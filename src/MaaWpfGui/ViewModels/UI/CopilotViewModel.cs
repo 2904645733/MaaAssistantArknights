@@ -68,7 +68,19 @@ public partial class CopilotViewModel : Screen
     /// 缓存的已解析作业，非即时添加的作业会使用该缓存
     /// </summary>
     private CopilotBase? _copilotCache;
-    private const string CopilotIdPrefix = "maa://";
+    private static readonly string[] CopilotIdPrefixes = ["maa://", "prts://"];
+    private static string StripCopilotIdPrefix(string s)
+    {
+        foreach (var prefix in CopilotIdPrefixes)
+        {
+            if (s.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return s[prefix.Length..];
+            }
+        }
+        return s;
+    }
+
     private static readonly string TempCopilotFile = Path.Combine(CacheDir, "_temp_copilot.json");
 
     // VideoRecognition 已不支持：仅保留 json 作业
@@ -1067,7 +1079,7 @@ public partial class CopilotViewModel : Screen
                 return;
             }
         }
-        else if (filename.StartsWith(CopilotIdPrefix, StringComparison.OrdinalIgnoreCase) || int.TryParse(filename, out _))
+        else if (int.TryParse(StripCopilotIdPrefix(filename), out _))
         {
             (copilotId, payload) = await GetCopilotAsync(filename);
             if (payload is not null)
@@ -1124,10 +1136,7 @@ public partial class CopilotViewModel : Screen
 
     private async Task<(int CopilotId, CopilotBase? Payload)> GetCopilotAsync(string copilotCodeString)
     {
-        if (copilotCodeString.StartsWith(CopilotIdPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            copilotCodeString = copilotCodeString[CopilotIdPrefix.Length..];
-        }
+        copilotCodeString = StripCopilotIdPrefix(copilotCodeString);
 
         if (int.TryParse(copilotCodeString, out var copilotCode))
         {
@@ -1328,10 +1337,7 @@ public partial class CopilotViewModel : Screen
 
     private async Task GetCopilotSetAsync(string copilotCodeString)
     {
-        if (copilotCodeString.StartsWith(CopilotIdPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            copilotCodeString = copilotCodeString[CopilotIdPrefix.Length..];
-        }
+        copilotCodeString = StripCopilotIdPrefix(copilotCodeString);
 
         if (int.TryParse(copilotCodeString, out var copilotCode))
         {
