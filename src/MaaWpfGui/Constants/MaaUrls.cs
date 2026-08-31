@@ -25,6 +25,9 @@ public static class MaaUrls
 
     public const string GitHub = "https://github.com/MaaAssistantArknights/MaaAssistantArknights";
 
+    // 自定义更新源仓库（fork 仓库），本体更新改为从该仓库的 GitHub Releases 检查
+    public const string UpdateRepository = "2904645733/MaaAssistantArknights";
+
     public const string ResourceRepository = "https://github.com/MaaAssistantArknights/MaaResource";
 
     public const string GitHubIssues = "https://github.com/MaaAssistantArknights/MaaAssistantArknights/issues";

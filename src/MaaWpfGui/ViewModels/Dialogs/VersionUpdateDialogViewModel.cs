@@ -197,6 +197,9 @@ public class VersionUpdateDialogViewModel : Screen
 
     private const string MaaUpdateApi = "version/summary.json";
 
+    // 自定义更新源：直接从 GitHub Releases API 检查本 fork 仓库的最新发布
+    private static readonly string GithubReleasesApi = $"https://api.github.com/repos/{MaaUrls.UpdateRepository}/releases/latest";
+
     private JObject? _latestJson;
     private JObject? _assetsObject;
 
@@ -839,14 +842,110 @@ public class VersionUpdateDialogViewModel : Screen
 
         try
         {
-            var ret = await CheckUpdateByMaaApi();
+            var ret = await CheckUpdateByGithubReleases();
             return (ret, AppUpdateSource.MaaApi);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to check update by Maa API.");
+            _logger.Error(ex, "Failed to check update by GitHub Releases.");
             return (CheckUpdateRetT.FailedToGetInfo, AppUpdateSource.MaaApi);
         }
+    }
+
+    private async Task<CheckUpdateRetT> CheckUpdateByGithubReleases()
+    {
+        HttpResponseMessage? response = null;
+        try
+        {
+            response = await Instances.HttpService.GetAsync(new(GithubReleasesApi));
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to send GET request to {Uri}", GithubReleasesApi);
+        }
+
+        if (response is null || !response.IsSuccessStatusCode)
+        {
+            return CheckUpdateRetT.FailedToGetInfo;
+        }
+
+        var jsonStr = await response.Content.ReadAsStringAsync();
+        JObject? json = null;
+        try
+        {
+            json = JObject.Parse(jsonStr);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to parse GitHub Releases response.");
+        }
+
+        if (json is null)
+        {
+            return CheckUpdateRetT.FailedToGetInfo;
+        }
+
+        string latestVersion = json["tag_name"]?.ToString() ?? string.Empty;
+        if (string.IsNullOrEmpty(latestVersion))
+        {
+            return CheckUpdateRetT.FailedToGetInfo;
+        }
+
+        if (!NeedToUpdate(latestVersion))
+        {
+            return CheckUpdateRetT.AlreadyLatest;
+        }
+
+        _latestVersion = latestVersion;
+        _latestJson = json;
+
+        // 选择更新资产：优先 OTA 增量包（命名含 {旧版}_{新版}），否则使用完整包
+        _assetsObject = null;
+        JObject? fullPackage = null;
+        var curVersionLower = _curVersion.ToLower();
+        var latestVersionLower = _latestVersion.ToLower();
+        foreach (var curAssets in ((JArray?)_latestJson["assets"]) ?? new JArray())
+        {
+            string? name = curAssets["name"]?.ToString().ToLower();
+            if (name == null)
+            {
+                continue;
+            }
+
+            if (IsArm ^ name.Contains("arm"))
+            {
+                continue;
+            }
+
+            if (!name.Contains("win"))
+            {
+                continue;
+            }
+
+            if (name.Contains($"maa-{latestVersionLower}-"))
+            {
+                fullPackage = curAssets as JObject;
+            }
+
+            // ReSharper disable once InvertIf
+            if (name.Contains("ota") && name.Contains($"{curVersionLower}_{latestVersionLower}"))
+            {
+                _assetsObject = curAssets as JObject;
+                break;
+            }
+        }
+
+        if (_assetsObject == null && fullPackage != null && SettingsViewModel.VersionUpdateSettings.AutoDownloadUpdatePackage)
+        {
+            _assetsObject = fullPackage;
+            _requiresFullPackageConfirmation = true;
+            _logger.Warning("No OTA package found, but full package found.");
+            using var toast = new ToastNotification(LocalizationHelper.GetString("NewVersionNoOtaPackage"));
+            toast.Show(30);
+            Instances.TaskQueueViewModel.AddLog(LocalizationHelper.GetString("NewVersionNoOtaPackage"), UiLogColor.Warning);
+        }
+
+        return CheckUpdateRetT.OK;
     }
 
     private async Task<CheckUpdateRetT> CheckUpdateByMaaApi()
