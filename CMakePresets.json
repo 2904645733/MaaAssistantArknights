@@ -218,10 +218,10 @@
                 "BUILD_WPF_GUI": "ON"
             },
             "$comment": [
-                "github actions only support Visual Studio 17 2022",
+                "github actions windows-latest 已升级到 VS 2026, 与 windows-base 保持一致",
                 "see https://github.com/actions/runner-images/issues/13291"
             ],
-            "generator": "Visual Studio 17 2022",
+            "generator": "Visual Studio 18 2026",
             "displayName": "Windows x64 Publish"
         },
         {
@@ -234,10 +234,10 @@
                 "BUILD_WPF_GUI": "ON"
             },
             "$comment": [
-                "github actions only support Visual Studio 17 2022",
+                "github actions windows-latest 已升级到 VS 2026, 与 windows-base 保持一致",
                 "see https://github.com/actions/runner-images/issues/13291"
             ],
-            "generator": "Visual Studio 17 2022",
+            "generator": "Visual Studio 18 2026",
             "displayName": "Windows arm64 Publish"
         },
         {
