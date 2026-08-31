@@ -72,6 +72,19 @@ bool asst::MultiCopilotTaskPlugin::navigate_to_stage(const std::string& stage_na
         }
     }
 
+    // OCR 找不到关卡名，先在当前画面直接找初见剧情入口（不滑动）
+    // 若识别到并看完剧情，画面会回到关卡选择界面，再 OCR 找关卡名
+    ProcessTask(*this, { "Copilot@ClickPlotStage" }).set_ignore_error(true).set_retry_times(0).run();
+    sleep(Config.get_options().task_delay);
+    image = ctrler()->get_image();
+    stages = find_stage(image, task->bin_threshold[0], task->bin_threshold[1]);
+    it = std::ranges::find_if(stages, [&](const OcrPack::Result& r) { return r.text == stage_name; });
+    if (it != stages.end()) {
+        if (enter_stage(it->rect, stage_name)) {
+            return true;
+        }
+    }
+
     ProcessTask(*this, { "Copilot@FullStageNavigation" }).set_retry_times(20).run();
     sleep(Config.get_options().task_delay);
     image = ctrler()->get_image();
