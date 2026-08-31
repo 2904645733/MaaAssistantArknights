@@ -687,6 +687,7 @@ jobs:
           files: |
             assets/*
           prerelease: ${{ needs.meta.outputs.prerelease != 'false' }}
+          tag_name: ${{ needs.meta.outputs.tag }}
 
       - name: Trigger release distribution workflows
         run: |
