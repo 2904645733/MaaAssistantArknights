@@ -28,6 +28,15 @@ on:
       - "tools/maadeps-download.py"
       - "!**/*.md"
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Publish a GitHub Release with this build'
+        type: boolean
+        default: false
+      version:
+        description: 'Release version tag, must be higher than current installed (e.g. v6.6.2)'
+        type: string
+        default: 'v6.6.2'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}${{ github.ref == 'refs/heads/dev-v2' && format('-{0}', github.sha) || '' }}
@@ -57,6 +66,9 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             # For tag pushes, use the tag name
             tag="${{ github.ref_name }}"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.version }}" ]]; then
+            # For manual dispatch, use the version input
+            tag="${{ github.event.inputs.version }}"
           else
             # For PRs and branch pushes, use git describe or fallback
             tag=$(git describe --tags --match "v*" HEAD 2>/dev/null || echo "v0.0.1-$(git rev-parse --short HEAD)")
@@ -65,7 +77,6 @@ jobs:
 
       - name: Check if it is a pre-release
         id: set_pre
-        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           if [[ '${{ steps.set_tag.outputs.tag }}' =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "prerelease=false" | tee -a $GITHUB_OUTPUT
@@ -651,7 +662,7 @@ jobs:
 
   release:
     name: Publish Release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.release == 'true')
     needs: [meta, windows, ubuntu, android, macOS-Core, macOS-GUI]
     runs-on: ubuntu-latest
     steps:
@@ -662,7 +673,7 @@ jobs:
 
       - name: Clean up files
         run: |
-          mv -vf assets/changelog/* .
+          mv -vf assets/changelog/* . || true
           rm -rf assets/MAACore-macos-*
           cd assets
           # find . -type f | xargs mv -fvt .
