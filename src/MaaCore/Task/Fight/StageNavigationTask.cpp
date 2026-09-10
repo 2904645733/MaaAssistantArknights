@@ -139,6 +139,28 @@ bool asst::StageNavigationTask::set_stage_name(const std::string& stage_name)
     return true;
 }
 
+bool asst::StageNavigationTask::set_chapter(int chapter)
+{
+    LogTraceFunction;
+
+    clear();
+
+    if (chapter < 0 || chapter > 17) {
+        Log.error("chapter is invalid", chapter);
+        return false;
+    }
+
+    m_chapter_only = true;
+    m_chapter_task = "Episode" + std::to_string(chapter);
+    if (!Task.get(m_chapter_task)) {
+        Log.error("chapter task not exists", m_chapter_task);
+        return false;
+    }
+
+    Log.info("chapter task", m_chapter_task);
+    return true;
+}
+
 bool asst::StageNavigationTask::_run()
 {
     LogTraceFunction;
@@ -159,12 +181,18 @@ bool asst::StageNavigationTask::_run()
         }
     }
 
+    if (m_chapter_only) {
+        // 只做章节导航：与理智作战进入某一章完全一致，不再在地图上选具体关卡、也不切难度
+        return chapter_wayfinding();
+    }
+
     return chapter_wayfinding() && swipe_and_find_stage() && switch_difficulty_after_stage_selection();
 }
 
 void asst::StageNavigationTask::clear() noexcept
 {
     m_is_directly = false;
+    m_chapter_only = false;
     m_directly_task.clear();
     m_chapter_task.clear();
     m_difficulty_tasks.clear();

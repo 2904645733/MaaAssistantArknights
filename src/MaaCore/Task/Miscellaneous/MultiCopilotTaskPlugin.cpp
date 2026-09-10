@@ -14,6 +14,24 @@
 #include "Vision/Matcher.h"
 #include "Vision/Miscellaneous/PipelineAnalyzer.h"
 
+namespace {
+// 关卡名形如 3-1 / R8-8 / JT8-2 / H10-1：用于判断"画面确实已经在关卡地图上"
+bool looks_like_stage_code(const std::string& text)
+{
+    if (text.size() < 3 || text.size() > 8) {
+        return false;
+    }
+
+    const auto dash = text.find('-');
+    if (dash == std::string::npos || dash == 0 || dash + 1 >= text.size()) {
+        return false;
+    }
+
+    const auto is_digit = [](char ch) { return ch >= '0' && ch <= '9'; };
+    return is_digit(text[dash - 1]) && is_digit(text[dash + 1]);
+}
+} // namespace
+
 bool asst::MultiCopilotTaskPlugin::_run()
 {
     LogTraceFunction;
@@ -110,9 +128,31 @@ bool asst::MultiCopilotTaskPlugin::navigate_to_stage(const std::string& stage_na
         }
     }
 
-    // 找不到关卡名时先扫一遍初见剧情：点掉剧情节点后地图会推进，目标关卡名可能出现
+    // 刚点完"前往章节"时地图还在加载，画面里一个关卡名都没有。此时若直接盲点剧情图标，会点进别的关卡
+    // （例如第 8 章的 EG-x 本身就是剧情关），所以先等地图出现；始终不像地图就返回，交给外层重试。
+    const auto map_visible = [](const auto& ocr) {
+        return std::ranges::any_of(ocr, [](const OcrPack::Result& r) { return looks_like_stage_code(r.text); });
+    };
+    for (int wait = 0; wait < 4 && !need_exit() && !map_visible(stages); ++wait) {
+        Log.info("stage map not visible yet, wait before plot probing", stage_name);
+        sleep(1000);
+        image = ctrler()->get_image();
+        stages = find_stage(image, threshold_low, threshold_high);
+        it = std::ranges::find_if(stages, [&](const OcrPack::Result& r) { return r.text == stage_name; });
+        if (it != stages.end() && enter_stage(it->rect, stage_name)) {
+            return true;
+        }
+    }
+    if (!map_visible(stages)) {
+        Log.info("no stage map in sight, retry later instead of clicking plot nodes", stage_name);
+        return false;
+    }
+
+    // 走到这里说明画面已经是关卡地图（上面的等待保证了这一点），此时才做初见剧情探测：
+    // 点掉剧情节点后地图会推进，目标关卡名可能出现。
+    // 仅做少量探测（3 次）即可：有剧情节点时必然在探测窗口内出现；没有则快速放行进入滑动找关，避免空转过久。
     ProcessTask first_plot_task(*this, { "Copilot@ClickPlotStage" });
-    first_plot_task.set_retry_times(RetryTimesDefault);
+    first_plot_task.set_retry_times(3);
     bool plot_ret = first_plot_task.run();
     bool plot_touched = plot_ret || !first_plot_task.get_last_task_name().empty();
     if (need_exit()) {

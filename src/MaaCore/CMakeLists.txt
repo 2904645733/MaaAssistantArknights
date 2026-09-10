@@ -1,3 +1,5 @@
+# NOTE: sources are collected with GLOB; re-run CMake configure after adding/removing .cpp files
+# （本次新增 Task/Interface/ChapterNavigationTask.{h,cpp}，靠这行触发重新配置）
 file(GLOB_RECURSE maa_src *.h *.hpp *.cpp)
 
 # Exclude the platform-specific OCR implementation that is not needed on this target

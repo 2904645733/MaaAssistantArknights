@@ -142,6 +142,11 @@ public class TaskQueueViewModel : Screen
     /// </summary>
     public static CustomSettingsUserControlModel CustomTask => CustomSettingsUserControlModel.Instance;
 
+    /// <summary>
+    /// Gets 自动战斗(作业)任务Model
+    /// </summary>
+    public static CopilotSettingsUserControlModel CopilotTask => CopilotSettingsUserControlModel.Instance;
+
     #endregion 长草任务Model
 
     private static readonly IEnumerable<TaskSettingsViewModel> _taskViewModelTypes = InitTaskViewModelList();
@@ -1426,6 +1431,7 @@ public class TaskQueueViewModel : Screen
                 case TaskType.Roguelike:
                 case TaskType.Reclamation:
                 case TaskType.Custom:
+                case TaskType.Copilot:
                     continue;
             }
 
@@ -1446,6 +1452,7 @@ public class TaskQueueViewModel : Screen
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("UserDataUpdate"), Value = typeof(UserDataUpdateTask) },
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("DepotMaintain"), Value = typeof(DepotMaintainTask) },
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("Custom"), Value = typeof(CustomTask) },
+            new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("CopilotTask"), Value = typeof(CopilotTask) },
         ]);
 
     private void RefreshTaskTypeListLocalization()
@@ -1464,6 +1471,7 @@ public class TaskQueueViewModel : Screen
                 nameof(UserDataUpdateTask) => LocalizationHelper.GetString("UserDataUpdate"),
                 nameof(DepotMaintainTask) => LocalizationHelper.GetString("DepotMaintain"),
                 nameof(CustomTask) => LocalizationHelper.GetString("Custom"),
+                nameof(CopilotTask) => LocalizationHelper.GetString("CopilotTask"),
                 _ => item.Display,
             };
         }
@@ -1473,6 +1481,11 @@ public class TaskQueueViewModel : Screen
     {
         if (Activator.CreateInstance(taskName) is BaseTask task)
         {
+            if (task is CopilotTask { Name.Length: 0 })
+            {
+                task.Name = LocalizationHelper.GetString("CopilotTask");
+            }
+
             ConfigFactory.CurrentConfig.TaskQueue.Add(task);
             TaskItemViewModels.Add(new TaskItemViewModel());
             AchievementTrackerHelper.Instance.Unlock(AchievementIds.QueueExpansion);
@@ -1708,6 +1721,7 @@ public class TaskQueueViewModel : Screen
                     case TaskType.Roguelike:
                     case TaskType.Reclamation:
                     case TaskType.Custom:
+                    case TaskType.Copilot:
                         continue;
                 }
 

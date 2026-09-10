@@ -1,0 +1,384 @@
+<UserControl
+    x:Class="MaaWpfGui.Views.UserControl.TaskQueue.CopilotUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dd="urn:gong-wpf-dragdrop"
+    xmlns:hc="https://handyorg.github.io/handycontrol"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:s="https://github.com/canton7/Stylet"
+    xmlns:taskQueue_vms="clr-namespace:MaaWpfGui.ViewModels.UserControl.TaskQueue"
+    xmlns:ui_vms="clr-namespace:MaaWpfGui.ViewModels.UI"
+    d:Background="White"
+    d:DataContext="{d:DesignInstance {x:Type taskQueue_vms:CopilotSettingsUserControlModel}}"
+    s:View.ActionTarget="{Binding}"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <!-- 无边框小图标按钮（与主界面任务列表动作按钮同款） -->
+        <Style
+            x:Key="TaskActionButtonStyle"
+            BasedOn="{StaticResource {x:Type Button}}"
+            TargetType="Button">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Margin" Value="2,0,0,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="hc:IconElement.Height" Value="14" />
+            <Setter Property="hc:IconElement.Width" Value="14" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!-- 名字输入框：圆角浅底方块，无下划线/悬停下阴影 -->
+        <Style x:Key="StepNameTextBoxStyle" TargetType="TextBox">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="MinWidth" Value="140" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border
+                            x:Name="Bd"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{DynamicResource RegionBrushOpacity25}"
+                            CornerRadius="4">
+                            <ScrollViewer
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                x:Name="PART_ContentHost" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MouseOverRegionBrushOpacity75}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MouseOverRegionBrushOpacity75}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <!--  常规设置  -->
+        <StackPanel Visibility="{c:Binding '!EnableAdvancedSettings', Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingVisibilities}}">
+            <WrapPanel Margin="0,0,0,8" IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}">
+                <Button
+                    Margin="0,0,8,0"
+                    Command="{s:Action AddBattleFromPage}"
+                    Content="{DynamicResource CopilotAddBattle}" />
+                <Button Command="{s:Action ToggleNavPicker}" Content="{DynamicResource CopilotAddNav}" />
+            </WrapPanel>
+
+            <!--  导航小任务：点"添加导航小任务"后展开，选章节 + 添加  -->
+            <StackPanel IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" Visibility="{Binding IsNavPickerOpen, Converter={StaticResource BoolToVis}}">
+                <StackPanel Margin="0,0,0,4" Orientation="Horizontal">
+                    <hc:ComboBox
+                        Width="150"
+                        DisplayMemberPath="Display"
+                        ItemsSource="{Binding NavChapterOptions}"
+                        MaxDropDownHeight="380"
+                        SelectedValue="{Binding SelectedNavChapter}"
+                        SelectedValuePath="Value" />
+                    <Button
+                        MinWidth="64"
+                        Margin="8,0,0,0"
+                        Command="{s:Action AddSelectedNav}"
+                        Content="{DynamicResource CopilotNavAdd}" />
+                </StackPanel>
+                <TextBlock
+                    Margin="0,0,0,8"
+                    FontSize="11"
+                    Foreground="{DynamicResource TraceLogBrush}"
+                    Text="{DynamicResource CopilotNavPickerTip}"
+                    TextAlignment="Left"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <TextBlock
+                Margin="0,0,0,6"
+                FontSize="12"
+                Foreground="{DynamicResource TraceLogBrush}"
+                Text="{Binding StatusMessage}"
+                TextAlignment="Left"
+                TextWrapping="Wrap"
+                Visibility="{Binding HasStatusMessage, Converter={StaticResource BoolToVis}}" />
+
+            <TextBlock
+                Margin="0,0,0,4"
+                FontSize="11"
+                Foreground="{DynamicResource TraceLogBrush}"
+                Text="{DynamicResource CopilotDragTip}"
+                TextAlignment="Left"
+                TextWrapping="Wrap"
+                Visibility="{Binding HasItems, Converter={StaticResource BoolToVis}}" />
+
+            <!-- 与主界面任务队列一致的拖拽行为（dd:DragDrop 不会触发选中，避免文字变色） -->
+            <ListBox
+                x:Name="StepList"
+                MaxHeight="220"
+                HorizontalContentAlignment="Stretch"
+                IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                ItemsSource="{Binding Items}"
+                dd:DragDrop.DragDropContext="{Binding RelativeSource={RelativeSource Self}}"
+                dd:DragDrop.IsDragSource="True"
+                dd:DragDrop.IsDropTarget="True"
+                PreviewMouseWheel="List_PreviewMouseWheel"
+                Style="{DynamicResource NoSelectedHighlightListBoxStyle}"
+                s:View.ActionTarget="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
+                <ListBox.ItemContainerStyle>
+                    <Style
+                        BasedOn="{StaticResource NoSelectedHighlightListBoxItemStyle}"
+                        TargetType="ListBoxItem">
+                        <Setter Property="Margin" Value="0,0,0,2" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="4,2" s:View.ActionTarget="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 勾选（跑完自动取消勾选）+ 标记/拖拽把手：战斗=斜向短剑，导航=向右箭头 -->
+                                <StackPanel
+                                    Grid.Column="0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal">
+                                    <CheckBox
+                                        Margin="0,0,2,0"
+                                        VerticalAlignment="Center"
+                                        IsChecked="{Binding IsChecked}" />
+                                    <Path
+                                        Width="16"
+                                        Height="16"
+                                        VerticalAlignment="Center"
+                                        Stroke="{DynamicResource SecondaryTextBrush}"
+                                        StrokeEndLineCap="Round"
+                                        StrokeLineJoin="Round"
+                                        StrokeStartLineCap="Round"
+                                        StrokeThickness="1.4"
+                                        Stretch="Uniform"
+                                        ToolTip="{DynamicResource CopilotDragTip}">
+                                        <Path.Style>
+                                            <Style TargetType="Path">
+                                                <Setter Property="Data" Value="M16.2,2.4 L6.9,11.7 M3.8,8.9 L9.5,14.6 M6.4,12.2 L3.4,15.2 M2.2,14.4 L4.2,16.4" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsNav}" Value="True">
+                                                        <Setter Property="Data" Value="M1.5,8 L13,8 M8.6,3.6 L13,8 L8.6,12.4" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Path.Style>
+                                    </Path>
+                                </StackPanel>
+
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    FontSize="13"
+                                    Foreground="{DynamicResource PrimaryTextBrush}"
+                                    Text="{Binding Name}"
+                                    TextTrimming="CharacterEllipsis">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBox
+                                    Grid.Column="1"
+                                    KeyDown="StepNameBox_KeyDown"
+                                    LostFocus="{s:Action SaveName}"
+                                    Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                    ToolTip="{DynamicResource CopilotStepNameTip}">
+                                    <TextBox.Style>
+                                        <Style BasedOn="{StaticResource StepNameTextBoxStyle}" TargetType="TextBox">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+
+                                <StackPanel
+                                    Grid.Column="2"
+                                    Margin="6,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal">
+                                    <!-- 战斗小任务：重命名 + 删除 + 高级设置；导航小任务：只有删除 -->
+                                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsBattle, Converter={StaticResource BoolToVis}}">
+                                        <Button
+                                            hc:IconElement.Geometry="{StaticResource RenameTaskGeometry}"
+                                            Command="{s:Action RenameItem}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource TaskActionButtonStyle}"
+                                            ToolTip="{DynamicResource Rename}" />
+                                        <Button
+                                            hc:IconElement.Geometry="{StaticResource ConfigGeometry}"
+                                            Command="{s:Action OpenAdvanced}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource TaskActionButtonStyle}"
+                                            ToolTip="{DynamicResource CopilotAdvancedTitle}" />
+                                    </StackPanel>
+                                    <Button
+                                        hc:IconElement.Geometry="{StaticResource DeleteTaskGeometry}"
+                                        Command="{s:Action DeleteItem}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource TaskActionButtonStyle}"
+                                        ToolTip="{DynamicResource QueueDelete}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <TextBlock
+                Margin="0,8,0,0"
+                FontSize="12"
+                Foreground="{DynamicResource TraceLogBrush}"
+                Text="{DynamicResource CopilotTaskTip}"
+                TextAlignment="Left"
+                TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!--  高级设置：与作业页多作业列表同款  -->
+        <StackPanel Visibility="{c:Binding 'EnableAdvancedSettings', Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingVisibilities}}">
+            <TextBlock
+                Margin="0,4"
+                FontSize="12"
+                Foreground="{DynamicResource TraceLogBrush}"
+                Text="{DynamicResource CopilotAdvancedNeedTarget}"
+                TextAlignment="Left"
+                TextWrapping="Wrap"
+                Visibility="{Binding NoAdvancedTarget, Converter={StaticResource BoolToVis}}" />
+
+            <StackPanel Visibility="{Binding HasAdvancedTarget, Converter={StaticResource BoolToVis}}">
+                <!-- 对应小任务的名字（随重命名同步，无边框） -->
+                <TextBlock
+                    Margin="0,2,0,0"
+                    FontSize="14"
+                    Foreground="{DynamicResource PrimaryTextBrush}"
+                    Text="{Binding AdvancedOwnerName}"
+                    TextTrimming="CharacterEllipsis" />
+
+                <!-- 编辑 / 保存（作用于上方小任务） -->
+                <StackPanel
+                    Margin="0,6,0,6"
+                    HorizontalAlignment="Left"
+                    IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                    Orientation="Horizontal">
+                    <Button
+                        MinWidth="64"
+                        Command="{s:Action EditItem}"
+                        CommandParameter="{Binding AdvancedOwner}"
+                        Content="{DynamicResource CopilotStepEdit}" />
+                    <Button
+                        MinWidth="64"
+                        Margin="8,0,0,0"
+                        Command="{s:Action SaveItem}"
+                        CommandParameter="{Binding AdvancedOwner}"
+                        Content="{DynamicResource CopilotStepSave}" />
+                </StackPanel>
+
+                <TextBlock
+                    Margin="0,2,0,4"
+                    FontSize="11"
+                    Foreground="{DynamicResource TraceLogBrush}"
+                    Text="{DynamicResource CopilotAdvancedTip}"
+                    TextWrapping="Wrap" />
+                <ListBox
+                    x:Name="AdvancedList"
+                    MaxHeight="260"
+                    HorizontalContentAlignment="Stretch"
+                    IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                    ItemsSource="{Binding AdvancedItems}"
+                    dd:DragDrop.DragDropContext="{Binding RelativeSource={RelativeSource Self}}"
+                    dd:DragDrop.IsDragSource="True"
+                    dd:DragDrop.IsDropTarget="True"
+                    PreviewMouseWheel="List_PreviewMouseWheel"
+                    BorderThickness="1"
+                    Style="{DynamicResource NoSelectedHighlightListBoxStyle}"
+                    ToolTip="{DynamicResource LabelSequenceTip}"
+                    s:View.ActionTarget="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
+                    <ListBox.ItemContainerStyle>
+                        <Style BasedOn="{StaticResource NoSelectedHighlightListBoxItemStyle}" TargetType="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsRaid}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource Copilot.RaidBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid s:View.ActionTarget="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Grid.Column="0" IsChecked="{Binding IsChecked}">
+                                    <TextBlock Text="{Binding Title}" ToolTip="{Binding Title}" />
+                                </CheckBox>
+                                <Button
+                                    Grid.Column="1"
+                                    Margin="0"
+                                    Padding="5,6"
+                                    hc:IconElement.Geometry="{StaticResource CopilotListItemToParse}"
+                                    hc:VisualElement.HighlightBackground="Transparent"
+                                    hc:VisualElement.HighlightForeground="{DynamicResource PrimaryBrush}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Command="{s:Action LoadJobToPage}"
+                                    CommandParameter="{Binding}"
+                                    Foreground="{DynamicResource SecondaryTextBrush}"
+                                    ToolTip="{DynamicResource CopilotSelectTaskTip}" />
+                                <Button
+                                    Grid.Column="2"
+                                    Margin="0"
+                                    Padding="5,0,10,0"
+                                    hc:IconElement.Geometry="{StaticResource CloseGeometry}"
+                                    hc:VisualElement.HighlightBackground="Transparent"
+                                    hc:VisualElement.HighlightForeground="{DynamicResource PrimaryBrush}"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Command="{s:Action RemoveAdvancedJob}"
+                                    CommandParameter="{Binding}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

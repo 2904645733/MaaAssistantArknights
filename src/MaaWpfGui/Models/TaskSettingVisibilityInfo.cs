@@ -58,6 +58,8 @@ public class TaskSettingVisibilityInfo : PropertyChangedBase
 
     public bool Custom { get => field; set => SetAndNotify(ref field, value); }
 
+    public bool Copilot { get => field; set => SetAndNotify(ref field, value); }
+
     public bool PostAction { get => field; set => SetAndNotify(ref field, value); }
 
     public static TaskSettingVisibilityInfo Instance { get; } = new();
@@ -156,6 +158,7 @@ public class TaskSettingVisibilityInfo : PropertyChangedBase
             UserDataUpdateTask => UserDataUpdate = enable,
             DepotMaintainTask => DepotMaintain = enable,
             CustomTask => Custom = enable,
+            CopilotTask => Copilot = enable,
             _ => throw new NotImplementedException(),
         };
         EnableAdvancedSettings = false;
@@ -197,6 +200,7 @@ public class TaskSettingVisibilityInfo : PropertyChangedBase
         UserDataUpdate = false;
         DepotMaintain = false;
         Custom = false;
+        Copilot = false;
     }
 
     public void SetPostAction(bool value)

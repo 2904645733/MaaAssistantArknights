@@ -1320,6 +1320,12 @@ public class AsstProxy
 
             case AsstMsg.TaskChainCompleted:
                 {
+                    // 战斗任务（队列）：任务链结束时把最后执行的一个作业标记为已完成
+                    if (taskChain is "Copilot" or "ChapterNavigation")
+                    {
+                        CopilotSettingsUserControlModel.HandleTaskFinished(taskId);
+                    }
+
                     // 判断 _latestTaskId 中是否有元素的值和 details["taskid"] 相等，如果有再判断这个 id 对应的任务是否在 _mainTaskTypes 中
                     UpdateTaskStatus(taskId, TaskStatus.Completed);
                     if (_tasksStatus.TryGetValue(taskId, out var taskInfo))
@@ -2374,6 +2380,14 @@ public class AsstProxy
                 {
                     Instances.CopilotViewModel.CurrentCopilotId = -1;
                 }
+
+                // 战斗任务（队列）：核心开始执行下一个作业时，把之前的作业标记为已完成（取消勾选，支持断点续跑）
+                if (details["taskid"]?.ToObject<int>() is int hookedTaskId and > 0 &&
+                    subTaskDetails["id"] is JToken { Type: JTokenType.Integer } jobIndexToken)
+                {
+                    CopilotSettingsUserControlModel.HandleJobStarted(hookedTaskId, (int)jobIndexToken);
+                }
+
                 break;
 
             case "SSSStage":

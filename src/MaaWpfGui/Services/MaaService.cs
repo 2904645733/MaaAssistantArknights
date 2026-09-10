@@ -189,4 +189,9 @@ public enum AsstTaskType : byte
     /// 自定义任务
     /// </summary>
     Custom,
+
+    /// <summary>
+    /// 导航到指定章节（只切章节入口，不选具体关卡、不战斗）
+    /// </summary>
+    ChapterNavigation,
 }
