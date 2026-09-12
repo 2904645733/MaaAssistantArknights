@@ -139,7 +139,7 @@ bool asst::StageNavigationTask::set_stage_name(const std::string& stage_name)
     return true;
 }
 
-bool asst::StageNavigationTask::set_chapter(int chapter)
+bool asst::StageNavigationTask::set_chapter(int chapter, const std::string& difficulty)
 {
     LogTraceFunction;
 
@@ -157,7 +157,81 @@ bool asst::StageNavigationTask::set_chapter(int chapter)
         return false;
     }
 
+    // 主线 10~14 章有标准 / 磨难两个模式，用的就是理智作战那一套任务
+    // （ChapterDifficultyHard / ChapterDifficultyNormal）。这两档难度要在地图上先选好，
+    // 所以 m_switch_difficulty_after_stage_selection 保持 false：
+    // chapter_wayfinding() 会在 Episode{N}（也就是"前往章节"）之后立刻跑它，顺序与理智作战完全一致。
+    if (!difficulty.empty()) {
+        if (get_chapter_difficulty_mode(chapter) != ChapterDifficultyMode::PreStageNormalHard) {
+            Log.error("difficulty is not supported in this chapter", chapter, difficulty);
+            return false;
+        }
+        if (difficulty != "Hard" && difficulty != "Normal") {
+            Log.error("only Hard/Normal is supported for chapter 10-14", difficulty);
+            return false;
+        }
+
+        m_difficulty_tasks = { "ChapterDifficulty" + difficulty };
+        for (const auto& difficulty_task : m_difficulty_tasks) {
+            if (!Task.get(difficulty_task)) {
+                Log.error("difficulty task not exists", difficulty_task);
+                return false;
+            }
+        }
+
+        Log.info("difficulty task", m_difficulty_tasks.front());
+    }
+
     Log.info("chapter task", m_chapter_task);
+    return true;
+}
+
+bool asst::StageNavigationTask::set_side_story(const std::string& prefix, const std::string& mode)
+{
+    LogTraceFunction;
+
+    clear();
+
+    if (prefix.empty()) {
+        Log.error("side story prefix is empty");
+        return false;
+    }
+
+    // 和主线章节同一个套路：xx@SideStoryNew 是 JustReturn 父任务，前缀展开后它的 next 变成
+    // [xx@EnterSideStoryNew, xx@SwipeUpToSideStory] ——「找卡片」和「滑动再找」是同级候选，
+    // 卡片不在屏幕上时才会落到滑动（直接跑卡片任务的话，找不到卡片就只会原地重试然后报错）。
+    // 卡片任务 xx@EnterSideStoryNew 是 38 条已声明派生任务，模板自动取同名图。
+    m_chapter_task = prefix + "@SideStoryNew";
+    if (!Task.get(m_chapter_task)) {
+        Log.error("side story entry task not exists", m_chapter_task);
+        return false;
+    }
+
+    // 活动内的关卡模式（EX / S，可选）：进入活动之后全屏扫模式按钮的模板图，命中就点。
+    // 用的是和活动入口卡片完全相同的「已声明派生任务」机制：tasks.json 里为每个 (代号, 模式)
+    // 声明一条空定义（如 "BP@EnterStageModeEX": {}），派生任务自动取同名模板图
+    // <代号>@EnterStageMode<模式>.png（放哪个子文件夹都行，TemplResource 按文件名找）。
+    // 任务不存在（= 这个活动还没有该模式的图）就跳过，等于不切模式（普通关），不影响整条导航。
+    if (!mode.empty()) {
+        if (mode != "EX" && mode != "S") {
+            Log.error("only EX/S is supported for activity stage mode", mode);
+            return false;
+        }
+
+        const std::string mode_task = prefix + "@EnterStageMode" + mode;
+        if (!Task.get(mode_task)) {
+            Log.warn("activity stage mode task not exists, skip mode switch", mode_task);
+        }
+        else {
+            m_stage_mode_task = mode_task;
+            Log.info("activity stage mode task", mode, mode_task);
+        }
+    }
+
+    Log.info("side story entry task", m_chapter_task);
+
+    // 复用"只导航"通道：不选具体关卡（理智作战原有路径完全不受影响）
+    m_chapter_only = true;
     return true;
 }
 
@@ -182,7 +256,8 @@ bool asst::StageNavigationTask::_run()
     }
 
     if (m_chapter_only) {
-        // 只做章节导航：与理智作战进入某一章完全一致，不再在地图上选具体关卡、也不切难度
+        // 只做章节导航：与理智作战进入某一章完全一致，不再在地图上选具体关卡、也不切难度。
+        // 活动的"点主题曲标签"由活动卡片任务自己的 sub 完成（和 Episode{N} 的结构完全相同）
         return chapter_wayfinding();
     }
 
@@ -196,6 +271,7 @@ void asst::StageNavigationTask::clear() noexcept
     m_directly_task.clear();
     m_chapter_task.clear();
     m_difficulty_tasks.clear();
+    m_stage_mode_task.clear();
     m_stage_code.clear();
     m_switch_difficulty_after_stage_selection = false;
 }
@@ -209,7 +285,23 @@ bool asst::StageNavigationTask::chapter_wayfinding()
     }
 
     if (!m_difficulty_tasks.empty() && !m_switch_difficulty_after_stage_selection) {
-        return ProcessTask(*this, m_difficulty_tasks).set_retry_times(RetryTimesDefault).run();
+        if (!ProcessTask(*this, m_difficulty_tasks).set_retry_times(RetryTimesDefault).run()) {
+            return false;
+        }
+    }
+
+    // 活动模式入口（EX / S）：命中就点；认不到就报错、这一步判为失败——选了模式却没切成功，
+    // 绝不能悄悄落到普通关去。任务里配了 preDelay 4000（等「进入活动」的转场/黑屏加载），
+    // 这里再给 5 次机会（每次间隔约 0.5s），总共约 6 秒窗口。低分匹配日志本来不打印，
+    // 所以这里额外写明确的结果日志。
+    if (!m_stage_mode_task.empty()) {
+        const bool clicked = ProcessTask(*this, { m_stage_mode_task }).set_retry_times(5).run();
+        if (!clicked) {
+            Log.error("activity stage mode not found", m_stage_mode_task);
+            return false;
+        }
+
+        Log.info("activity stage mode clicked", m_stage_mode_task);
     }
 
     return true;

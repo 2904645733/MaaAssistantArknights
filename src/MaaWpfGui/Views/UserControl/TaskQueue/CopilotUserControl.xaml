@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
+    xmlns:controls="clr-namespace:MaaWpfGui.Styles.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="urn:gong-wpf-dragdrop"
     xmlns:hc="https://handyorg.github.io/handycontrol"
@@ -79,32 +80,76 @@
                     Margin="0,0,8,0"
                     Command="{s:Action AddBattleFromPage}"
                     Content="{DynamicResource CopilotAddBattle}" />
-                <Button Command="{s:Action ToggleNavPicker}" Content="{DynamicResource CopilotAddNav}" />
             </WrapPanel>
 
-            <!--  导航小任务：点"添加导航小任务"后展开，选章节 + 添加  -->
-            <StackPanel IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" Visibility="{Binding IsNavPickerOpen, Converter={StaticResource BoolToVis}}">
-                <StackPanel Margin="0,0,0,4" Orientation="Horizontal">
+            <!--  导航小任务：和"自动肉鸽 · 开局干员"一样直接摆在这里（可搜索下拉框 + 添加），不用先点按钮展开  -->
+            <StackPanel IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}">
+                <StackPanel Margin="0,3,0,5" Orientation="Horizontal">
+                    <controls:TextBlock Margin="8,0,0,0" Text="{DynamicResource CopilotNavTitle}" />
+                    <controls:TooltipBlock TooltipText="{DynamicResource CopilotNavPickerTip}" />
+                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
                     <hc:ComboBox
-                        Width="150"
+                        x:Name="NavTargetComboBox"
                         DisplayMemberPath="Display"
+                        IsEditable="True"
+                        IsTextSearchEnabled="False"
+                        IsVisibleChanged="NavTargetComboBox_IsVisibleChanged"
                         ItemsSource="{Binding NavChapterOptions}"
+                        Loaded="{s:Action MakeComboBoxSearchable,
+                                          Target={x:Type ui_vms:SettingsViewModel}}"
                         MaxDropDownHeight="380"
-                        SelectedValue="{Binding SelectedNavChapter}"
-                        SelectedValuePath="Value" />
+                        SelectedItem="{Binding SelectedNavOption}"
+                        Text="{Binding NavSearchText, UpdateSourceTrigger=PropertyChanged}" />
                     <Button
-                        MinWidth="64"
+                        Grid.Column="1"
+                        MinWidth="56"
                         Margin="8,0,0,0"
                         Command="{s:Action AddSelectedNav}"
                         Content="{DynamicResource CopilotNavAdd}" />
+                </Grid>
+                <!--  主线 10~14 章有标准 / 磨难两个模式：选中这些章节后才出现  -->
+                <StackPanel
+                    Margin="8,6,0,4"
+                    HorizontalAlignment="Left"
+                    Orientation="Horizontal"
+                    Visibility="{Binding ShowNavDifficulty, Converter={StaticResource BoolToVis}}">
+                    <controls:TextBlock
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Center"
+                        Text="{DynamicResource CopilotNavDifficultyLabel}" />
+                    <RadioButton
+                        Margin="0,0,12,0"
+                        Content="{DynamicResource CopilotNavDifficultyNormal}"
+                        IsChecked="{Binding NavDifficultyIsNormal}" />
+                    <RadioButton
+                        Content="{DynamicResource CopilotNavDifficultyHard}"
+                        IsChecked="{Binding NavDifficultyIsHard}" />
                 </StackPanel>
-                <TextBlock
-                    Margin="0,0,0,8"
-                    FontSize="11"
-                    Foreground="{DynamicResource TraceLogBrush}"
-                    Text="{DynamicResource CopilotNavPickerTip}"
-                    TextAlignment="Left"
-                    TextWrapping="Wrap" />
+                <!--  活动有 EX / S 两种关卡模式（S 只有部分活动有）：选中活动后才出现；都不勾选 = 普通关  -->
+                <StackPanel
+                    Margin="8,6,0,10"
+                    HorizontalAlignment="Left"
+                    Orientation="Horizontal"
+                    Visibility="{Binding ShowNavMode, Converter={StaticResource BoolToVis}}">
+                    <controls:TextBlock
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Center"
+                        Text="{DynamicResource CopilotNavModeLabel}" />
+                    <CheckBox
+                        Margin="0,0,12,0"
+                        Content="{DynamicResource CopilotNavModeEX}"
+                        IsChecked="{Binding NavModeIsEX}"
+                        Visibility="{Binding SelectedNavOption.HasEx, Converter={StaticResource BoolToVis}}" />
+                    <CheckBox
+                        Content="{DynamicResource CopilotNavModeS}"
+                        IsChecked="{Binding NavModeIsS}"
+                        Visibility="{Binding SelectedNavOption.HasS, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
             </StackPanel>
 
             <TextBlock
@@ -125,16 +170,16 @@
                 TextWrapping="Wrap"
                 Visibility="{Binding HasItems, Converter={StaticResource BoolToVis}}" />
 
-            <!-- 与主界面任务队列一致的拖拽行为（dd:DragDrop 不会触发选中，避免文字变色） -->
+            <!--  与主界面任务队列一致的拖拽行为（dd:DragDrop 不会触发选中，避免文字变色）。
+                 跑任务时（Idle=false）只关掉拖拽、勾选框和行内按钮，列表本身不禁用——这样才能继续滚动查看。  -->
             <ListBox
                 x:Name="StepList"
                 MaxHeight="220"
                 HorizontalContentAlignment="Stretch"
-                IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
                 ItemsSource="{Binding Items}"
                 dd:DragDrop.DragDropContext="{Binding RelativeSource={RelativeSource Self}}"
-                dd:DragDrop.IsDragSource="True"
-                dd:DragDrop.IsDropTarget="True"
+                dd:DragDrop.IsDragSource="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                dd:DragDrop.IsDropTarget="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
                 PreviewMouseWheel="List_PreviewMouseWheel"
                 Style="{DynamicResource NoSelectedHighlightListBoxStyle}"
                 s:View.ActionTarget="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
@@ -149,7 +194,10 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Padding="4,2" s:View.ActionTarget="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
+                        <Border
+                            Padding="4,2"
+                            ToolTip="{Binding Name}"
+                            s:View.ActionTarget="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="56" />
@@ -166,7 +214,8 @@
                                     <CheckBox
                                         Margin="0,0,2,0"
                                         VerticalAlignment="Center"
-                                        IsChecked="{Binding IsChecked}" />
+                                        IsChecked="{Binding IsChecked}"
+                                        IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" />
                                     <Path
                                         Width="16"
                                         Height="16"
@@ -232,6 +281,7 @@
                                     Grid.Column="2"
                                     Margin="6,0,0,0"
                                     VerticalAlignment="Center"
+                                    IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
                                     Orientation="Horizontal">
                                     <!-- 战斗小任务：重命名 + 删除 + 高级设置；导航小任务：只有删除 -->
                                     <StackPanel Orientation="Horizontal" Visibility="{Binding IsBattle, Converter={StaticResource BoolToVis}}">

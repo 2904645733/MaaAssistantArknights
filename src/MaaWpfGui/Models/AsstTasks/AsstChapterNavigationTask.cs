@@ -27,8 +27,20 @@ public class AsstChapterNavigationTask : AsstBaseTask
     public override AsstTaskType TaskType => AsstTaskType.ChapterNavigation;
 
     /// <summary>Gets or sets 目标章节号（0~17，对应核心的 Episode0~Episode17）。</summary>
-    [JsonProperty("chapter")]
-    public int Chapter { get; set; }
+    [JsonProperty("chapter", NullValueHandling = NullValueHandling.Ignore)]
+    public int? Chapter { get; set; }
+
+    /// <summary>Gets or sets 目标活动代码（如 AS、AT，对应 SideStory/{代码}/{代码}@EnterSideStoryNew.png）。</summary>
+    [JsonProperty("side_story", NullValueHandling = NullValueHandling.Ignore)]
+    public string? SideStory { get; set; }
+
+    /// <summary>Gets or sets 难度（仅主线 10~14 章有效：Hard = 磨难、Normal = 标准；留空表示不切换难度）。</summary>
+    [JsonProperty("difficulty", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Difficulty { get; set; }
+
+    /// <summary>Gets or sets 活动内的关卡模式（仅活动有效："EX" 或 "S"；留空表示不切模式，进活动后默认就是普通关）。</summary>
+    [JsonProperty("mode", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Mode { get; set; }
 
     public override (AsstTaskType TaskType, JObject Params) Serialize() => (TaskType, JObject.FromObject(this));
 }

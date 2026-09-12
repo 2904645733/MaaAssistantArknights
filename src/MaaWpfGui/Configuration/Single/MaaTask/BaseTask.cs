@@ -97,6 +97,23 @@ public class CopilotSubTask
     /// Gets or sets 导航目标章节号（Kind=Nav 时使用；0~17，对应核心的 Episode0~Episode17 章节导航任务）。
     /// </summary>
     public int NavChapter { get; set; }
+
+    /// <summary>
+    /// Gets or sets 导航目标活动代码（Kind=Nav 时使用；如 AS、AT，非空时优先于 NavChapter）。
+    /// </summary>
+    public string? NavSideStory { get; set; }
+
+    /// <summary>
+    /// Gets or sets 导航难度（Kind=Nav 且目标是主线 10~14 章时使用；"Hard" = 磨难、"Normal" = 标准）。
+    /// 非空时核心会在"前往章节"之后再切难度（复用理智作战那套 ChapterDifficulty* 任务）。
+    /// </summary>
+    public string? Difficulty { get; set; }
+
+    /// <summary>
+    /// Gets or sets 活动内的关卡模式（Kind=Nav 且目标是活动时使用："EX" 或 "S"；留空 = 普通关，不切模式）。
+    /// 非空时核心会在「进入活动」之后全屏扫对应模式按钮的模板图并点击。
+    /// </summary>
+    public string? Mode { get; set; }
 }
 
 /// <summary>

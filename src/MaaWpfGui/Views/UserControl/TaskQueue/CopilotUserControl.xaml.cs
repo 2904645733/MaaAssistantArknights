@@ -15,6 +15,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using MaaWpfGui.Extensions;
 using MaaWpfGui.ViewModels.UserControl.TaskQueue;
 
 namespace MaaWpfGui.Views.UserControl.TaskQueue;
@@ -79,6 +80,24 @@ public partial class CopilotUserControl : System.Windows.Controls.UserControl
 
         box.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// 导航目标下拉框做成可搜索（和"自动肉鸽 · 开局干员"同一套 MakeComboBoxSearchable）。
+    /// 选择器平时是折叠的：Collapsed 的元素不走布局，控件模板还没实例化，Loaded 时取不到
+    /// PART_EditableTextBox，搜索会挂不上；所以等它真正可见、布局跑完后再补挂一次
+    /// （MakeComboBoxSearchable 内部有去重标记，重复调用安全）。
+    /// </summary>
+    private void NavTargetComboBox_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (sender is not ComboBox { IsVisible: true } comboBox)
+        {
+            return;
+        }
+
+        comboBox.Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Loaded,
+            new System.Action(comboBox.MakeComboBoxSearchable));
     }
 
     private void OnEditModeEntered(CopilotSubTaskItem item)

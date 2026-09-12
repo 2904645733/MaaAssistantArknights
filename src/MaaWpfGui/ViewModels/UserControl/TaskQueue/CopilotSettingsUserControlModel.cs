@@ -100,54 +100,253 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     private const int NavChapterCount = 18;
 
     /// <summary>
-    /// Gets 章节选择器条目（第 0 章 ~ 第 17 章）。
+    /// 活动入口（SideStory）：代号 → 中文名 → 该活动的关卡模式。
+    /// 只列已有入口模板图的活动（resource/template/StageNavigation/SideStory/{代码}/{代码}@EnterSideStoryNew.png）。
+    /// Modes 来自 D:\桌面\ss.xlsx 的 C 列：EX 全部活动都有，S 只有一部分（"EX" 或 "EXS"）；
+    /// 空字符串表示这个活动暂时不给模式选项（叙拉古人 IS / 愚人号 SN 按需求先关掉）。
     /// </summary>
-    public List<NavChapterOption> NavChapterOptions { get; } =
-        [.. Enumerable.Range(0, NavChapterCount).Select(i => new NavChapterOption(i))];
-
-    private bool _isNavPickerOpen;
+    private static readonly (string Code, string Name, string Modes)[] NavSideStories = [
+        ("AD", "红丝绒", "EX"), ("AS", "太阳甩在身后", "EXS"), ("AT", "墟", "EXS"), ("BB", "巴别塔", "EXS"), ("BI", "风雪过境", "EX"),
+        ("BP", "生路", "EX"), ("CB", "喧闹法则", "EX"), ("CW", "孤星", "EXS"), ("CV", "不义之财", "EX"), ("DH", "多索雷斯夏日", "EXS"),
+        ("DM", "生于黑夜", "EXS"), ("DV", "绿野幻梦", "EX"), ("EA", "挽歌燃烧殆尽", "EX"), ("EP", "出苍白海", "EX"), ("FC", "照我以火", "EX"),
+        ("GA", "吾导先路", "EX"), ("GO", "追迹日落以西", "EX"), ("GT", "骑兵与猎人", "EX"), ("HE", "空想花庭", "EX"), ("HS", "怀黍离", "EXS"),
+        ("IC", "理想城 夏日狂欢季", "EXS"), ("IS", "叙拉古人", ""), ("IW", "将进酒", "EX"), ("LE", "尘影余音", "EX"), ("MB", "孤岛风云", "EX"),
+        ("MN", "玛莉娅·临光", "EX"), ("MT", "众生行记", "EXS"), ("NL", "长夜临光", "EXS"), ("OF", "火蓝之心", "EXS"), ("OR", "相见欢", "EXS"),
+        ("PV", "揭幕者们", "EXS"), ("RI", "密林悍将归来", "EX"), ("RS", "银心湖列车", "EX"), ("SL", "火山旅梦", "EXS"), ("SN", "愚人号", ""),
+        ("SV", "覆潮之下", "EX"), ("TW", "沃伦姆德的薄暮", "EXS"), ("WB", "登临意", "EX"), ("WD", "遗尘漫步", "EX"), ("WR", "画中人", "EX"),
+        ("ZT", "崔林特尔梅之金", "EXS"),
+    ];
 
     /// <summary>
-    /// Gets or sets a value indicating whether 章节选择器已展开（点"添加导航小任务"后出现）。
+    /// Gets 导航目标列表：先是第 0~17 章，接着是活动入口（和游戏里"第 17 章往下就是活动"一致）。
     /// </summary>
-    public bool IsNavPickerOpen
+    public List<NavChapterOption> NavChapterOptions { get; } = [
+        .. Enumerable.Range(0, NavChapterCount).Select(i => new NavChapterOption(i)),
+        .. NavSideStories.Select(s => new NavChapterOption(s.Code, s.Name, s.Modes)),
+    ];
+
+    private NavChapterOption? _selectedNavOption;
+
+    /// <summary>
+    /// Gets or sets 选择器里选中的目标（某一章 / 某个活动）。
+    /// </summary>
+    public NavChapterOption? SelectedNavOption
     {
-        get => _isNavPickerOpen;
-        set => SetAndNotify(ref _isNavPickerOpen, value);
+        get => _selectedNavOption;
+        set
+        {
+            SetAndNotify(ref _selectedNavOption, value);
+
+            // 只有主线 10~14 章才显示「标准 / 磨难」，只有活动才显示「EX / S」
+            OnPropertyChanged(nameof(ShowNavDifficulty));
+            OnPropertyChanged(nameof(ShowNavMode));
+        }
     }
 
-    private int _selectedNavChapter;
+    private string _navSearchText = string.Empty;
 
     /// <summary>
-    /// Gets or sets 章节选择器中选中的章节号（0~17）。
+    /// Gets or sets 选择器输入框里的搜索词。下拉框做成了可搜索的（和"自动肉鸽 · 开局干员"用的是同一个
+    /// MakeComboBoxSearchable），打字即过滤；输入关键字后不点下拉项、直接点"添加"时也按这个文本找目标。
     /// </summary>
-    public int SelectedNavChapter
+    public string NavSearchText
     {
-        get => _selectedNavChapter;
-        set => SetAndNotify(ref _selectedNavChapter, value);
+        get => _navSearchText;
+        set => SetAndNotify(ref _navSearchText, value);
+    }
+
+    private const string NavDifficultyNormal = "Normal";
+    private const string NavDifficultyHard = "Hard";
+    private const string NavModeEX = "EX";
+    private const string NavModeS = "S";
+
+    private string _navDifficulty = NavDifficultyNormal;
+
+    /// <summary>
+    /// Gets or sets 选中的难度（只对主线 10~14 章有效）："Normal" = 标准、"Hard" = 磨难。
+    /// </summary>
+    public string NavDifficulty
+    {
+        get => _navDifficulty;
+        set
+        {
+            SetAndNotify(ref _navDifficulty, value);
+            OnPropertyChanged(nameof(NavDifficultyIsNormal));
+            OnPropertyChanged(nameof(NavDifficultyIsHard));
+        }
+    }
+
+    private bool _navModeIsEX;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 选的是活动里的 EX 模式（和 S 互斥；都不勾选 = 普通关）。
+    /// </summary>
+    public bool NavModeIsEX
+    {
+        get => _navModeIsEX;
+        set
+        {
+            SetAndNotify(ref _navModeIsEX, value);
+            if (value)
+            {
+                // EX 和 S 是同一个活动里的两套关卡，只能落在一套上
+                NavModeIsS = false;
+            }
+        }
+    }
+
+    private bool _navModeIsS;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 选的是活动里的 S 模式。
+    /// </summary>
+    public bool NavModeIsS
+    {
+        get => _navModeIsS;
+        set
+        {
+            SetAndNotify(ref _navModeIsS, value);
+            if (value)
+            {
+                NavModeIsEX = false;
+            }
+        }
     }
 
     /// <summary>
-    /// 点击"添加导航小任务"：展开 / 收起章节选择器。
+    /// Gets 当前选中的活动模式（两个都没勾选时为 null = 不切模式，进活动后就是普通关）。
     /// </summary>
-    public void ToggleNavPicker() => IsNavPickerOpen = !IsNavPickerOpen;
+    private string? SelectedNavMode => NavModeIsEX ? NavModeEX : NavModeIsS ? NavModeS : null;
 
     /// <summary>
-    /// 把选择器里选中的章节添加成一个"导航"小任务（追加到列表末尾，可拖拽插到任意位置）。
+    /// Gets a value indicating whether 当前选中的章节有「标准 / 磨难」两个模式（主线 10~14 章）。
+    /// </summary>
+    public bool ShowNavDifficulty => SelectedNavOption?.HasDifficulty == true;
+
+    /// <summary>
+    /// Gets a value indicating whether 当前选中的活动有关卡模式可选（EX / S）。
+    /// </summary>
+    public bool ShowNavMode => SelectedNavOption?.HasStageMode == true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 选的是「标准」（默认）。
+    /// </summary>
+    public bool NavDifficultyIsNormal
+    {
+        get => !NavDifficultyIsHard;
+        set
+        {
+            if (value)
+            {
+                NavDifficulty = NavDifficultyNormal;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 选的是「磨难」。
+    /// </summary>
+    public bool NavDifficultyIsHard
+    {
+        get => string.Equals(_navDifficulty, NavDifficultyHard, StringComparison.OrdinalIgnoreCase);
+        set
+        {
+            if (value)
+            {
+                NavDifficulty = NavDifficultyHard;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 难度在界面与日志里的名字（Hard → 磨难，其余 → 标准）。
+    /// </summary>
+    /// <param name="difficulty">"Hard" / "Normal" / null。</param>
+    /// <returns>本地化的难度名。</returns>
+    private static string DifficultyName(string? difficulty) =>
+        string.Equals(difficulty, NavDifficultyHard, StringComparison.OrdinalIgnoreCase)
+            ? LocalizationHelper.GetString("CopilotNavDifficultyHard")
+            : LocalizationHelper.GetString("CopilotNavDifficultyNormal");
+
+    /// <summary>
+    /// 导航小任务在列表里的名字：活动是"代号 + 活动名"（带模式时再加（EX）/（S））；
+    /// 10~14 章记录了难度时加上（标准 / 磨难）；其余就是选项本身的显示文本。
+    /// </summary>
+    /// <param name="option">选中的目标。</param>
+    /// <param name="difficulty">这一步记录的难度（老配置里可能为空）。</param>
+    /// <param name="mode">这一步记录的活动模式（老配置里可能为空）。</param>
+    /// <returns>用于显示的名字。</returns>
+    private static string NavStepName(NavChapterOption option, string? difficulty, string? mode)
+    {
+        if (option.HasStageMode && !string.IsNullOrEmpty(mode))
+        {
+            return LocalizationHelper.GetStringFormat("CopilotNavActivityItemMode", option.Display, mode);
+        }
+
+        return option.HasDifficulty && !string.IsNullOrEmpty(difficulty)
+            ? LocalizationHelper.GetStringFormat(
+                "CopilotNavChapterItemDifficulty",
+                option.Chapter,
+                DifficultyName(difficulty))
+            : option.Display;
+    }
+
+    /// <summary>
+    /// 把选择器里选中的目标（某一章 / 某个活动）添加成一个"导航"小任务。
     /// </summary>
     public void AddSelectedNav()
     {
-        var chapter = Math.Clamp(SelectedNavChapter, 0, NavChapterCount - 1);
+        // 允许"打字搜索 → 直接点添加"：没在下拉框里点选时，用输入的文本找一个明确的目标
+        var option = SelectedNavOption ?? ResolveNavOption(NavSearchText);
+        if (option is null)
+        {
+            StatusMessage = LocalizationHelper.GetString("CopilotNavNeedPick");
+            return;
+        }
+
+        // 10~14 章有标准 / 磨难，活动有 EX / S：把选中的记进这一步（没有的、没勾的都留空）
+        var difficulty = option.HasDifficulty ? NavDifficulty : null;
+        var mode = option.HasStageMode ? SelectedNavMode : null;
+
         var subTask = new CopilotSubTask {
             Kind = CopilotSubTaskKind.Nav,
-            Name = LocalizationHelper.GetStringFormat("CopilotSubNavName", chapter),
-            NavChapter = chapter,
+            Name = NavStepName(option, difficulty, mode),
+            NavChapter = option.Chapter ?? 0,
+            NavSideStory = option.SideStory,
+            Difficulty = difficulty,
+            Mode = mode,
         };
 
         Items.Add(new CopilotSubTaskItem(subTask));
         SaveItems();
-        IsNavPickerOpen = false;
+
+        // 加完清空选择器状态，方便接着加下一个目标
+        SelectedNavOption = null;
+        NavSearchText = string.Empty;
+        NavModeIsEX = false;
+        NavModeIsS = false;
         StatusMessage = string.Empty;
+    }
+
+    /// <summary>
+    /// 按输入文本找导航目标：完全一致优先，其次"只有一个候选"时也算（章节名、活动代号、活动名都能搜）。
+    /// </summary>
+    /// <param name="text">输入框里的搜索词。</param>
+    /// <returns>能唯一确定的目标；不确定时返回 null。</returns>
+    private NavChapterOption? ResolveNavOption(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var keyword = text.Trim();
+        var matches = NavChapterOptions
+            .Where(option => option.Display.Contains(keyword, StringComparison.CurrentCultureIgnoreCase))
+            .ToList();
+
+        return matches.FirstOrDefault(option => string.Equals(option.Display, keyword, StringComparison.CurrentCultureIgnoreCase))
+               ?? (matches.Count == 1 ? matches[0] : null);
     }
 
     #endregion
@@ -335,7 +534,31 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     }
 
     /// <summary>
-    /// 核心开始执行某个作业时调用：把此前已开始的作业标记为已完成（取消勾选）。
+    /// 把一个小任务标记为已完成（取消勾选，可带一条日志）。列表里有界面包装时会一起刷新界面。
+    /// </summary>
+    private static void MarkStepDone(CopilotSubTask subTask, string? logMessage = null)
+    {
+        var item = Instance.Items.FirstOrDefault(i => ReferenceEquals(i.Model, subTask));
+        if (item is not null)
+        {
+            item.IsChecked = false;
+        }
+        else
+        {
+            subTask.IsChecked = false;
+        }
+
+        if (!string.IsNullOrEmpty(logMessage))
+        {
+            Instances.TaskQueueViewModel.AddLog(logMessage, MaaWpfGui.Constants.UiLogColor.Success);
+        }
+    }
+
+    private static string JobTitle(CopilotSnapshotJob job) =>
+        string.IsNullOrEmpty(job.StageName) ? Path.GetFileName(job.FilePath) : job.StageName!;
+
+    /// <summary>
+    /// 核心开始执行某个作业时调用：把此前已开始的作业标记为已完成（取消勾选），并写日志。
     /// </summary>
     public static void HandleJobStarted(int taskId, int jobIndex)
     {
@@ -347,13 +570,22 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         for (var i = 0; i < jobIndex && i < info.SentJobs.Count; i++)
         {
             info.SentJobs[i].IsChecked = false;
+            Instances.TaskQueueViewModel.AddLog(
+                LocalizationHelper.GetStringFormat("CopilotJobDone", JobTitle(info.SentJobs[i])),
+                MaaWpfGui.Constants.UiLogColor.Success);
+        }
+
+        if (jobIndex >= 0 && jobIndex < info.SentJobs.Count)
+        {
+            Instances.TaskQueueViewModel.AddLog(
+                LocalizationHelper.GetStringFormat("CopilotJobRunning", info.SubTask.Name, JobTitle(info.SentJobs[jobIndex])));
         }
 
         info.LastStarted = jobIndex;
     }
 
     /// <summary>
-    /// 任务链结束时调用：把最后开始的作业标记为已完成。
+    /// 任务链结束时调用：把最后开始的作业标记为已完成，并把整条小任务标记为已完成（写日志）。
     /// </summary>
     public static void HandleTaskFinished(int taskId)
     {
@@ -365,20 +597,59 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         if (info.LastStarted >= 0 && info.LastStarted < info.SentJobs.Count)
         {
             info.SentJobs[info.LastStarted].IsChecked = false;
+            Instances.TaskQueueViewModel.AddLog(
+                LocalizationHelper.GetStringFormat("CopilotJobDone", JobTitle(info.SentJobs[info.LastStarted])),
+                MaaWpfGui.Constants.UiLogColor.Success);
+        }
+        else if (info.SubTask.Kind == CopilotSubTaskKind.Battle)
+        {
+            // 轮到这一步时才发现没有可执行的作业：这时候才算它完成
+            MarkStepDone(info.SubTask, LocalizationHelper.GetStringFormat("CopilotSubNoJob", info.SubTask.Name));
+            return;
         }
 
-        // 这条小任务（不论战斗还是导航）已经跑完 → 取消勾选，中断后继续执行不会重复跑。
-        // 要通过界面包装去改：它既写模型又通知界面（列表一直显示着，只改模型界面不会刷新）。
-        var owner = CopilotSettingsUserControlModel.Instance;
-        var item = owner.Items.FirstOrDefault(i => ReferenceEquals(i.Model, info.SubTask));
-        if (item is not null)
+        // 这条小任务（不论战斗还是导航）已经跑完 → 取消勾选，中断后继续执行不会重复跑
+        MarkStepDone(
+            info.SubTask,
+            info.SubTask.Kind == CopilotSubTaskKind.Nav
+                ? NavDoneText(info.SubTask)
+                : LocalizationHelper.GetStringFormat("CopilotSubDone", info.SubTask.Name));
+    }
+
+    /// <summary>
+    /// 导航小任务完成的日志文本：章节写"已在第 N 章"（10~14 章带模式时写"已在第 N 章（标准/磨难）"），
+    /// 活动写"已在&lt;活动中文名&gt;"（不带活动代号）。
+    /// </summary>
+    /// <param name="sub">导航小任务。</param>
+    /// <returns>日志文本。</returns>
+    private static string NavDoneText(CopilotSubTask sub)
+    {
+        if (!string.IsNullOrEmpty(sub.NavSideStory))
         {
-            item.IsChecked = false;
+            // 活动中文名：先按代号查活动表（NavSideStories），查不到再退回"步骤名去掉代号前缀"
+            var name = NavSideStories.FirstOrDefault(s => s.Code == sub.NavSideStory).Name;
+            if (string.IsNullOrEmpty(name))
+            {
+                var prefix = sub.NavSideStory + " ";
+                name = sub.Name.StartsWith(prefix, StringComparison.Ordinal) ? sub.Name[prefix.Length..] : sub.Name;
+            }
+
+            // 选了 EX / S 模式时，日志里也写清楚落在哪一套关卡
+            return string.IsNullOrEmpty(sub.Mode)
+                ? LocalizationHelper.GetStringFormat("CopilotNavDoneSideStory", name)
+                : LocalizationHelper.GetStringFormat("CopilotNavDoneSideStoryMode", name, sub.Mode);
         }
-        else
+
+        // 10~14 章记录了难度时，日志里也写清楚是标准还是磨难
+        if (!string.IsNullOrEmpty(sub.Difficulty))
         {
-            info.SubTask.IsChecked = false;
+            return LocalizationHelper.GetStringFormat(
+                "CopilotNavDoneChapterWithDifficulty",
+                sub.NavChapter,
+                DifficultyName(sub.Difficulty));
         }
+
+        return LocalizationHelper.GetStringFormat("CopilotNavDone", sub.NavChapter);
     }
 
     #endregion
@@ -439,7 +710,10 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
             return;
         }
 
+        // 保存 = 以作业页当前内容为准：换上新副本的同时，把这一步不再引用的旧副本删掉
+        var oldPaths = item.Model.Battle is { } oldBattle ? oldBattle.Jobs.Select(j => j.FilePath).ToList() : [];
         item.Model.Battle = snapshot;
+        DeleteSnapshotCopies(oldPaths, item);
         SaveItems();
         StatusMessage = LocalizationHelper.GetString("CopilotSaved");
 
@@ -480,7 +754,60 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     public void DeleteItem(CopilotSubTaskItem item)
     {
         Items.Remove(item);
+        if (item.Model.Battle is { } battle)
+        {
+            // 这一步没了，它专用的作业副本也一起清掉（本任务里还有别的小任务引用时不会删）
+            DeleteSnapshotCopies(battle.Jobs.Select(j => j.FilePath), null);
+        }
+
         SaveItems();
+    }
+
+    /// <summary>
+    /// 删除作业快照副本。只删 config\copilot_snapshot\ 目录内、且"本任务里没有其它小任务引用"的文件，
+    /// 绝不碰作业页下载的 config\copilot\。
+    /// </summary>
+    /// <param name="paths">候选路径（一般是这个小任务保存前的旧作业）。</param>
+    /// <param name="owner">被替换/删除的那个小任务自己（它不算引用者）。</param>
+    private static void DeleteSnapshotCopies(IEnumerable<string> paths, CopilotSubTaskItem? owner)
+    {
+        var referenced = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var step in Instance.Items)
+        {
+            if (ReferenceEquals(step, owner) || step.Model.Battle is not { } other)
+            {
+                continue;
+            }
+
+            foreach (var job in other.Jobs)
+            {
+                referenced.Add(job.FilePath);
+            }
+        }
+
+        var snapshotDir = Path.Combine(PathsHelper.BaseDir, "config", "copilot_snapshot");
+        foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(path) || referenced.Contains(path))
+            {
+                continue;
+            }
+
+            var absolute = Path.Combine(PathsHelper.BaseDir, path);
+            if (!absolute.StartsWith(snapshotDir, StringComparison.OrdinalIgnoreCase) || !File.Exists(absolute))
+            {
+                continue;
+            }
+
+            try
+            {
+                File.Delete(absolute);
+            }
+            catch (IOException)
+            {
+                // 删不掉就算了（文件被占用等情况）
+            }
+        }
     }
 
     /// <summary>
@@ -560,7 +887,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
             UseSanityPotion = page.UseSanityPotion,
             FormationIndex = page.UseFormation ? page.FormationIndex : 0,
             Jobs = [.. selectedJobs.Select(job => new CopilotSnapshotJob {
-                FilePath = job.FilePath,
+                FilePath = CopyJobToSnapshot(job.FilePath),
                 IsRaid = job.IsRaid,
                 StageName = job.IsNavNameOverride ? job.Name : null,
             })],
@@ -580,6 +907,47 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         }
 
         return File.Exists(filePath) || File.Exists(Path.Combine(PathsHelper.BaseDir, filePath));
+    }
+
+    /// <summary>
+    /// 快照专用目录：把用到的作业文件复制一份进来。
+    /// 这样在「作业」页点"清除任务"（它会删掉 config\copilot 下下载的作业）也不会把已记录的小任务弄坏，
+    /// 同时不动作业页原有的行为。
+    /// </summary>
+    private static string CopyJobToSnapshot(string filePath)
+    {
+        var source = File.Exists(filePath) ? filePath : Path.Combine(PathsHelper.BaseDir, filePath);
+        var relativeDir = Path.Combine("config", "copilot_snapshot");
+        var absoluteDir = Path.Combine(PathsHelper.BaseDir, relativeDir);
+        Directory.CreateDirectory(absoluteDir);
+
+        var name = Path.GetFileName(source);
+        var target = Path.Combine(absoluteDir, name);
+        var extension = Path.GetExtension(name);
+        var stem = Path.GetFileNameWithoutExtension(name);
+        for (var i = 2; File.Exists(target) && !SameFileContent(target, source); i++)
+        {
+            target = Path.Combine(absoluteDir, stem + "_" + i + extension);
+        }
+
+        if (!File.Exists(target))
+        {
+            File.Copy(source, target);
+        }
+
+        return Path.Combine(relativeDir, Path.GetFileName(target));
+    }
+
+    private static bool SameFileContent(string left, string right)
+    {
+        try
+        {
+            return File.ReadAllText(left) == File.ReadAllText(right);
+        }
+        catch (IOException)
+        {
+            return false;
+        }
     }
 
     private static void LoadSnapshotToPage(CopilotBattleSnapshot snapshot)
@@ -620,6 +988,19 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
             Items.Clear();
             foreach (var sub in copilot.SubTasks)
             {
+                // 导航步骤的名字统一成"活动代号 + 活动名"（如 "GO It's my GO"）：
+                // 老配置里存的是没带代号的名字，读出来时按当前表刷新一下，免得列表里显示不一致
+                if (sub.Kind == CopilotSubTaskKind.Nav)
+                {
+                    var option = string.IsNullOrEmpty(sub.NavSideStory)
+                        ? NavChapterOptions.FirstOrDefault(o => o.Chapter == sub.NavChapter)
+                        : NavChapterOptions.FirstOrDefault(o => o.SideStory == sub.NavSideStory);
+                    if (option is not null)
+                    {
+                        sub.Name = NavStepName(option, sub.Difficulty, sub.Mode);
+                    }
+                }
+
                 Items.Add(new CopilotSubTaskItem(sub));
             }
 
@@ -627,7 +1008,6 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
             AdvancedOwner = null;
             _isRefreshing = false;
             StatusMessage = string.Empty;
-            IsNavPickerOpen = false;
             Refresh();
         }
     }
@@ -662,11 +1042,9 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
                         skipped.Add(LocalizationHelper.GetStringFormat("CopilotJobFileMissingShort", sub.Name, lost.FilePath));
                     }
 
-                    if (usableJobs.Count > 0)
-                    {
-                        chain.Add((sub, usableJobs));
-                    }
-
+                    // 没有可执行的作业（一个都没勾选 / 作业文件都没了）：不提前取消勾选，
+                    // 而是按顺序占位——轮到这一步时立刻完成，由 HandleTaskFinished 判定并取消勾选
+                    chain.Add((sub, usableJobs));
                     continue;
                 }
 
@@ -712,10 +1090,17 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
                 {
                     // 导航小任务 → 核心的 ChapterNavigation 任务：
                     // 就是理智作战那套（StageBegin 进入选关界面 + Episode{N} 章节导航），只是目标换成"某一章"
-                    var chapter = Math.Clamp(model.NavChapter, 0, NavChapterCount - 1);
                     var (navSuccess, navId) = Instances.AsstProxy.AsstAppendTaskWithEncoding(
                         TaskType.Copilot,
-                        new AsstChapterNavigationTask { Chapter = chapter });
+                        string.IsNullOrEmpty(model.NavSideStory)
+                            ? new AsstChapterNavigationTask {
+                                Chapter = Math.Clamp(model.NavChapter, 0, NavChapterCount - 1),
+                                Difficulty = model.Difficulty,
+                            }
+                            : new AsstChapterNavigationTask {
+                                SideStory = model.NavSideStory,
+                                Mode = model.Mode,
+                            });
                     if (!navSuccess || navId <= 0)
                     {
                         return (false, []);
@@ -726,7 +1111,11 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
                     continue;
                 }
 
-                var (isSuccess, appendedId) = Instances.AsstProxy.AsstAppendTaskWithEncoding(TaskType.Copilot, BuildAsstTask(model.Battle!, jobs));
+                // jobs 为空 = 这一步没有可执行的作业：下发一个空任务占位（核心会立刻"通过"），
+                // 轮到它时才算完成、再取消勾选
+                var (isSuccess, appendedId) = jobs.Count == 0
+                    ? Instances.AsstProxy.AsstAppendTaskWithEncoding(TaskType.Copilot, new AsstCustomTask { CustomTasks = [] })
+                    : Instances.AsstProxy.AsstAppendTaskWithEncoding(TaskType.Copilot, BuildAsstTask(model.Battle!, jobs));
                 if (!isSuccess || appendedId <= 0)
                 {
                     return (false, []);
@@ -826,25 +1215,77 @@ public class CopilotSubTaskItem : PropertyChangedBase
 }
 
 /// <summary>
-/// "导航"小任务的章节选项（章节选择器 ComboBox 的条目）。
+/// "导航"小任务的目标选项（章节选择器 ComboBox 的条目）：要么是某一章，要么是某个活动。
 /// </summary>
 public class NavChapterOption
 {
+    /// <summary>主线 10~14 章有「标准 / 磨难」两个模式（对应核心的 PreStageNormalHard 档）。</summary>
+    public const int DifficultyChapterMin = 10;
+
+    /// <summary>主线 10~14 章有「标准 / 磨难」两个模式（对应核心的 PreStageNormalHard 档）。</summary>
+    public const int DifficultyChapterMax = 14;
+
     public NavChapterOption(int chapter)
     {
-        Value = chapter;
+        Chapter = chapter;
         Display = LocalizationHelper.GetStringFormat("CopilotNavChapterItem", chapter);
     }
 
-    /// <summary>
-    /// Gets 章节号（0 ~ 17）。
-    /// </summary>
-    public int Value { get; }
+    public NavChapterOption(string sideStoryCode, string sideStoryName, string modes)
+    {
+        SideStory = sideStoryCode;
+        Modes = modes;
+
+        // 活动名前面带上活动代号（如 "SL 火山旅梦"）：列表里一眼能看出是哪个活动，也方便按代号搜索。
+        // 活动名来自游戏内中文名，不随界面语言变化，所以这里不用本地化格式串。
+        Display = $"{sideStoryCode} {sideStoryName}";
+    }
 
     /// <summary>
-    /// Gets 显示文本（如"第 8 章"）。
+    /// Gets 章节号（活动项为 null）。
+    /// </summary>
+    public int? Chapter { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether 该章节需要选「标准 / 磨难」（主线 10~14 章）。
+    /// </summary>
+    public bool HasDifficulty => Chapter is >= DifficultyChapterMin and <= DifficultyChapterMax;
+
+    /// <summary>
+    /// Gets 活动代码（章节项为 null）。
+    /// </summary>
+    public string? SideStory { get; }
+
+    /// <summary>
+    /// Gets 该活动有哪些关卡模式（章节项为 null）："EX" 或 "EXS"，来自 ss.xlsx 的 C 列。
+    /// </summary>
+    public string? Modes { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether 该活动能切 EX 模式。
+    /// </summary>
+    public bool HasEx => Modes?.Contains("EX", StringComparison.Ordinal) == true;
+
+    /// <summary>
+    /// Gets a value indicating whether 该活动能切 S 模式（只有一部分活动有）。
+    /// </summary>
+    public bool HasS => Modes?.Contains('S') == true;
+
+    /// <summary>
+    /// Gets a value indicating whether 该目标（活动）能选关卡模式。
+    /// </summary>
+    public bool HasStageMode => HasEx || HasS;
+
+    /// <summary>
+    /// Gets 显示文本（"第 8 章" 或 "SL 火山旅梦"）。
     /// </summary>
     public string Display { get; }
+
+    /// <summary>
+    /// 可搜索下拉框（MakeComboBoxSearchable）是按 ToString() 过滤的，所以要和 Display 保持一致。
+    /// </summary>
+    /// <returns>显示文本。</returns>
+    public override string ToString() => Display;
 }
 
 /// <summary>

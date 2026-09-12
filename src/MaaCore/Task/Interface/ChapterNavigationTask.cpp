@@ -34,6 +34,18 @@ bool asst::ChapterNavigationTask::set_params(const json::value& params)
 {
     LogTraceFunction;
 
+    // 活动（SideStory）：{"side_story": "AS"}；可选模式 {"side_story": "SL", "mode": "EX"}
+    if (auto side_story_opt = params.find<std::string>("side_story"); side_story_opt) {
+        if (!m_running) {
+            m_start_up_task_ptr->set_tasks({ "StageBegin" }).set_times_limit("GoLastBattle", 0);
+        }
+
+        // 模式可选：EX / S；留空表示不切模式（进活动后默认就是普通关）
+        return m_chapter_navigation_task_ptr->set_side_story(
+            side_story_opt.value(),
+            params.get("mode", std::string {}));
+    }
+
     const int chapter = params.get("chapter", -1);
     if (chapter < 0) {
         LogError << __FUNCTION__ << "chapter not found";
@@ -44,5 +56,7 @@ bool asst::ChapterNavigationTask::set_params(const json::value& params)
         m_start_up_task_ptr->set_tasks({ "StageBegin" }).set_times_limit("GoLastBattle", 0);
     }
 
-    return m_chapter_navigation_task_ptr->set_chapter(chapter);
+    // 难度可选，只对主线 10~14 章有效：{"chapter": 12, "difficulty": "Hard"} → 磨难，
+    // "Normal" → 标准；留空则只切到该章、不动难度。
+    return m_chapter_navigation_task_ptr->set_chapter(chapter, params.get("difficulty", std::string {}));
 }
