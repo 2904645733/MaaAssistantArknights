@@ -235,9 +235,122 @@ bool asst::StageNavigationTask::set_side_story(const std::string& prefix, const 
     return true;
 }
 
+bool asst::StageNavigationTask::set_annihilation(const std::string& stage_name)
+{
+    LogTraceFunction;
+
+    clear();
+
+    if (stage_name.empty()) {
+        Log.error("annihilation stage name is empty");
+        return false;
+    }
+
+    static const std::vector<std::string> nav_tasks = {
+        "StageAnnihilationTab", "StageAnnihilationEnter",     "AnnihilationNavReturn",
+        "AnnihilationNavSwitch", "AnnihilationNavSelectStage",
+    };
+    for (const auto& task_name : nav_tasks) {
+        if (!Task.get(task_name)) {
+            Log.error("annihilation nav task not exists", task_name);
+            return false;
+        }
+    }
+
+    m_annihilation = true;
+    m_annihilation_stage = stage_name;
+    Log.info("annihilation stage", m_annihilation_stage);
+    return true;
+}
+
+bool asst::StageNavigationTask::set_resource(const std::string& stage_code)
+{
+    LogTraceFunction;
+
+    clear();
+
+    if (stage_code.empty()) {
+        Log.error("resource stage code is empty");
+        return false;
+    }
+
+    // 就是理智作战里的资源关任务（CE-6 / LS-6 / CA-5 / AP-5 / SK-5 / PR-A-1 …），
+    // 它自带"入口卡片 + 左/右滑"的候选对，直接拿来跑就行
+    auto stage_task = Task.get(stage_code);
+    if (!stage_task) {
+        Log.error("resource stage task not exists", stage_code);
+        return false;
+    }
+
+    if (stage_task->next.empty() || !Task.get(stage_task->next.front())) {
+        Log.error("resource stage entry card not exists", stage_code);
+        return false;
+    }
+
+    m_resource = true;
+    m_resource_stage = stage_code;
+    Log.info("resource nav stage", m_resource_stage);
+    return true;
+}
+
 bool asst::StageNavigationTask::_run()
 {
     LogTraceFunction;
+
+    // 战斗任务的「资源关导航」：直接跑理智作战那个资源关任务（如 "CE-6"）——
+    // 它会先点「资源」标签进资源关页面（sub: StageResource），再"认该产物的入口卡片，
+    // 认不到就左滑 / 右滑"（芯片在右边，所以 PR-* 是往右滑）。
+    // 唯一的区别：它后面还会继续去选具体关卡，这里把那一步的次数限制成 0 ——
+    // 认到入口卡片、停在关卡列表就算完成（和章节导航用 set_times_limit 禁掉 StartButton1 是一个套路）。
+    if (m_resource) {
+        auto stage_task = Task.get(m_resource_stage);
+        auto card_task = stage_task ? Task.get(stage_task->next.front()) : nullptr;
+        if (!stage_task || !card_task) {
+            Log.error("resource nav task not found", m_resource_stage);
+            return false;
+        }
+
+        ProcessTask task(*this, { m_resource_stage });
+        task.set_retry_times(RetryTimesDefault);
+        for (const std::string& after : card_task->next) {
+            // 如 CE6@Stage：认到产物入口就够了，不选具体关卡
+            task.set_times_limit(after, 0);
+        }
+        // 左右滑的默认上限是 50 次，太久；这里收紧到 6 次（每个产物的入口卡片最多滑几下就出来了）
+        for (size_t i = 1; i < stage_task->next.size(); ++i) {
+            task.set_times_limit(stage_task->next[i], 6);
+        }
+
+        const bool ret = task.run();
+
+        // 点中入口卡片之后，链路才会走到"选具体关卡"（上面被限次挡掉的那个任务）→
+        // 命中它就说明卡片点到了；一直停在左右滑上说明没认出产物入口，这一步算失败（别静默当成功）。
+        const std::string last = task.get_last_task_name();
+        const bool clicked = std::ranges::find(card_task->next, last) != card_task->next.end();
+        if (!clicked) {
+            Log.error("resource stage entry not found", m_resource_stage, last);
+        }
+
+        return ret && clicked;
+    }
+
+    // 战斗任务的「剿灭导航」：第 1、2 步（点「剿灭」标签 → 点「进入」）以及之后的
+    // 返回 / 切换 / 选关卡都写在 tasks.json 的 next 链里，这里只要把目标关卡名注入 OCR 任务、
+    // 再跑链头 StageAnnihilationTab 就行。
+    if (m_annihilation) {
+        auto select_task = Task.get<OcrTaskInfo>("AnnihilationNavSelectStage");
+        if (select_task == nullptr) {
+            Log.error("annihilation nav task not found", "AnnihilationNavSelectStage");
+            return false;
+        }
+
+        // 关卡名来自界面（"这一步后面第一个作战任务的作业"）。运行时注入 OCR 文本，
+        // 和 MultiCopilotTaskPlugin、SideStoryReopenTask 用的是同一套做法。
+        select_task->text = { m_annihilation_stage };
+        Log.info("annihilation nav select stage", m_annihilation_stage);
+
+        return ProcessTask(*this, { "StageAnnihilationTab" }).set_retry_times(RetryTimesDefault).run();
+    }
 
     if (m_is_directly) {
         ProcessTask task(*this, { m_directly_task });
@@ -268,7 +381,11 @@ void asst::StageNavigationTask::clear() noexcept
 {
     m_is_directly = false;
     m_chapter_only = false;
+    m_annihilation = false;
+    m_resource = false;
     m_directly_task.clear();
+    m_annihilation_stage.clear();
+    m_resource_stage.clear();
     m_chapter_task.clear();
     m_difficulty_tasks.clear();
     m_stage_mode_task.clear();

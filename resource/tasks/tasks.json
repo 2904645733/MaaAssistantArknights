@@ -497,7 +497,31 @@
     "ZT@EnterStageModeEX": {},
     "ZT@EnterStageModeS": {},
     "EnterSideStoryNew-Click": {
-        "Doc": "活动详情面板里的「进入活动」按钮（对应主线章节的「前往章节」）",
+        "Doc": "活动详情面板里的「进入活动」按钮（对应主线章节的「前往章节」）；有的活动这个位置写的是「解锁」，点掉之后会弹「确认使用」确认框，所以顺手把它也点掉（没弹就直接结束这一步）",
+        "algorithm": "OcrDetect",
+        "action": "ClickSelf",
+        "text": ["进入活动", "解锁"],
+        "roi": [1078, 595, 112, 42],
+        "postDelay": 1500,
+        "next": ["EnterSideStoryNew-NoCrystal", "EnterSideStoryNew-ConfirmUse", "Stop"]
+    },
+    "EnterSideStoryNew-NoCrystal": {
+        "Doc": "活动导航：点「解锁」之后如果这个位置冒出「结晶不足」，说明结晶不够解锁不了，直接停任务（界面会写一条「结晶不足，停止任务」的日志）。放在「确认使用」前面，先查这个再查确认框",
+        "algorithm": "OcrDetect",
+        "text": ["结晶不足"],
+        "roi": [944, 65, 332, 109],
+        "action": "Stop"
+    },
+    "EnterSideStoryNew-ConfirmUse": {
+        "Doc": "活动导航：点「解锁」之后弹出的「确认使用」确认按钮（在 roi 里用同名模板图匹配，命中就点）。点完等 1.5 秒，面板上才会出现「进入活动」；没出现就直接结束这一步",
+        "action": "ClickSelf",
+        "template": "EnterSideStoryNew-ConfirmUse.png",
+        "roi": [620, 454, 656, 108],
+        "postDelay": 1500,
+        "next": ["EnterSideStoryNew-EnterActivity", "Stop"]
+    },
+    "EnterSideStoryNew-EnterActivity": {
+        "Doc": "活动导航：「确认使用」之后面板上才出现的「进入活动」按钮，点它才真正进活动页",
         "algorithm": "OcrDetect",
         "action": "ClickSelf",
         "text": ["进入活动"],
@@ -1306,6 +1330,75 @@
         "roi": [966, 577, 314, 142],
         "next": ["AnnihilationStage"]
     },
+    "StageAnnihilationTab": {
+        "Doc": "战斗任务的「剿灭导航」第 1 步：在选关界面点「剿灭」标签（和 StageTheme / StageResource 同一排）",
+        "templThreshold": 0.7,
+        "action": "ClickSelf",
+        "roi": [675, 600, 140, 120],
+        "postDelay": 1000,
+        "next": ["StageAnnihilationEnter"]
+    },
+    "StageAnnihilationEnter": {
+        "Doc": "战斗任务的「剿灭导航」第 2 步：点剿灭作战页的「进入」按钮",
+        "templThreshold": 0.7,
+        "action": "ClickSelf",
+        "roi": [724, 382, 112, 143],
+        "postDelay": 1000,
+        "next": ["AnnihilationNavReturn"]
+    },
+    "AnnihilationNavReturn": {
+        "Doc": "战斗任务的「剿灭导航」：点左上角返回键回到剿灭关卡列表（从这里开始和理智作战切剿灭关卡一致）",
+        "template": "Return.png",
+        "templThreshold": 0.7,
+        "action": "ClickSelf",
+        "preDelay": 1000,
+        "postDelay": 500,
+        "roi": [0, 0, 180, 80],
+        "next": ["AnnihilationNavSwitch"]
+    },
+    "AnnihilationNavSwitch": {
+        "Doc": "战斗任务的「剿灭导航」：点右下角「切换」，打开剿灭关卡列表。列表一次认不到目标就交给 AnnihilationNavSwipeUp 上滑再认",
+        "algorithm": "OcrDetect",
+        "text": ["切换"],
+        "action": "ClickSelf",
+        "roi": [966, 577, 314, 142],
+        "postDelay": 800,
+        "next": ["AnnihilationNavSelectStage", "AnnihilationNavSwipeUp"]
+    },
+    "AnnihilationNavSelectStage": {
+        "Doc": "战斗任务的「剿灭导航」：在剿灭关卡列表里认出目标关卡名并点击（认到就点，然后去处理剿灭关卡页上的代理/全权委托）。text 故意留空，由核心运行时注入（界面从「导航后面第一个作战任务的作业」里读出的关卡名，见 StageNavigationTask::set_annihilation）",
+        "algorithm": "OcrDetect",
+        "text": [],
+        "action": "ClickSelf",
+        "roi": [721, 22, 529, 693],
+        "next": ["AnnihilationNavClickPrtsAnnihilation", "AnnihilationNavClickPrts"]
+    },
+    "AnnihilationNavClickPrtsAnnihilation": {
+        "Doc": "战斗任务的「剿灭导航」：剿灭关卡页上识别到「全权委托已开启」的 PRTS 徽章就点它一下，然后这一步就结束（不点「开始行动」，留给后面的作战小任务）",
+        "template": "UsePrts-AnnihilationSuccess.png",
+        "action": "ClickSelf",
+        "roi": [938, 527, 156, 133],
+        "next": []
+    },
+    "AnnihilationNavClickPrts": {
+        "Doc": "战斗任务的「剿灭导航」：剿灭关卡页上识别到「代理指挥已开启」的按钮就点它一下，然后这一步就结束（不点「开始行动」，留给后面的作战小任务）",
+        "template": "UsePrtsSuccess.png",
+        "action": "ClickSelf",
+        "roi": [985, 523, 159, 165],
+        "next": []
+    },
+    "AnnihilationNavSwipeUp": {
+        "Doc": "战斗任务的「剿灭导航」：关卡列表里没认出目标关卡名时，在列表区域上滑一段再认一次（最多 10 次）。10 次都没认到就让这一步失败报错，不会静默跳过",
+        "baseTask": "SlowlySwipeToTheUp",
+        "specificRect": [985, 600, 20, 20],
+        "rectMove": [985, 200, 20, 20],
+        "specialParams": [800, 0, 3, 0],
+        "preDelay": 500,
+        "postDelay": 500,
+        "next": ["AnnihilationNavSelectStage", "#self"],
+        "maxTimes": 10,
+        "exceededNext": []
+    },
     "AnnihilationReturn": {
         "Doc": "从剿灭关卡界面退回到含有切换按钮的界面",
         "template": "Return.png",
@@ -1841,11 +1934,20 @@
         "preDelay": 5000,
         "action": "ClickSelf",
         "roi": [36, 226, 482, 269],
-        "next": ["EndOfAction", "OfflineConfirm", "StartUpThemes#next", "StartButton1"],
+        "next": ["FightMissionFailedLevelTooLow", "EndOfAction", "OfflineConfirm", "StartUpThemes#next", "StartButton1"],
         "maxTimes": 3,
         "maxTimesDoc": "这是失败次数的限制，超过此限制会停止任务",
         "exceededNext": ["FightMissionFailedAndStop"],
         "onErrorNext": ["ClickCornerAfterPRTS"]
+    },
+    "FightMissionFailedLevelTooLow": {
+        "Doc": "「任务失败」点掉之后可能出现的等级过低提示：再点一下，然后继续走失败之后的流程",
+        "algorithm": "OcrDetect",
+        "text": ["等级过低"],
+        "action": "ClickSelf",
+        "roi": [384, 250, 760, 209],
+        "preDelay": 1000,
+        "next": ["EndOfAction", "OfflineConfirm", "StartUpThemes#next", "StartButton1"]
     },
     "FightMissionFailedAndStop": {
         "algorithm": "OcrDetect",
@@ -4367,6 +4469,12 @@
         "template": "UseMedicine.png",
         "next": ["BattleStartPre"]
     },
+    "BattleStartPre@UseStone": {
+        "doc": "使用源石补理智（能碎几颗由 Copilot 的 stone 参数限制 StoneConfirm 的执行次数）",
+        "template": "UseStone.png",
+        "roi": [600, 130, 420, 420],
+        "next": ["StoneConfirm"]
+    },
     "BattleStartPre@BattleQuickFormation": {
         "baseTask": "BattleQuickFormation",
         "action": "DoNothing",
@@ -4481,6 +4589,14 @@
     },
     "BattleStartPlot": {
         "roi": [872, 250, 212, 255],
+        "postDelay": 2000,
+        "action": "ClickSelf",
+        "next": ["SkipBattlePlot"]
+    },
+    "BattleStartPlot2": {
+        "Doc": "剧情界面上的 PLAY 按钮：已经看过剧情的剧情关点开后是「剧情回放」卡片，按钮是 PLAY 而不是「开始」。和 BattleStartPlot 放进同一个候选列表，认到哪个点哪个",
+        "template": "BattleStartPlot2.png",
+        "roi": [289, 156, 111, 106],
         "postDelay": 2000,
         "action": "ClickSelf",
         "next": ["SkipBattlePlot"]
@@ -5348,17 +5464,48 @@
         "baseTask": "ChapterSwipeToTheRight",
         "exceededNext": ["Copilot@ClickPlotStage"]
     },
+    "Copilot@EndPlotSwipe": {
+        "doc": "章尾剧情：往章节末尾（编号大的那头）慢慢滑一段；每滑之前先看画面里有没有剧情关（Copilot@EndPlotClick 认不到才会滑）",
+        "baseTask": "ChapterSlowlySwipeToTheRight",
+        "postDelay": 300,
+        "next": ["Copilot@EndPlotClick", "#self"],
+        "maxTimes": 12,
+        "exceededNext": ["Copilot@EndPlotNotFound"]
+    },
+    "Copilot@EndPlotClick": {
+        "doc": "章尾剧情：点剧情关（后面和理智作战完全一样：PLAY/开始 → 跳过 → 确认 → 剧情结束）",
+        "action": "ClickSelf",
+        "template": "ClickPlotStage.png",
+        "roi": [0, 0, 1280, 720],
+        "postDelay": 500,
+        "next": ["BattleStartPlot", "BattleStartPlot2"]
+    },
+    "Copilot@EndPlotNotFound": {
+        "doc": "滑到章节末尾也没认出剧情关：故意放一个永远认不到的目标，让这一步直接报错（这样这一步不会被当成已完成）",
+        "algorithm": "OcrDetect",
+        "isAscii": true,
+        "text": ["ENDPLOTNOTFOUND"],
+        "roi": [0, 0, 8, 8]
+    },
     "ClickPlotStage": {
         "action": "ClickSelf",
         "roi": [0, 0, 1280, 720],
-        "next": ["BattleStartPlot"],
+        "next": ["BattleStartPlot", "BattleStartPlot2"],
         "maxTimes": 1
+    },
+    "Copilot@CheckLevelUp": {
+        "doc": "打完关卡后可能出现的等级提升界面（和理智作战一样）：认到就点掉，然后继续走结算",
+        "action": "ClickSelf",
+        "template": "CheckLevelUp.png",
+        "roi": [1000, 250, 270, 200],
+        "next": ["Copilot@EndOfAction", "Copilot@EndOfAction-Sandbox", "Copilot@ClickCornerUntilStartButton"]
     },
     "Copilot@WaitUntilEndOfAction": {
         "algorithm": "JustReturn",
         "maxTimes": 50,
         "exceededNext": ["Copilot@EndOfAction"],
         "next": [
+            "Copilot@CheckLevelUp",
             "Copilot@SkipThePreBattlePlot",
             "Copilot@EndOfAction",
             "Copilot@EndOfAction-Sandbox",
@@ -5371,6 +5518,7 @@
         "maxTimes": 50,
         "exceededNext": ["Copilot@EndOfAction-Bypass"],
         "next": [
+            "Copilot@CheckLevelUp",
             "Copilot@SkipThePreBattlePlot",
             "Copilot@EndOfAction-Bypass",
             "Copilot@EndOfAction-Sandbox",
@@ -5400,11 +5548,16 @@
     "Copilot@FightMissionFailed": {
         "exceededNext": [],
         "onErrorNext": [],
+        "next": ["Copilot@FightMissionFailedLevelTooLow", "Copilot@EndOfAction", "Copilot@EndOfAction-Sandbox"]
+    },
+    "Copilot@FightMissionFailedLevelTooLow": {
+        "exceededNext": [],
+        "onErrorNext": [],
         "next": ["Copilot@EndOfAction", "Copilot@EndOfAction-Sandbox"]
     },
     "Copilot@FightMissionFailed-Bypass": {
         "baseTask": "Copilot@FightMissionFailed",
-        "next": ["Copilot@EndOfAction-Bypass", "Copilot@EndOfAction-Sandbox"]
+        "next": ["Copilot@FightMissionFailedLevelTooLow", "Copilot@EndOfAction-Bypass", "Copilot@EndOfAction-Sandbox"]
     },
     "Copilot@StageDrops-Stars-3": {
         "Doc": "如果没有三星就终止",
@@ -5425,8 +5578,9 @@
         "next": ["Copilot@ClickCornerUntilStartButton"]
     },
     "Copilot@ClickCornerUntilStartButton": {
-        "Doc": "三星之后",
+        "Doc": "三星之后（顺手看一眼有没有等级提升界面）",
         "next": [
+            "Copilot@CheckLevelUp",
             "Copilot@BattleStartPreFlag",
             "Copilot@BattleStartPreFlag-Return",
             "Copilot@ClickCornerUntilStartButton@LoadingIcon",

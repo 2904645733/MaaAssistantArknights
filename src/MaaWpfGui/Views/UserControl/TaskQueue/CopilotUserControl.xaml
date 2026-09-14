@@ -205,7 +205,9 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <!-- 勾选（跑完自动取消勾选）+ 标记/拖拽把手：战斗=斜向短剑，导航=向右箭头 -->
+                                <!-- 勾选（跑完自动取消勾选）+ 标记/拖拽把手：
+                                     战斗=斜向短剑；普通导航=向右箭头；
+                                     剿灭导航=对/错（能不能从"后面第一个作战任务的作业"里读出剿灭关卡名） -->
                                 <StackPanel
                                     Grid.Column="0"
                                     HorizontalAlignment="Center"
@@ -216,28 +218,62 @@
                                         VerticalAlignment="Center"
                                         IsChecked="{Binding IsChecked}"
                                         IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" />
+                                    <!--  战斗：斜向短剑  -->
                                     <Path
                                         Width="16"
                                         Height="16"
                                         VerticalAlignment="Center"
+                                        Data="M16.2,2.4 L6.9,11.7 M3.8,8.9 L9.5,14.6 M6.4,12.2 L3.4,15.2 M2.2,14.4 L4.2,16.4"
                                         Stroke="{DynamicResource SecondaryTextBrush}"
                                         StrokeEndLineCap="Round"
                                         StrokeLineJoin="Round"
                                         StrokeStartLineCap="Round"
                                         StrokeThickness="1.4"
                                         Stretch="Uniform"
-                                        ToolTip="{DynamicResource CopilotDragTip}">
-                                        <Path.Style>
-                                            <Style TargetType="Path">
-                                                <Setter Property="Data" Value="M16.2,2.4 L6.9,11.7 M3.8,8.9 L9.5,14.6 M6.4,12.2 L3.4,15.2 M2.2,14.4 L4.2,16.4" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsNav}" Value="True">
-                                                        <Setter Property="Data" Value="M1.5,8 L13,8 M8.6,3.6 L13,8 L8.6,12.4" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Path.Style>
-                                    </Path>
+                                        ToolTip="{DynamicResource CopilotDragTip}"
+                                        Visibility="{Binding ShowBattleIcon, Converter={StaticResource BoolToVis}}" />
+                                    <!--  普通导航：向右箭头  -->
+                                    <Path
+                                        Width="16"
+                                        Height="16"
+                                        VerticalAlignment="Center"
+                                        Data="M1.5,8 L13,8 M8.6,3.6 L13,8 L8.6,12.4"
+                                        Stroke="{DynamicResource SecondaryTextBrush}"
+                                        StrokeEndLineCap="Round"
+                                        StrokeLineJoin="Round"
+                                        StrokeStartLineCap="Round"
+                                        StrokeThickness="1.4"
+                                        Stretch="Uniform"
+                                        ToolTip="{DynamicResource CopilotDragTip}"
+                                        Visibility="{Binding ShowNavIcon, Converter={StaticResource BoolToVis}}" />
+                                    <!--  剿灭导航：从下一个作战任务的作业里读到了剿灭关卡名 → 对勾  -->
+                                    <Path
+                                        Width="16"
+                                        Height="16"
+                                        VerticalAlignment="Center"
+                                        Data="M1.5,8.5 L6,13 L14.5,3"
+                                        Stroke="{DynamicResource SuccessLogBrush}"
+                                        StrokeEndLineCap="Round"
+                                        StrokeLineJoin="Round"
+                                        StrokeStartLineCap="Round"
+                                        StrokeThickness="1.8"
+                                        Stretch="Uniform"
+                                        ToolTip="{Binding AnnihilationIconTip}"
+                                        Visibility="{Binding ShowAnnihilationOkIcon, Converter={StaticResource BoolToVis}}" />
+                                    <!--  剿灭导航：读不到剿灭关卡名 → 叉  -->
+                                    <Path
+                                        Width="16"
+                                        Height="16"
+                                        VerticalAlignment="Center"
+                                        Data="M3,3 L13,13 M13,3 L3,13"
+                                        Stroke="{DynamicResource ErrorLogBrush}"
+                                        StrokeEndLineCap="Round"
+                                        StrokeLineJoin="Round"
+                                        StrokeStartLineCap="Round"
+                                        StrokeThickness="1.8"
+                                        Stretch="Uniform"
+                                        ToolTip="{Binding AnnihilationIconTip}"
+                                        Visibility="{Binding ShowAnnihilationFailIcon, Converter={StaticResource BoolToVis}}" />
                                 </StackPanel>
 
                                 <TextBlock
@@ -357,6 +393,23 @@
                         Command="{s:Action SaveItem}"
                         CommandParameter="{Binding AdvancedOwner}"
                         Content="{DynamicResource CopilotStepSave}" />
+                </StackPanel>
+
+                <!--  章尾剧情：只有作战小任务有；勾上后这一步的作业全打完了，会往章节末尾滑地图找剧情关并播完  -->
+                <StackPanel
+                    Margin="0,2,0,4"
+                    IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                    Orientation="Horizontal"
+                    Visibility="{Binding AdvancedOwner.IsBattle, Converter={StaticResource BoolToVis}}">
+                    <CheckBox Content="{DynamicResource CopilotEndPlot}" IsChecked="{Binding AdvancedOwner.Model.EndPlot}" />
+                    <hc:NumericUpDown
+                        Height="20"
+                        Margin="6,0,0,0"
+                        InputMethod.IsInputMethodEnabled="False"
+                        Maximum="9999"
+                        Minimum="1"
+                        Value="{Binding AdvancedOwner.Model.EndPlotTimes}" />
+                    <controls:TooltipBlock TooltipText="{DynamicResource CopilotEndPlotTip}" />
                 </StackPanel>
 
                 <TextBlock

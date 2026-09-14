@@ -74,7 +74,8 @@ public:
         None = 0,               // 不加助战干员
         WhenNeeded = 1,         // 如果仅缺一名干员则尝试补助战,
         Specific = 2,           // 如果仅缺一名干员则尝试补助战，如无缺失则使用指定助战干员
-        Random = 3              // 如果仅缺一名干员则尝试补助战，如无缺失则随机加一个助战干员
+        Random = 3,             // 如果仅缺一名干员则尝试补助战，如无缺失则随机加一个助战干员
+        OnlyFirst = 4           // 不自动编队（队伍保持游戏里现在的样子），只把作业里排在第一位的干员借来当助战
     };
 
     void set_support_unit_usage(const SupportUnitUsage& value) { m_support_unit_usage = value; }
@@ -159,6 +160,9 @@ protected:
         const std::vector<RequiredOper>& required_opers = {},
         size_t max_refresh_times = 5,
         Friendship friendship = Friendship::Stranger);
+
+    // 「只借首位」：不自动编队，只把作业里第一个干员借来当助战
+    bool borrow_first_required_support_unit();
 
     std::optional<std::string> add_support_unit_from_support_list(
         SupportList& support_list,

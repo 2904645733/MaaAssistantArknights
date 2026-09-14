@@ -34,6 +34,28 @@ bool asst::ChapterNavigationTask::set_params(const json::value& params)
 {
     LogTraceFunction;
 
+    // 剿灭导航（战斗任务用）：{"annihilation_stage": "龙门市区"}。
+    // 关卡名由界面从"这一步后面第一个作战任务的作业"里读出，核心只在关卡列表里 OCR 认它。
+    // 前面的"进选关界面"用的是和章节导航完全相同的 StageBegin。
+    if (auto annihilation_opt = params.find<std::string>("annihilation_stage"); annihilation_opt) {
+        if (!m_running) {
+            m_start_up_task_ptr->set_tasks({ "StageBegin" }).set_times_limit("GoLastBattle", 0);
+        }
+
+        return m_chapter_navigation_task_ptr->set_annihilation(annihilation_opt.value());
+    }
+
+    // 资源关导航（战斗任务用）：{"resource_stage": "CE-6"}。
+    // 只切到资源关页面（点「资源」标签 → 认该产物的入口卡片，认不到就左滑/右滑），不选具体关卡。
+    // 前面的"进选关界面"和章节/剿灭导航一样走 StageBegin。
+    if (auto resource_opt = params.find<std::string>("resource_stage"); resource_opt) {
+        if (!m_running) {
+            m_start_up_task_ptr->set_tasks({ "StageBegin" }).set_times_limit("GoLastBattle", 0);
+        }
+
+        return m_chapter_navigation_task_ptr->set_resource(resource_opt.value());
+    }
+
     // 活动（SideStory）：{"side_story": "AS"}；可选模式 {"side_story": "SL", "mode": "EX"}
     if (auto side_story_opt = params.find<std::string>("side_story"); side_story_opt) {
         if (!m_running) {

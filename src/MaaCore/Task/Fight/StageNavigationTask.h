@@ -37,6 +37,27 @@ public:
     /// 图不存在就跳过这一步、不影响整条导航。</param>
     bool set_side_story(const std::string& prefix, const std::string& mode = std::string {});
 
+    /// <summary>
+    /// 战斗任务的「剿灭导航」：先点选关界面的「剿灭」标签进入剿灭作战页、再点「进入」，
+    /// 之后与理智作战切剿灭关卡完全一致：左上角返回 → 右下角切换 → 在关卡列表里认出关卡名并点击。
+    /// 整条链写在 tasks.json 的 next 里：
+    /// StageAnnihilationTab → StageAnnihilationEnter → AnnihilationNavReturn → AnnihilationNavSwitch
+    /// → AnnihilationNavSelectStage（OCR 任务，text 在这里运行时注入）。
+    /// </summary>
+    /// <param name="stage_name">要切到的剿灭关卡名（如 "龙门市区"），由界面从"这一步后面第一个作战任务的作业"里读出。</param>
+    bool set_annihilation(const std::string& stage_name);
+
+    /// <summary>
+    /// 战斗任务的「资源关导航」：只切到资源关页面（某个产物的大类），不选具体关卡。
+    /// 做法就是直接跑理智作战那个资源关任务（如 "CE-6"）：它会先点「资源」标签进资源关页面
+    /// （ResourceStages 的 sub: StageResource），再"认该产物的入口卡片，认不到就左滑 / 右滑"
+    /// （CE-6.next = [CE6@StageCE, CE-6@SwipeToTheLeft]；芯片在右边，所以 PR-* 是右滑）。
+    /// 唯一的区别：理智作战认到卡片后还会继续选具体关卡，这里把"选具体关卡"那一步的次数限制成 0，
+    /// 认到入口卡片、停在关卡列表就算完成。
+    /// </summary>
+    /// <param name="stage_code">理智作战里的资源关代号（tasks.json 里的任务名），如 "CE-6"、"PR-A-1"。</param>
+    bool set_resource(const std::string& stage_code);
+
     void set_fight_task_ptr(std::shared_ptr<ProcessTask> fight_task_ptr) noexcept
     {
         m_fight_task_ptr = fight_task_ptr;
@@ -54,6 +75,12 @@ protected:
     bool m_is_directly = false;
     // 只导航到某一章（不选具体关卡）
     bool m_chapter_only = false;
+    // 战斗任务的「剿灭导航」（剿灭标签 → 进入 → 返回 → 切换 → 选关卡）
+    bool m_annihilation = false;
+    std::string m_annihilation_stage;
+    // 战斗任务的「资源关导航」：跑理智作战的资源关任务（资源标签 → 入口卡片 / 认不到就左滑右滑）
+    bool m_resource = false;
+    std::string m_resource_stage;
     std::string m_directly_task;
     // Not directly
     std::string m_chapter_task;

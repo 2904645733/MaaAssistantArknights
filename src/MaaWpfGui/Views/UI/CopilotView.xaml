@@ -445,7 +445,17 @@
                                 Margin="2.5,5"
                                 Content="{DynamicResource UseSanityPotion}"
                                 IsChecked="{Binding UseSanityPotion}"
-                                Visibility="{c:Binding 'UseCopilotList and CopilotTabIndex == 0'}" />
+                                IsEnabled="{c:Binding !UseStone}"
+                                Visibility="{c:Binding 'CopilotTabIndex == 0'}" />
+
+                            <!--  UseStone：和理智作战的「使用源石」一样（勾上会连「使用药剂」一起勾上，且这时不能取消）  -->
+                            <StackPanel
+                                Margin="2.5,5"
+                                Orientation="Horizontal"
+                                Visibility="{c:Binding 'CopilotTabIndex == 0'}">
+                                <CheckBox Content="{DynamicResource UseOriginitePrime}" IsChecked="{Binding UseStone}" />
+                                <controls:TooltipBlock TooltipText="{DynamicResource UseStoneTip}" />
+                            </StackPanel>
 
                             <!--  Loop / LoopTimes  -->
                             <StackPanel Orientation="Horizontal" Visibility="{c:Binding '!UseCopilotList and CopilotTabIndex != 0 and CopilotTabIndex != 2'}">

@@ -1290,6 +1290,14 @@ public class AsstProxy
                         ExternalNotificationService.Send(log, log);
                     }
 
+                    // 战斗任务（队列）：导航 / 作战 / 章尾剧情任何一步失败，都写一条说明并停止整条战斗任务
+                    // （后面的步骤不再执行；修好后重新开始即可）
+                    if ((taskChain is "Copilot" or "ChapterNavigation" or "Custom")
+                        && CopilotSettingsUserControlModel.HandleTaskFailed(taskId))
+                    {
+                        _ = Instances.TaskQueueViewModel.Stop();
+                    }
+
                     if (value is { Type: TaskType.Copilot })
                     {
                         Instances.CopilotViewModel.AddLog(LocalizationHelper.GetString("CombatError"), UiLogColor.Error);
@@ -1881,6 +1889,15 @@ public class AsstProxy
                             }
                             _ = Instances.TaskQueueViewModel.Stop();
                             break;
+
+                        case "EnterSideStoryNew-NoCrystal":
+                            {
+                                var noCrystalLog = LocalizationHelper.GetString("NoCrystal");
+                                Instances.TaskQueueViewModel.AddLog(noCrystalLog, UiLogColor.Error);
+                                ToastNotification.ShowDirect(noCrystalLog);
+                                _ = Instances.TaskQueueViewModel.Stop();
+                                break;
+                            }
 
                         case "GamePass":
                             Instances.TaskQueueViewModel.AddLog(LocalizationHelper.GetString("RoguelikeGamePass"), UiLogColor.RareOperator);

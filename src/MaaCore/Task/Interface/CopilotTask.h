@@ -41,6 +41,7 @@ private:
 
     std::shared_ptr<MultiCopilotTaskPlugin> m_multi_copilot_plugin_ptr = nullptr;
     std::shared_ptr<ProcessTask> m_medicine_task_ptr = nullptr;
+    std::shared_ptr<ProcessTask> m_stone_task_ptr = nullptr;
     std::shared_ptr<BattleFormationTask> m_formation_task_ptr = nullptr;
     std::shared_ptr<BattleProcessTask> m_battle_task_ptr = nullptr;
     std::shared_ptr<ProcessTask> m_stop_task_ptr = nullptr;

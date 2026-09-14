@@ -36,6 +36,12 @@ asst::CopilotTask::CopilotTask(const AsstCallback& callback, Assistant* inst) :
     m_medicine_task_ptr->register_plugin<MedicineCounterTaskPlugin>()->set_count(999999);
     m_subtasks.emplace_back(m_medicine_task_ptr);
 
+    // 「使用源石」：和理智作战一样，理智不足时用源石补理智（能碎几颗由 set_params 里的 stone 限制 StoneConfirm）
+    m_stone_task_ptr = std::make_shared<ProcessTask>(callback, inst, TaskType);
+    m_stone_task_ptr->set_tasks({ "BattleStartPre@UseStone", "BattleStartPre@BattleQuickFormation" })
+        .set_ignore_error(true);
+    m_subtasks.emplace_back(m_stone_task_ptr);
+
     m_subtasks.emplace_back(m_formation_task_ptr)->set_retry_times(0);
 
     auto start_2_tp = std::make_shared<ProcessTask>(callback, inst, TaskType);
@@ -147,7 +153,13 @@ bool asst::CopilotTask::set_params(const json::value& params)
 
     m_medicine_task_ptr->set_enable(use_sanity_potion);
 
-    m_formation_task_ptr->set_enable(with_formation);
+    // 「使用源石」：stone = 允许吃几颗源石，0 = 不吃（和理智作战的 stone 参数同义）
+    const int stone = params.get("stone", 0);
+    m_stone_task_ptr->set_enable(stone > 0);
+    m_stone_task_ptr->set_times_limit("StoneConfirm", stone);
+
+    // 「只借首位」不自动编队，但仍然要靠这个子任务去借助战干员：所以这种情况下没勾"自动编队"也要跑
+    m_formation_task_ptr->set_enable(with_formation || support_unit_usage == SupportUnitUsage::OnlyFirst);
     m_formation_task_ptr->set_select_formation(formation_index);
     m_formation_task_ptr->set_add_trust(add_trust);
     m_formation_task_ptr->set_ignore_requirements(ignore_requirements);

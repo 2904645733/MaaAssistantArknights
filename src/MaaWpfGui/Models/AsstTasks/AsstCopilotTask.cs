@@ -68,6 +68,11 @@ public class AsstCopilotTask : AsstBaseTask
     public bool UseSanityPotion { get; set; }
 
     /// <summary>
+    /// Gets or sets 允许吃几颗源石补理智（0 = 不吃），和理智作战的 stone 参数同义
+    /// </summary>
+    public int Stone { get; set; }
+
+    /// <summary>
     /// Gets or sets 自定干员列表
     /// </summary>
     public List<UserAdditional>? UserAdditionals { get; set; }
@@ -86,6 +91,7 @@ public class AsstCopilotTask : AsstBaseTask
             ["ignore_requirements"] = IgnoreRequirements,
             ["loop_times"] = LoopTimes,
             ["use_sanity_potion"] = UseSanityPotion,
+            ["stone"] = Stone,
         };
 
         if (!string.IsNullOrEmpty(FileName) && MultiTasks.Count > 0)

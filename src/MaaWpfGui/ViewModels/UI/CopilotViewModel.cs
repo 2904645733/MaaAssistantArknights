@@ -463,7 +463,39 @@ public partial class CopilotViewModel : Screen
 
     public int CurrentCopilotId { get; set; } = -1;
 
-    public bool UseSanityPotion { get => field; set => SetAndNotify(ref field, value); }
+    public bool UseSanityPotion
+    {
+        get => field;
+        set {
+            // 勾了「使用源石」时不允许取消「使用药剂」（和理智作战一致）
+            if (!value && UseStone)
+            {
+                return;
+            }
+
+            SetAndNotify(ref field, value);
+        }
+
+        // 使用源石 是持久化的、使用药剂 不是：上次开着源石的话，这里也要跟着勾上药剂，保持两者一致
+    } = ConfigFactory.CurrentConfig.Copilot.UseStone;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 理智不足时使用源石（和理智作战的「使用源石」一样）。
+    /// 勾上时会自动勾上「使用药剂」，并且这时不允许取消「使用药剂」（和理智作战一致）；不限制碎几颗。
+    /// </summary>
+    public bool UseStone
+    {
+        get;
+        set {
+            if (value)
+            {
+                UseSanityPotion = true;
+            }
+
+            SetAndNotify(ref field, value);
+            ConfigFactory.CurrentConfig.Copilot.UseStone = value;
+        }
+    } = ConfigFactory.CurrentConfig.Copilot.UseStone;
 
     /// <summary>
     /// Gets or sets a value indicating whether to use auto-formation.
@@ -700,7 +732,8 @@ public partial class CopilotViewModel : Screen
 
     public LocalizedObservableList<CopilotSupportMode> SupportUnitUsageList { get; } = new(
         (CopilotSupportMode.WhenNeeded, "SupportUnitUsage.WhenNeeded"),
-        (CopilotSupportMode.Random, "SupportUnitUsage.Random"));
+        (CopilotSupportMode.Random, "SupportUnitUsage.Random"),
+        (CopilotSupportMode.OnlyFirst, "SupportUnitUsage.OnlyFirst"));
 
     public enum CopilotSupportMode
     {
@@ -709,6 +742,9 @@ public partial class CopilotViewModel : Screen
 
         /// <summary>随机加一个, 刷信用点用</summary>
         Random = 3,
+
+        /// <summary>只借首位：不自动编队，只借作业里排在第一位的干员</summary>
+        OnlyFirst = 4,
     }
 
     private bool _useCopilotList;
@@ -1998,6 +2034,52 @@ public partial class CopilotViewModel : Screen
         return UserAdditional.Where(op => !string.IsNullOrWhiteSpace(op.Name));
     }
 
+    /// <summary>
+    /// 当前"自定干员"列表（已过滤空名字、技能序号已夹紧），供战斗任务快照记录用。
+    /// </summary>
+    /// <returns>自定干员列表。</returns>
+    public IReadOnlyList<UserAdditional> GetUserAdditionals() => [.. ParseUserAdditionals()];
+
+    /// <summary>
+    /// 单作业模式（作业页没勾"多作业模式"）下发任务时用的参数。
+    /// 「作业」页点"开始"和战斗任务的"战斗"小任务都调用这里：
+    /// 以后改自动战斗的单作业流程（借干员 / 自定干员 / 循环…），两边一起变，不会漏。
+    /// </summary>
+    /// <param name="fileName">作业文件路径（可能相对 MAA 用户目录）。</param>
+    /// <param name="formation">是否自动编队。</param>
+    /// <param name="supportUnitUsage">借助战模式（0 = 不借）。</param>
+    /// <param name="addTrust">是否追加信赖干员。</param>
+    /// <param name="ignoreRequirements">是否忽略干员要求。</param>
+    /// <param name="userAdditionals">自定干员。</param>
+    /// <param name="loopTimes">循环次数。</param>
+    /// <param name="formationIndex">编队索引（0 = 不选）。</param>
+    /// <param name="stone">允许吃几颗源石补理智（0 = 不吃）。</param>
+    /// <param name="useSanityPotion">是否使用理智药（单作业模式也支持）。</param>
+    /// <returns>可直接下发的单作业任务参数。</returns>
+    public static AsstCopilotTask BuildSingleJobTask(
+        string fileName,
+        bool formation,
+        int supportUnitUsage,
+        bool addTrust,
+        bool ignoreRequirements,
+        List<UserAdditional> userAdditionals,
+        int loopTimes,
+        int formationIndex,
+        int stone,
+        bool useSanityPotion)
+        => new() {
+            FileName = fileName,
+            Formation = formation,
+            SupportUnitUsage = supportUnitUsage,
+            AddTrust = addTrust,
+            IgnoreRequirements = ignoreRequirements,
+            UserAdditionals = userAdditionals,
+            LoopTimes = loopTimes,
+            UseSanityPotion = useSanityPotion,
+            Stone = stone,
+            FormationIndex = formationIndex,
+        };
+
     private async Task<bool> AppendAndStartCopilotAsync(IEnumerable<UserAdditional> userAdditional)
     {
         if (!UseCopilotList)
@@ -2020,6 +2102,7 @@ public partial class CopilotViewModel : Screen
                 IgnoreRequirements = IgnoreRequirements,
                 UserAdditionals = AddUserAdditional ? [.. userAdditional] : [],
                 UseSanityPotion = UseSanityPotion,
+                Stone = UseStone ? int.MaxValue : 0,
                 FormationIndex = UseFormation ? FormationIndex : 0,
             };
 
@@ -2066,17 +2149,17 @@ public partial class CopilotViewModel : Screen
         }
         else
         {
-            var singleTask = new AsstCopilotTask() {
-                FileName = IsDataFromWeb ? TempCopilotFile : Filename,
-                Formation = Form,
-                SupportUnitUsage = UseSupportUnitUsage ? (int)SupportUnitUsage : 0,
-                AddTrust = AddTrust,
-                IgnoreRequirements = IgnoreRequirements,
-                UserAdditionals = AddUserAdditional ? [.. userAdditional] : [],
-                LoopTimes = Loop ? LoopTimes : 1,
-                UseSanityPotion = false,
-                FormationIndex = UseFormation ? FormationIndex : 0,
-            };
+            var singleTask = BuildSingleJobTask(
+                IsDataFromWeb ? TempCopilotFile : Filename,
+                Form,
+                UseSupportUnitUsage ? (int)SupportUnitUsage : 0,
+                AddTrust,
+                IgnoreRequirements,
+                AddUserAdditional ? [.. userAdditional] : [],
+                Loop ? LoopTimes : 1,
+                UseFormation ? FormationIndex : 0,
+                UseStone ? int.MaxValue : 0,
+                UseSanityPotion);
 
             // 单作业需要区分 Copilot / SSSCopilot
             appended = Instances.AsstProxy.AsstAppendTaskWithEncoding(AsstProxy.TaskType.Copilot, _taskType, singleTask.Serialize().Params);
@@ -2107,6 +2190,31 @@ public partial class CopilotViewModel : Screen
     }
 
     private bool IsDataFromWeb { get => field; set => SetAndNotify(ref field, value); }
+
+    /// <summary>
+    /// 单作业模式（没勾"多作业模式"）下，当前作业页上那一个作业的文件路径。
+    /// 和点"开始"时用的是同一套取法：本地文件用输入框里的路径；从作业站载入的用页面自己的临时文件
+    /// （载入时就写好了，保证返回的路径一定能在磁盘上找到）。
+    /// </summary>
+    /// <param name="filePath">作业文件路径（相对 MAA 用户目录或绝对路径）。</param>
+    /// <returns>当前有作业且路径可用时为 true。</returns>
+    public bool TryGetSingleJobFilePath(out string? filePath)
+    {
+        filePath = null;
+        if (_copilotCache is null)
+        {
+            return false;
+        }
+
+        var path = IsDataFromWeb ? TempCopilotFile : Filename;
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        filePath = path;
+        return true;
+    }
 
     private int _copilotId;
 

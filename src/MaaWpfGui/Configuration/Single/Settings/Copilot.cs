@@ -42,4 +42,7 @@ public partial class Copilot : NotifyPropertyChangedWithValue
     public int SelectFormation { get; set; } = 1;
 
     public int LoopTimes { get; set; } = 1;
+
+    /// <summary>理智不足时使用源石（和理智作战的「使用源石」一样）</summary>
+    public bool UseStone { get; set; }
 }

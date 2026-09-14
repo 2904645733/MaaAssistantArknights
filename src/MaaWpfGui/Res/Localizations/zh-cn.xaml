@@ -909,6 +909,7 @@ C:\leidian\LDPlayer9
     <!--  战斗设置  -->
     <system:String x:Key="UseSanityPotion">使用药剂</system:String>
     <system:String x:Key="UseOriginitePrime">使用源石</system:String>
+    <system:String x:Key="UseStoneTip">理智不足时用源石补理智（和理智作战的「使用源石」一样）；勾上后会一起勾上「使用药剂」，并且这时「使用药剂」不能取消。不限制碎几颗。</system:String>
     <system:String x:Key="PerformBattles">指定次数</system:String>
     <system:String x:Key="AssignedMaterial">指定材料</system:String>
     <system:String x:Key="Quantity">刷取数量</system:String>
@@ -1245,7 +1246,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="CopilotTask">战斗任务</system:String>
     <system:String x:Key="CopilotAddBattle">记录当前作业页（战斗小任务）</system:String>
     <system:String x:Key="CopilotNavTitle">导航任务</system:String>
-    <system:String x:Key="CopilotNeedMultiMode">请先在「作业」页勾选多作业模式并勾选要执行的作业，再点"记录当前作业页"</system:String>
+    <system:String x:Key="CopilotNeedMultiMode">「作业」页还没有可记录的作业：请先在「作业」页载入 / 输入一个作业（勾了"多作业模式"时把要执行的都勾上），再点"记录当前作业页"</system:String>
     <system:String x:Key="CopilotRecorded">已记录 {0} 个作业（快照）</system:String>
     <system:String x:Key="CopilotSnapshotJobs">{0} 个作业（快照）</system:String>
     <system:String x:Key="CopilotUserAdditionalIgnored"> 注意：作业页的"自定干员"列表暂不随快照记录</system:String>
@@ -1263,11 +1264,17 @@ C:\leidian\LDPlayer9
     <system:String x:Key="CopilotNavActivityItemMode">{0}（{1}）</system:String>
     <system:String x:Key="CopilotNavDoneSideStoryMode">导航完成：已在{0}（{1}）</system:String>
     <system:String x:Key="CopilotNavDoneChapterWithDifficulty">导航完成：已在第 {0} 章（{1}）</system:String>
+    <system:String x:Key="CopilotNavAnnihilation">剿灭作战</system:String>
+    <system:String x:Key="CopilotNavAnnihilationItem">剿灭作战（{0}）</system:String>
+    <system:String x:Key="CopilotNavAnnihilationOkTip">剿灭导航：已从后面那个作战小任务的作业里读到剿灭关卡「{0}」，会切到这个剿灭关卡（再点"切换"里对应的一项）</system:String>
+    <system:String x:Key="CopilotNavAnnihilationFailTip">剿灭导航：读不到剿灭关卡名 —— 后面没有作战小任务，或者它的作业里没有写 stage_name。运行时会跳过这一步；请在"剿灭作战"这一步后面放一个有作业的作战小任务。</system:String>
+    <system:String x:Key="CopilotNavAnnihilationNoStage">剿灭导航「{0}」：读不到剿灭关卡名（后面那个作战小任务的作业里没有可用关卡名），已跳过这一步</system:String>
+    <system:String x:Key="CopilotNavDoneAnnihilation">导航完成：已在{0}</system:String>
     <system:String x:Key="CopilotSubNavName">导航 · 第 {0} 章</system:String>
-    <system:String x:Key="CopilotNavPickerTip">在输入框里打字可搜索（章节名、活动名或活动代号，如 SL 火山旅梦）；选好后点"添加"；导航小任务只会切换到该章节入口（不会开始战斗），可与战斗小任务一起拖动排序。主线 10~14 章有标准和磨难两个模式，选中这些章节后下面会出现难度选项（默认标准）；活动有 EX / S 两种关卡模式（S 只有部分活动有），选中活动后下面会出现对应选项框，都不勾选就是普通关。</system:String>
+    <system:String x:Key="CopilotNavPickerTip">在输入框里打字可搜索（剿灭作战、章节名、活动名或活动代号（如 SL 火山旅梦）、资源关（如 CE 龙门币、PR-A 奶/盾芯片））；选好后点"添加"；资源关导航只切到资源关页面（点「资源」标签 → 点该产物的入口，如龙门币），不选具体关卡；导航小任务只会切换到对应入口（不会开始战斗），可与战斗小任务一起拖动排序。"剿灭作战"是切到某个剿灭关卡：点剿灭标签 → 点进入 → 返回 → 切换 → 认出关卡名并点击，切哪一关由"它后面第一个作战小任务的作业"决定（列表左边显示 ✓ 表示读到了关卡名，✗ 表示没读到）。主线 10~14 章有标准和磨难两个模式，选中这些章节后下面会出现难度选项（默认标准）；活动有 EX / S 两种关卡模式（S 只有部分活动有），选中活动后下面会出现对应选项框，都不勾选就是普通关。</system:String>
     <system:String x:Key="CopilotSubBattle">战斗</system:String>
     <system:String x:Key="CopilotSubNav">导航</system:String>
-    <system:String x:Key="CopilotTaskTip">"战斗任务"= 一串按顺序执行的小任务（按住可拖动排序）。&#10;① 战斗：在「作业」页用其自带功能添加/检测作业代码并设置 编队/借助战 等；勾选多作业模式、勾选要执行的作业后，回到这里点"记录当前作业页"，即生成一个"战斗"小任务（快照，之后作业页随便改都不影响）。&#10;② 导航：在"导航任务"框里搜索/选择章节或活动，点"添加"，生成一个"导航"小任务 —— 它复用理智作战的导航逻辑（先回到作战界面 → 点主题曲标签 → 按 乐章收录/开启时间/默认进度 选好列表 → 找到卡片 → 点"前往章节"），只切换页面、不会开始战斗，用于跨章节连续作战。&#10;③ 启动该任务后，MAA 会按列表顺序逐个执行小任务。</system:String>
+    <system:String x:Key="CopilotTaskTip">"战斗任务"= 一串按顺序执行的小任务（按住可拖动排序）。&#10;① 战斗：在「作业」页用其自带功能添加/检测作业代码并设置 编队/借助战 等；载入一个作业（勾了"多作业模式"时把要执行的都勾上；没勾就是单作业，直接记当前页面上那一个）后，回到这里点"记录当前作业页"，即生成一个"战斗"小任务（快照，之后作业页随便改都不影响）。&#10;② 导航：在"导航任务"框里搜索/选择章节或活动，点"添加"，生成一个"导航"小任务 —— 它复用理智作战的导航逻辑（先回到作战界面 → 点主题曲标签 → 按 乐章收录/开启时间/默认进度 选好列表 → 找到卡片 → 点"前往章节"），只切换页面、不会开始战斗，用于跨章节连续作战。&#10;③ 剿灭导航：选"剿灭作战"添加。它会点剿灭标签 → 点进入 → 返回 → 切换，然后在关卡列表里认出目标关卡名并点击（认不到会先上滑列表，最多 10 次）；之后如果认出"全权委托已开启"或"代理指挥已开启"的图标就点一下，最后点"开始行动" —— 这一步导航到此结束，后面的作战小任务接管（编队、开打、结算）。要切哪一关取自"它后面第一个作战小任务的作业"，列表左边显示 ✓ / ✗（读到了 / 没读到）。&#10;④ 启动该任务后，MAA 会按列表顺序逐个执行小任务。</system:String>
     <system:String x:Key="QueueMoveUp">上移</system:String>
     <system:String x:Key="QueueMoveDown">下移</system:String>
     <system:String x:Key="QueueDelete">删除</system:String>
@@ -1289,6 +1296,10 @@ C:\leidian\LDPlayer9
     <system:String x:Key="CopilotAdvancedTitle">高级设置</system:String>
     <system:String x:Key="CopilotAdvancedTip">勾选要执行的作业，按住拖动可调整顺序；已打完的关卡会自动取消勾选，中断后继续执行不会重复打。</system:String>
     <system:String x:Key="CopilotAdvancedNeedTarget">请先在小任务右侧点击设置图标，选择要编辑的小任务。</system:String>
+    <system:String x:Key="CopilotEndPlot">章尾剧情</system:String>
+    <system:String x:Key="CopilotEndPlotTip">勾选后：这一小任务里的作业全部打完后，往章节末尾（关卡编号大的那头）滑地图找剧情关，认出剧情图标就点进去把剧情播完。右边是次数（默认 1）：这个次数做完，这一步才算完成，中途失败不会勾掉这一步。默认不勾选。</system:String>
+    <system:String x:Key="CopilotEndPlotDone">章尾剧情完成：{0}（共 {1} 次）</system:String>
+    <system:String x:Key="CopilotEndPlotFailed">未找到章尾剧情（{0}）</system:String>
     <system:String x:Key="SelectTheFile">选择作业</system:String>
     <system:String x:Key="SelectTheFileTip">作业文件可以直接用鼠标拖进来哦 (oﾟvﾟ)ノ</system:String>
     <system:String x:Key="PasteClipboardTip">读取剪贴板，自动识别作业/作业集</system:String>
@@ -1299,10 +1310,11 @@ C:\leidian\LDPlayer9
     <system:String x:Key="AutoSquad">自动编队</system:String>
     <system:String x:Key="AutoSquadTip">自动编队可能无法识别带有 ｢特别关注｣ 标记的{key=Operator}</system:String>
     <system:String x:Key="SupportUnitUsage">借助战</system:String>
-    <system:String x:Key="SupportUnitUsage.Tip">缺一个还能用用，缺两个以上还是换份作业吧</system:String>
+    <system:String x:Key="SupportUnitUsage.Tip">缺一个还能用用，缺两个以上还是换份作业吧；选「只借首位」则不做自动编队（队伍保持游戏里现在的样子），只把作业里排在第一位的干员借来当助战。</system:String>
     <system:String x:Key="SupportUnitUsage.None">不借用</system:String>
     <system:String x:Key="SupportUnitUsage.WhenNeeded">补漏</system:String>
     <system:String x:Key="SupportUnitUsage.Random">随机</system:String>
+    <system:String x:Key="SupportUnitUsage.OnlyFirst">只借首位</system:String>
     <system:String x:Key="AddTrust">补充低信赖{key=Operator}</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements">忽略{key=Operator}属性要求</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements.Tip" xml:space="preserve">某些作业需要特定技能等级、模组等作为前置条件
@@ -1518,6 +1530,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="UpperLimit">投资达到上限</system:String>
     <system:String x:Key="GameCrash">游戏崩溃，重新启动</system:String>
     <system:String x:Key="GameDrop">游戏掉线，停止任务</system:String>
+    <system:String x:Key="NoCrystal">结晶不足，停止任务</system:String>
     <system:String x:Key="RoguelikeGamePass">肉鸽通关啦！</system:String>
     <system:String x:Key="RoguelikeSpecialItemBought">购买了特殊商品！</system:String>
     <system:String x:Key="MonthlySquadCompleted">月度小队清完啦！</system:String>
