@@ -11,11 +11,13 @@
 // but WITHOUT ANY WARRANTY
 // </copyright>
 
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using MaaWpfGui.Extensions;
+using MaaWpfGui.Models;
 using MaaWpfGui.ViewModels.UserControl.TaskQueue;
 
 namespace MaaWpfGui.Views.UserControl.TaskQueue;
@@ -32,7 +34,126 @@ public partial class CopilotUserControl : System.Windows.Controls.UserControl
     {
         InitializeComponent();
         CopilotSettingsUserControlModel.EditModeEntered += OnEditModeEntered;
-        Unloaded += (_, _) => CopilotSettingsUserControlModel.EditModeEntered -= OnEditModeEntered;
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private Window? _hookedWindow;
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        // 页面来回切换时静态事件要重新挂上
+        CopilotSettingsUserControlModel.EditModeEntered -= OnEditModeEntered;
+        CopilotSettingsUserControlModel.EditModeEntered += OnEditModeEntered;
+        TaskSettingVisibilityInfo.Instance.PropertyChanged -= OnTaskSettingVisibilityChanged;
+        TaskSettingVisibilityInfo.Instance.PropertyChanged += OnTaskSettingVisibilityChanged;
+        HookWindow();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        CopilotSettingsUserControlModel.EditModeEntered -= OnEditModeEntered;
+        TaskSettingVisibilityInfo.Instance.PropertyChanged -= OnTaskSettingVisibilityChanged;
+        if (_hookedWindow is not null)
+        {
+            _hookedWindow.PreviewMouseDown -= OnWindowPreviewMouseDown;
+            _hookedWindow = null;
+        }
+    }
+
+    /// <summary>
+    /// 切到「高级设置」面板后（点小任务的设置图标，或直接点上面的「高级设置」按钮），
+    /// 把外面的设置页滚回最上面：面板一换，内容高度就变了，滚动位置会停在中间。
+    /// 等布局跑完再滚，免得被"把焦点元素滚进视野"顶回去。
+    /// </summary>
+    private void OnTaskSettingVisibilityChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(TaskSettingVisibilityInfo.EnableAdvancedSettings)
+            || !TaskSettingVisibilityInfo.Instance.EnableAdvancedSettings)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Loaded,
+            new System.Action(ScrollHostToTop));
+    }
+
+    private void ScrollHostToTop()
+    {
+        FindAncestor<ScrollViewer>(this)?.ScrollToVerticalOffset(0);
+    }
+
+    /// <summary>
+    /// 把窗口级的鼠标按下事件挂上：点列表外面的空白处时焦点不会移走，
+    /// TextBox 的 LostFocus 收不了尾，所以在这里兜底。
+    /// </summary>
+    private void HookWindow()
+    {
+        var window = Window.GetWindow(this);
+        if (ReferenceEquals(window, _hookedWindow))
+        {
+            return;
+        }
+
+        if (_hookedWindow is not null)
+        {
+            _hookedWindow.PreviewMouseDown -= OnWindowPreviewMouseDown;
+        }
+
+        _hookedWindow = window;
+        if (_hookedWindow is not null)
+        {
+            _hookedWindow.PreviewMouseDown += OnWindowPreviewMouseDown;
+        }
+    }
+
+    /// <summary>
+    /// 正在重命名时点到输入框以外的任何地方（含列表外的空白处）就保存并退出编辑。
+    /// </summary>
+    private void OnWindowPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        var model = CopilotSettingsUserControlModel.Instance;
+        var box = FindEditingTextBox(model);
+        if (box is null || IsDescendantOf(e.OriginalSource as DependencyObject, box))
+        {
+            return;
+        }
+
+        model.SaveName();
+    }
+
+    private TextBox? FindEditingTextBox(CopilotSettingsUserControlModel model)
+    {
+        foreach (var item in model.Items)
+        {
+            if (!item.IsEditing)
+            {
+                continue;
+            }
+
+            if (FindContainer(StepList, item) is { } container)
+            {
+                return FindDescendant<TextBox>(container);
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsDescendantOf(DependencyObject? node, DependencyObject ancestor)
+    {
+        while (node is not null)
+        {
+            if (ReferenceEquals(node, ancestor))
+            {
+                return true;
+            }
+
+            node = node is Visual ? VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node);
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -69,16 +190,19 @@ public partial class CopilotUserControl : System.Windows.Controls.UserControl
     }
 
     /// <summary>
-    /// 重命名输入框按回车确认：移出焦点以触发保存并退出编辑状态。
+    /// 重命名输入框按回车确认：保存名字并退出编辑状态。
     /// </summary>
     private void StepNameBox_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Enter || sender is not TextBox box)
+        if (e.Key != Key.Enter || sender is not TextBox)
         {
             return;
         }
 
-        box.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+        // 收掉键盘焦点（留着的焦点框会画虚线），保存走显式调用：
+        // ClearFocus 只清键盘焦点、不动逻辑焦点，TextBox 的 LostFocus 不会触发，光靠它退不出编辑状态。
+        Keyboard.ClearFocus();
+        CopilotSettingsUserControlModel.Instance.SaveName();
         e.Handled = true;
     }
 

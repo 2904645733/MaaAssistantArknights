@@ -158,7 +158,7 @@ bool asst::CopilotTask::set_params(const json::value& params)
     m_stone_task_ptr->set_enable(stone > 0);
     m_stone_task_ptr->set_times_limit("StoneConfirm", stone);
 
-    // 「只借首位」不自动编队，但仍然要靠这个子任务去借助战干员：所以这种情况下没勾"自动编队"也要跑
+    // 「只借首位6星」不自动编队，但仍然要靠这个子任务去借助战干员：所以这种情况下没勾"自动编队"也要跑
     m_formation_task_ptr->set_enable(with_formation || support_unit_usage == SupportUnitUsage::OnlyFirst);
     m_formation_task_ptr->set_select_formation(formation_index);
     m_formation_task_ptr->set_add_trust(add_trust);

@@ -1260,6 +1260,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="SupportUnitUsage.None">借用しない</system:String>
     <system:String x:Key="SupportUnitUsage.WhenNeeded">補完のみ</system:String>
     <system:String x:Key="SupportUnitUsage.Random">ランダム</system:String>
+    <system:String x:Key="SupportUnitUsage.OnlyFirst">先頭の6★のみ</system:String>
     <system:String x:Key="AddTrust">信頼度低の{key=Operator}追加</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements">{key=Operator}要件を無視</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements.Tip" xml:space="preserve">一部の攻略は特定のモジュールなどを前提条件とします

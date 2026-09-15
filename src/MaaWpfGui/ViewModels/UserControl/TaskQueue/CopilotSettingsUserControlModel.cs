@@ -87,6 +87,25 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// </summary>
     public bool HasStatusMessage => !string.IsNullOrEmpty(_statusMessage);
 
+    private string _battleAddHint = string.Empty;
+
+    /// <summary>
+    /// Gets or sets 「添加自动战斗」右边那行小提示（点了按钮、但作业页里没作业可记录时显示）。
+    /// </summary>
+    public string BattleAddHint
+    {
+        get => _battleAddHint;
+        set {
+            SetAndNotify(ref _battleAddHint, value);
+            OnPropertyChanged(nameof(HasBattleAddHint));
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether 显示「添加自动战斗」旁边的小提示。
+    /// </summary>
+    public bool HasBattleAddHint => !string.IsNullOrEmpty(_battleAddHint);
+
     /// <summary>
     /// Gets a value indicating whether 列表非空（控制拖拽提示显隐）。
     /// </summary>
@@ -320,9 +339,8 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     {
         if (option.IsAnnihilation)
         {
-            return string.IsNullOrEmpty(annihilationStage)
-                ? option.Display
-                : LocalizationHelper.GetStringFormat("CopilotNavAnnihilationItem", annihilationStage);
+            // 读到了就直接用剿灭关卡名（如"龙门市区"），不用"剿灭作战（…）"这种前缀
+            return string.IsNullOrEmpty(annihilationStage) ? option.Display : annihilationStage;
         }
 
         if (option.HasStageMode && !string.IsNullOrEmpty(mode))
@@ -814,10 +832,12 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     {
         if (!TryCaptureFromPage(out var snapshot, out var reasonKey))
         {
-            StatusMessage = reasonKey;
+            // 就近显示在「添加自动战斗」右边，下面那条通用状态栏留给导航之类的提示
+            BattleAddHint = reasonKey;
             return;
         }
 
+        BattleAddHint = string.Empty;
         var subTask = new CopilotSubTask {
             Kind = CopilotSubTaskKind.Battle,
             Name = NextBattleName(),
@@ -845,8 +865,25 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         // 只有 1 个作业的快照按"单作业"载入（不勾"多作业模式"），2 个及以上才用多作业列表 ——
         // 和记录时用的模式保持一致：单作业记录 → 编辑时也是单作业（改完"保存"回去仍是单作业）。
         page.UseCopilotList = snapshot.Jobs.Count > 1;
+
+        // 先把作业页作业目录清空，再把这一步的作业复制进去（页面看到的就正好是这一步的作业）
+        ClearCopilotJobDir();
         LoadSnapshotToPage(snapshot);
-        StatusMessage = LocalizationHelper.GetString("CopilotEditLoaded");
+
+        // 老版本的编辑区（config\copilot_edit\）现在不用了：页面已经改指向 config\copilot\，顺手清掉没人引用的旧副本
+        CleanupLegacyEditArea();
+
+        // 右边日志里留一条（和自动肉鸽"选了开局干员"一样）：告诉用户去哪儿改、改完要更新。
+        // 两边都写：任务队列页的日志（和自动肉鸽那条一致）＋ 自动战斗页自己的日志（切过去就能看见）
+        var editLog = LocalizationHelper.GetStringFormat("CopilotEditLoadedLog", item.Name);
+        Instances.TaskQueueViewModel.AddLog(editLog);
+        Instances.CopilotViewModel.AddLog(editLog);
+
+        // 顺手跳到「自动战斗」页，方便马上改（等于点左侧菜单切过去）
+        if (System.Windows.Application.Current?.MainWindow?.DataContext is RootViewModel root)
+        {
+            root.ActiveItem = page;
+        }
     }
 
     /// <summary>
@@ -860,16 +897,22 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
             return;
         }
 
+        // 更新 = 先删掉这一步旧的快照文件，再从作业页复制新的过来。
+        // 顺序很关键：同名文件先删掉，新副本才能叫原来的名字（否则只能退化成 xxx_2）；
+        // 还被别的小任务 / 作业页引用着的文件会留着（DeleteSnapshotCopies 里有判断）。
+        var oldBattle = item.Model.Battle;
+        var oldPaths = oldBattle is { } old ? old.Jobs.Select(j => j.FilePath).ToList() : [];
+        item.Model.Battle = null;
+        DeleteSnapshotCopies(oldPaths);
+
         if (!TryCaptureFromPage(out var snapshot, out var reasonKey))
         {
+            item.Model.Battle = oldBattle; // 没抓到作业：把这一步还原回去
             StatusMessage = reasonKey;
             return;
         }
 
-        // 保存 = 以作业页当前内容为准：换上新副本的同时，把这一步不再引用的旧副本删掉
-        var oldPaths = item.Model.Battle is { } oldBattle ? oldBattle.Jobs.Select(j => j.FilePath).ToList() : [];
         item.Model.Battle = snapshot;
-        DeleteSnapshotCopies(oldPaths, item);
         SaveItems();
         StatusMessage = LocalizationHelper.GetString("CopilotSaved");
 
@@ -888,12 +931,40 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     }
 
     /// <summary>
-    /// 生成不与现有小任务重名的默认名（战斗-N）。
+    /// 高级设置里的「清除」：把这一小任务的作业全部清掉（它自己的快照副本也按引用情况删掉）。
+    /// </summary>
+    /// <param name="item">要清除作业的小任务。</param>
+    public void ClearItemJobs(CopilotSubTaskItem? item)
+    {
+        if (item?.Model.Kind != CopilotSubTaskKind.Battle || item.Model.Battle is not { } battle)
+        {
+            StatusMessage = LocalizationHelper.GetString("CopilotEditNavNotReady");
+            return;
+        }
+
+        var oldPaths = battle.Jobs.Select(j => j.FilePath).ToList();
+        battle.Jobs = [];
+
+        // 高级设置正开着它 → 列表跟着清空（用 _isRefreshing 抑制回写，避免又把旧的写回去）
+        if (ReferenceEquals(AdvancedOwner, item))
+        {
+            _isRefreshing = true;
+            AdvancedItems.Clear();
+            _isRefreshing = false;
+        }
+
+        DeleteSnapshotCopies(oldPaths);
+        SaveItems();
+        Instances.TaskQueueViewModel.AddLog(LocalizationHelper.GetStringFormat("CopilotJobsCleared", item.Name));
+    }
+
+    /// <summary>
+    /// 生成不与现有小任务重名的默认名（战斗1、战斗2…）：编号只数战斗小任务，插了导航步骤也不会带偏。
     /// </summary>
     private string NextBattleName()
     {
-        var prefix = LocalizationHelper.GetString("CopilotSubBattle") + "-";
-        var index = Items.Count + 1;
+        var prefix = LocalizationHelper.GetString("CopilotSubBattle");
+        var index = Items.Count(i => i.IsBattle) + 1;
         string candidate;
         do
         {
@@ -905,6 +976,26 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     }
 
     /// <summary>
+    /// 老版本的默认名是"战斗-1"，现在改成"战斗1"：读旧配置时统一一下（自定义的名字原样保留）。
+    /// </summary>
+    private static string NormalizeBattleName(string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return name ?? string.Empty;
+        }
+
+        var prefix = LocalizationHelper.GetString("CopilotSubBattle");
+        var withDash = prefix + "-";
+        if (name.StartsWith(withDash, StringComparison.Ordinal) && int.TryParse(name.AsSpan(withDash.Length), out _))
+        {
+            return prefix + name[withDash.Length..];
+        }
+
+        return name;
+    }
+
+    /// <summary>
     /// 删除一个小任务。
     /// </summary>
     public void DeleteItem(CopilotSubTaskItem item)
@@ -913,44 +1004,69 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         if (item.Model.Battle is { } battle)
         {
             // 这一步没了，它专用的作业副本也一起清掉（本任务里还有别的小任务引用时不会删）
-            DeleteSnapshotCopies(battle.Jobs.Select(j => j.FilePath), null);
+            DeleteSnapshotCopies(battle.Jobs.Select(j => j.FilePath));
         }
 
         SaveItems();
     }
 
     /// <summary>
-    /// 删除作业快照副本。只删 config\copilot_snapshot\ 目录内、且"本任务里没有其它小任务引用"的文件，
-    /// 绝不碰作业页下载的 config\copilot\。
+    /// 收集"正在被使用"的作业文件，统一转成绝对路径再比较（相对 / 绝对对不上会导致该保护的没保护住）：
+    /// 所有小任务引用的 + 作业页当前列表 / 输入框指向的。
     /// </summary>
-    /// <param name="paths">候选路径（一般是这个小任务保存前的旧作业）。</param>
-    /// <param name="owner">被替换/删除的那个小任务自己（它不算引用者）。</param>
-    private static void DeleteSnapshotCopies(IEnumerable<string> paths, CopilotSubTaskItem? owner)
+    private static HashSet<string> CollectReferencedJobFiles()
     {
         var referenced = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var step in Instance.Items)
-        {
-            if (ReferenceEquals(step, owner) || step.Model.Battle is not { } other)
-            {
-                continue;
-            }
 
-            foreach (var job in other.Jobs)
+        void Add(string? path)
+        {
+            if (!string.IsNullOrWhiteSpace(path))
             {
-                referenced.Add(job.FilePath);
+                referenced.Add(Path.GetFullPath(Path.Combine(PathsHelper.BaseDir, path)));
             }
         }
 
-        var snapshotDir = Path.Combine(PathsHelper.BaseDir, "config", "copilot_snapshot");
-        foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var step in Instance.Items)
         {
-            if (string.IsNullOrWhiteSpace(path) || referenced.Contains(path))
+            if (step.Model.Battle is not { } battle)
             {
                 continue;
             }
 
-            var absolute = Path.Combine(PathsHelper.BaseDir, path);
-            if (!absolute.StartsWith(snapshotDir, StringComparison.OrdinalIgnoreCase) || !File.Exists(absolute))
+            foreach (var job in battle.Jobs)
+            {
+                Add(job.FilePath);
+            }
+        }
+
+        // 作业页当前正在用的文件也算"在用"：更新时如果先把页面指向的文件删了，就抓不到作业了
+        foreach (var pageJob in Instances.CopilotViewModel.CopilotItemViewModels)
+        {
+            Add(pageJob.FilePath);
+        }
+
+        Add(Instances.CopilotViewModel.Filename);
+        return referenced;
+    }
+
+    /// <summary>
+    /// 删除作业快照副本。只删 config\copilot_snapshot\ 目录内、且"没有任何小任务 / 作业页引用"的文件，
+    /// 绝不碰作业页下载的 config\copilot\。删完顺手把没人引用的副本也扫一遍。
+    /// </summary>
+    /// <param name="paths">候选路径（一般是这个小任务保存前的旧作业）。</param>
+    private static void DeleteSnapshotCopies(IEnumerable<string> paths)
+    {
+        var referenced = CollectReferencedJobFiles();
+        var snapshotDir = Path.Combine(PathsHelper.BaseDir, "config", "copilot_snapshot");
+        foreach (var path in paths.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                continue;
+            }
+
+            var absolute = Path.GetFullPath(Path.Combine(PathsHelper.BaseDir, path));
+            if (referenced.Contains(absolute) || !absolute.StartsWith(snapshotDir, StringComparison.OrdinalIgnoreCase) || !File.Exists(absolute))
             {
                 continue;
             }
@@ -963,6 +1079,96 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
             {
                 // 删不掉就算了（文件被占用等情况）
             }
+        }
+
+        SweepUnusedSnapshotCopies();
+    }
+
+    /// <summary>
+    /// 清掉快照目录里已经没有任何小任务 / 作业页引用的文件
+    /// （历史版本反复"删除再更新"会攒下 xxx_2、xxx_3、xxx_4 这类副本）。
+    /// </summary>
+    private static void SweepUnusedSnapshotCopies()
+    {
+        var snapshotDir = Path.Combine(PathsHelper.BaseDir, "config", "copilot_snapshot");
+        if (!Directory.Exists(snapshotDir))
+        {
+            return;
+        }
+
+        var referenced = CollectReferencedJobFiles();
+        foreach (var file in Directory.EnumerateFiles(snapshotDir))
+        {
+            if (referenced.Contains(Path.GetFullPath(file)))
+            {
+                continue;
+            }
+
+            try
+            {
+                File.Delete(file);
+            }
+            catch (IOException)
+            {
+                // 删不掉就算了（被占用等情况）
+            }
+        }
+    }
+
+    /// <summary>
+    /// 修历史遗留的坏快照：老版本的「更新」会误删自己刚引用上的快照副本，
+    /// 而「作业」页的同名作业通常还在（config\copilot\），缺了就补一份回来。
+    /// </summary>
+    private static void RepairMissingSnapshotCopies()
+    {
+        var snapshotDir = Path.Combine(PathsHelper.BaseDir, "config", "copilot_snapshot");
+        var sourceDir = Path.Combine(PathsHelper.BaseDir, "config", "copilot");
+        var repaired = new List<string>();
+
+        foreach (var step in Instance.Items)
+        {
+            if (step.Model.Battle is not { } battle)
+            {
+                continue;
+            }
+
+            foreach (var job in battle.Jobs)
+            {
+                if (string.IsNullOrWhiteSpace(job.FilePath))
+                {
+                    continue;
+                }
+
+                var snapshotPath = Path.Combine(PathsHelper.BaseDir, job.FilePath);
+                if (!snapshotPath.StartsWith(snapshotDir, StringComparison.OrdinalIgnoreCase) || File.Exists(snapshotPath))
+                {
+                    continue;
+                }
+
+                var fallback = Path.Combine(sourceDir, Path.GetFileName(snapshotPath));
+                if (!File.Exists(fallback))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    Directory.CreateDirectory(snapshotDir);
+                    File.Copy(fallback, snapshotPath);
+                    repaired.Add(Path.GetFileName(snapshotPath));
+                }
+                catch (IOException)
+                {
+                    // 复制不了就算了，序列化时照旧提示"作业文件不存在"
+                }
+            }
+        }
+
+        if (repaired.Count > 0)
+        {
+            Instances.TaskQueueViewModel.AddLog(LocalizationHelper.GetStringFormat(
+                "CopilotSnapshotRepaired",
+                string.Join("、", repaired.Distinct(StringComparer.OrdinalIgnoreCase))));
         }
     }
 
@@ -1102,9 +1308,10 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     }
 
     /// <summary>
-    /// 快照专用目录：把用到的作业文件复制一份进来。
-    /// 这样在「作业」页点"清除任务"（它会删掉 config\copilot 下下载的作业）也不会把已记录的小任务弄坏，
-    /// 同时不动作业页原有的行为。
+    /// 快照专用目录：把作业页当前的作业文件复制一份进来。
+    /// 同名文件只有在**内容完全一样**时才复用（例如"6-2 普通"和"6-2 突袭"两条记录指向同一个作业文件，
+    /// 这样列表里显示的名字就不会退化成 xxx_2）；内容不同就新建一份（xxx_2、xxx_3 …），
+    /// 所以同名作业改了内容照样能同步进来（旧的副本由 SaveItem 先删掉）。
     /// </summary>
     private static string CopyJobToSnapshot(string filePath)
     {
@@ -1114,9 +1321,38 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         Directory.CreateDirectory(absoluteDir);
 
         var name = Path.GetFileName(source);
-        var target = Path.Combine(absoluteDir, name);
         var extension = Path.GetExtension(name);
         var stem = Path.GetFileNameWithoutExtension(name);
+        var target = Path.Combine(absoluteDir, name);
+        for (var i = 2; File.Exists(target) && !SameFileContent(target, source); i++)
+        {
+            target = Path.Combine(absoluteDir, stem + "_" + i + extension);
+        }
+
+        if (!File.Exists(target))
+        {
+            File.Copy(source, target);
+        }
+
+        return Path.Combine(relativeDir, Path.GetFileName(target));
+    }
+
+    /// <summary>
+    /// 「编辑」时把这一小任务的作业复制一份到 config\copilot\（作业页的作业目录）给页面用。
+    /// 同名文件不覆盖：内容一样就直接复用，内容不同才换个名字（xxx_2.json），
+    /// 免得把你为同一关下载的另一个作业顶掉。
+    /// </summary>
+    private static string CopyJobForPage(string filePath)
+    {
+        var source = File.Exists(filePath) ? filePath : Path.Combine(PathsHelper.BaseDir, filePath);
+        var relativeDir = Path.Combine("config", "copilot");
+        var absoluteDir = Path.Combine(PathsHelper.BaseDir, relativeDir);
+        Directory.CreateDirectory(absoluteDir);
+
+        var name = Path.GetFileName(source);
+        var extension = Path.GetExtension(name);
+        var stem = Path.GetFileNameWithoutExtension(name);
+        var target = Path.Combine(absoluteDir, name);
         for (var i = 2; File.Exists(target) && !SameFileContent(target, source); i++)
         {
             target = Path.Combine(absoluteDir, stem + "_" + i + extension);
@@ -1139,6 +1375,71 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         catch (IOException)
         {
             return false;
+        }
+    }
+
+    /// <summary>
+    /// 点「编辑」时先把作业页的作业目录清空（config\copilot\ 整个删掉），
+    /// 再把这一小任务的作业复制进去 —— 这样页面看到的就正好是这一步的作业，名字也干净。
+    /// </summary>
+    private static void ClearCopilotJobDir()
+    {
+        var sourceDir = Path.Combine(PathsHelper.BaseDir, "config", "copilot");
+        if (!Directory.Exists(sourceDir))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(sourceDir, recursive: true);
+        }
+        catch (IOException)
+        {
+            // 删不掉（被占用）就算了：后面的复制遇到同名会加后缀
+        }
+    }
+
+    /// <summary>
+    /// 清掉老版本留下的编辑区目录（config\copilot_edit\）：现在编辑直接复制到 config\copilot\，不用它了。
+    /// 只删"没有任何作业页 / 小任务引用"的文件，删空后把目录也去掉。
+    /// </summary>
+    private static void CleanupLegacyEditArea()
+    {
+        var absoluteDir = Path.Combine(PathsHelper.BaseDir, "config", "copilot_edit");
+        if (!Directory.Exists(absoluteDir))
+        {
+            return;
+        }
+
+        var referenced = CollectReferencedJobFiles();
+        foreach (var file in Directory.EnumerateFiles(absoluteDir))
+        {
+            if (referenced.Contains(Path.GetFullPath(file)))
+            {
+                continue;
+            }
+
+            try
+            {
+                File.Delete(file);
+            }
+            catch (IOException)
+            {
+                // 删不掉就算了
+            }
+        }
+
+        try
+        {
+            if (!Directory.EnumerateFileSystemEntries(absoluteDir).Any())
+            {
+                Directory.Delete(absoluteDir);
+            }
+        }
+        catch (IOException)
+        {
+            // 目录里还有文件（被别人引用着）就留着
         }
     }
 
@@ -1169,7 +1470,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
                 Skill = op.Skill,
                 Module = op.Module,
             })];
-            page.Filename = snapshot.Jobs.Count == 1 ? ResolveJobPath(snapshot.Jobs[0].FilePath) : string.Empty;
+            page.Filename = snapshot.Jobs.Count == 1 ? ResolveJobPath(CopyJobForPage(snapshot.Jobs[0].FilePath)) : string.Empty;
             return;
         }
 
@@ -1180,7 +1481,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         {
             var useOverride = !string.IsNullOrEmpty(job.StageName);
             var name = useOverride ? job.StageName! : Path.GetFileNameWithoutExtension(job.FilePath);
-            page.CopilotItemViewModels.Add(new CopilotItemViewModel(name, job.FilePath, job.IsRaid, 0, true, useOverride) { Index = index++ });
+            page.CopilotItemViewModels.Add(new CopilotItemViewModel(name, CopyJobForPage(job.FilePath), job.IsRaid, 0, true, useOverride) { Index = index++ });
         }
 
         page.SaveCopilotTask();
@@ -1254,6 +1555,10 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
                         sub.Name = NavStepName(option, sub.Difficulty, sub.Mode, sub.NavAnnihilationStage);
                     }
                 }
+                else if (sub.Kind == CopilotSubTaskKind.Battle)
+                {
+                    sub.Name = NormalizeBattleName(sub.Name);
+                }
 
                 Items.Add(new CopilotSubTaskItem(sub));
             }
@@ -1261,6 +1566,12 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
             AdvancedItems.Clear();
             AdvancedOwner = null;
             _isRefreshing = false;
+
+            // 老版本的「更新」会误删自己引用上的快照副本：读配置时顺手从「作业」页的同名作业补回来
+            RepairMissingSnapshotCopies();
+
+            // 顺手清掉没人引用的快照副本（历史版本反复更新会攒下 xxx_2、xxx_3、xxx_4 …）
+            SweepUnusedSnapshotCopies();
 
             // 剿灭导航的关卡名每次读配置都重新解析一遍（作业可能已经换过了）
             RefreshAnnihilationStages();
@@ -1594,12 +1905,14 @@ public class CopilotSubTaskItem : PropertyChangedBase
     public bool ShowAnnihilationFailIcon => IsAnnihilationNav && !HasAnnihilationStage;
 
     /// <summary>
-    /// Gets 剿灭导航图标的提示：读到了就写清楚切到哪一关，读不到就说明去哪儿找关卡名。
+    /// Gets 剿灭导航图标的提示：图钉同样是拖拽把手，所以第一行固定写"标签顺序可拖动"，
+    /// 第二行再写读到了就切到哪一关、读不到时去哪儿找关卡名。
     /// </summary>
     public string AnnihilationIconTip => IsAnnihilationNav
-        ? LocalizationHelper.GetStringFormat(
-            HasAnnihilationStage ? "CopilotNavAnnihilationOkTip" : "CopilotNavAnnihilationFailTip",
-            Model.NavAnnihilationStage ?? string.Empty)
+        ? LocalizationHelper.GetString("LabelSequenceTip") + Environment.NewLine
+          + LocalizationHelper.GetStringFormat(
+              HasAnnihilationStage ? "CopilotNavAnnihilationOkTip" : "CopilotNavAnnihilationFailTip",
+              Model.NavAnnihilationStage ?? string.Empty)
         : string.Empty;
 
     /// <summary>

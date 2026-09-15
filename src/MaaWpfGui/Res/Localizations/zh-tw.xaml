@@ -1258,6 +1258,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="SupportUnitUsage.None">不借用</system:String>
     <system:String x:Key="SupportUnitUsage.WhenNeeded">僅用於補漏</system:String>
     <system:String x:Key="SupportUnitUsage.Random">隨機</system:String>
+    <system:String x:Key="SupportUnitUsage.OnlyFirst">只借首位6星</system:String>
     <system:String x:Key="AddTrust">補充低信賴 {key=Operator}</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements">忽略{key=Operator}屬性要求</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements.Tip" xml:space="preserve">部分作業需要特定技能等級、模組等作為前置條件。

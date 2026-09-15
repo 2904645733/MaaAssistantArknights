@@ -1245,9 +1245,13 @@ Only level rewards can be farmed; to get the Engraved Medal, all ｢Key Objectiv
     <system:String x:Key="CopilotTaskName">Stage Code</system:String>
     <system:String x:Key="CopilotTaskNameTip">Stage Code, e.g. 1-7</system:String>
     <system:String x:Key="CopilotTask">Battle Mission</system:String>
-    <system:String x:Key="CopilotAddBattle">Record current Copilot page (battle step)</system:String>
-    <system:String x:Key="CopilotNavTitle">Navigation step</system:String>
-    <system:String x:Key="CopilotNeedMultiMode">There is no job to record yet: load or enter a job on the Copilot page first (with multi-job mode on, check every job you want to run), then press "Record current Copilot page".</system:String>
+    <system:String x:Key="CopilotBattleTitle">Battle</system:String>
+    <system:String x:Key="CopilotBattlePickerTip" xml:space="preserve">Turns what is on the Copilot page (auto squad, multi-job mode, sanity potions and originite prime) into one battle step
+
+For now it only supports the "Main Theme / Story Collection / SideStory" tabs of the Copilot page</system:String>
+    <system:String x:Key="CopilotAddBattle">Add auto battle</system:String>
+    <system:String x:Key="CopilotNavTitle">Navigation</system:String>
+    <system:String x:Key="CopilotNeedMultiMode">No job in auto battle</system:String>
     <system:String x:Key="CopilotRecorded">Recorded {0} job(s) (snapshot)</system:String>
     <system:String x:Key="CopilotSnapshotJobs">{0} job(s) (snapshot)</system:String>
     <system:String x:Key="CopilotUserAdditionalIgnored"> Note: the custom operator list on the Copilot page is not recorded yet.</system:String>
@@ -1268,11 +1272,16 @@ Only level rewards can be farmed; to get the Engraved Medal, all ｢Key Objectiv
     <system:String x:Key="CopilotNavAnnihilation">Annihilation</system:String>
     <system:String x:Key="CopilotNavAnnihilationItem">Annihilation ({0})</system:String>
     <system:String x:Key="CopilotNavAnnihilationOkTip">Annihilation navigation: stage "{0}" was read from the job of the next battle step, so this annihilation stage will be selected.</system:String>
-    <system:String x:Key="CopilotNavAnnihilationFailTip">Annihilation navigation: no stage name available - there is no battle step after this one, or its job has no stage_name. This step will be skipped when running; put a battle step with a job after it.</system:String>
+    <system:String x:Key="CopilotNavAnnihilationFailTip">Annihilation navigation: no annihilation stage could be read - there is no battle step after this one, or that step's job is not an annihilation stage (normal and event stages count as unreadable). This step will be skipped when running; put a battle step whose job is an annihilation stage after it.</system:String>
     <system:String x:Key="CopilotNavAnnihilationNoStage">Annihilation navigation "{0}": no stage name available from the next battle step's job, step skipped</system:String>
     <system:String x:Key="CopilotNavDoneAnnihilation">Navigation done: now at {0}</system:String>
     <system:String x:Key="CopilotSubNavName">Nav · Chapter {0}</system:String>
-    <system:String x:Key="CopilotNavPickerTip">Type in the box to search (Annihilation, chapter, event name or event code (e.g. SL 火山旅梦), or a resource stage (e.g. CE LMD, PR-A Med/Def Chip)); pick a target, then press "Add". A resource-stage step only switches to the resource page (Resource tab then that product's entry) without picking the exact stage. A navigation step only switches to that entry (it never starts a battle) and can be dragged among battle steps. The "Annihilation" target switches to an annihilation stage: annihilation tab → Enter → Back → Switch → recognize the stage name and click it. Which stage is used comes from the job of the first battle step after it (a ✓ on the left means the name was found, ✗ means it was not). Mainline chapters 10-14 have two modes (Standard / Hard); the difficulty choices appear once such a chapter is selected (Standard by default). Events have EX / S stage modes (only some events have S); the matching check boxes appear once an event is selected, and leaving them unchecked means normal stages.</system:String>
+    <system:String x:Key="CopilotNavPickerTip" xml:space="preserve">Supports navigating to Main Theme, SideStory and Annihilation
+
+• Main Theme chapters 10-14 can pick a difficulty
+• SideStory navigation can target the EX or S stage page; with neither ticked it goes to the normal stage page
+• When a SideStory stage is still locked, SideStory navigation spends an event unlock crystal automatically; without one the navigation fails
+• Annihilation navigation must be followed by an annihilation battle step that does not use multi-job mode; the stage is detected automatically, and without such a battle step the navigation fails</system:String>
     <system:String x:Key="CopilotSubBattle">Battle</system:String>
     <system:String x:Key="CopilotSubNav">Nav</system:String>
     <system:String x:Key="CopilotTaskTip">"Battle Mission" is a list of steps executed in order (drag to reorder).&#10;1) Battle: on the Copilot page, add/verify job codes with its built-in features and set formation/support etc.; load a job (with multi-job mode on, check every job you want to run; with it off, the single job on the page is recorded), then click "Record current Copilot page" here to create a battle step (snapshot; later page changes do not affect it).&#10;2) Navigation: in the "Navigation step" box, search and pick a chapter or an event (type to filter; e.g. SL 火山旅梦), then press "Add" to create a navigation step. It reuses the same navigation logic as the mainline chapter navigation (return to the Terminal, click the main theme tab, set the list to 乐章收录/开启时间/默认进度, find the card, click "Go to Episode") and never starts a battle - useful for running battles across chapters.&#10;3) Annihilation navigation: pick "Annihilation" and press "Add". It clicks the Annihilation tab, Enter, Back and Switch, then recognizes the target stage name in the stage list and clicks it (swiping the list up to 10 times when it is not found). If it then finds the "full delegation active" or "auto-deploy active" icon it clicks that too, and finally it clicks "Start Operation" - this navigation step ends there and the battle step after it takes over (formation, fight, settlement). The stage comes from the job of the first battle step after it; a ✓ / ✗ icon on the left shows whether the name was found.&#10;4) Starting this task runs every step in order.</system:String>
@@ -1280,7 +1289,11 @@ Only level rewards can be farmed; to get the Engraved Medal, all ｢Key Objectiv
     <system:String x:Key="QueueMoveDown">Move down</system:String>
     <system:String x:Key="QueueDelete">Delete</system:String>
     <system:String x:Key="CopilotStepEdit">Edit</system:String>
-    <system:String x:Key="CopilotStepSave">Save</system:String>
+    <system:String x:Key="CopilotStepSave">Update</system:String>
+    <system:String x:Key="CopilotEditLoadedLog">Copied the jobs of {0} to "Auto Battle"; edit them and press Update</system:String>
+    <system:String x:Key="CopilotClearJobs">Clear</system:String>
+    <system:String x:Key="CopilotJobsCleared">Cleared the jobs of "{0}"</system:String>
+    <system:String x:Key="CopilotSnapshotRepaired">Repaired {0} missing job snapshot(s) by copying the same-named jobs from the Copilot page</system:String>
     <system:String x:Key="CopilotStepNameTip">Step name (editable; saved on focus loss)</system:String>
     <system:String x:Key="CopilotDragTip">Drag a step to reorder execution</system:String>
     <system:String x:Key="CopilotEditLoaded">Snapshot loaded into the Copilot page. Edit it there, then press "Save" here to write back.</system:String>
@@ -1298,7 +1311,7 @@ Only level rewards can be farmed; to get the Engraved Medal, all ｢Key Objectiv
     <system:String x:Key="CopilotAdvancedTip">Check the jobs to run and drag to reorder. Cleared stages are unchecked automatically, so resuming never repeats them.</system:String>
     <system:String x:Key="CopilotAdvancedNeedTarget">Click the settings icon on a step first to choose which step to edit.</system:String>
     <system:String x:Key="CopilotEndPlot">Chapter-end plot</system:String>
-    <system:String x:Key="CopilotEndPlotTip">When checked: after every job of this step is finished, the map is swiped towards the end of the chapter (the higher stage numbers) to look for the plot stage; once the plot icon is recognized it is opened and the story is played through. The number on the right (default 1) is how many times to do this - the step only counts as finished after that many runs, and a failure never unchecks the step.</system:String>
+    <system:String x:Key="CopilotEndPlotTip">When checked: after every job of this battle task is done, the map is swiped to the right to look for the plot stage. If it is found the story is played through, otherwise it is skipped. The repeat count is configurable.</system:String>
     <system:String x:Key="CopilotEndPlotDone">Chapter-end plot done: {0} ({1} times)</system:String>
     <system:String x:Key="CopilotEndPlotFailed">Chapter-end plot not found ({0})</system:String>
     <system:String x:Key="SelectTheFile">Select task file</system:String>
@@ -1311,11 +1324,11 @@ Only level rewards can be farmed; to get the Engraved Medal, all ｢Key Objectiv
     <system:String x:Key="AutoSquad">Auto Squad</system:String>
     <system:String x:Key="AutoSquadTip">｢Favourite｣ marked {key=Operator}s may not be recognized</system:String>
     <system:String x:Key="SupportUnitUsage">Use Support Unit</system:String>
-    <system:String x:Key="SupportUnitUsage.Tip">Missing one operator is manageable, but if two or more are missing, consider switching to a different job. With "First Only" no auto-squad is built (the in-game squad stays as it is) and only the first operator listed in the job is borrowed.</system:String>
+    <system:String x:Key="SupportUnitUsage.Tip">Missing one operator is manageable, but if two or more are missing, consider switching to a different job. With "First 6-star Only" no auto-squad is built (the in-game squad stays as it is) and only the first 6-star operator listed in the job is borrowed (if the job has no 6-star operator, the very first one is borrowed instead).</system:String>
     <system:String x:Key="SupportUnitUsage.None">Never</system:String>
     <system:String x:Key="SupportUnitUsage.WhenNeeded">When Needed</system:String>
     <system:String x:Key="SupportUnitUsage.Random">Random</system:String>
-    <system:String x:Key="SupportUnitUsage.OnlyFirst">First Only</system:String>
+    <system:String x:Key="SupportUnitUsage.OnlyFirst">First 6&#9733; Only</system:String>
     <system:String x:Key="AddTrust">Add low-trust {key=Operator}s</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements">Ignore {key=Operator} requirements</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements.Tip" xml:space="preserve">Some jobs require specific skill levels, Modules or other prerequisites.

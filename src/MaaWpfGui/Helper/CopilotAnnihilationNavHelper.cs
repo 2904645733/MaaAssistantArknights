@@ -26,8 +26,8 @@ namespace MaaWpfGui.Helper;
 /// 战斗任务的「剿灭导航」用到的查找逻辑。
 /// 要切哪一个剿灭关卡不在界面上单独选，而是从"这一步后面第一个作战小任务的作业"里读出来：
 /// 作业项里填的覆盖名优先，其次是作业文件里的 <c>stage_name</c>。
-/// 读到了说明这一步能执行（界面显示 ✓），读不到（后面没有作战小任务 / 作业里没有关卡名）核心就没法
-/// 在剿灭关卡列表里认出目标（界面显示 ✗）。
+/// 读到了说明这一步能执行（界面显示 ✓），读不到（后面没有作战小任务 / 作业里没有关卡名 /
+/// 那个作业根本不是剿灭关卡）核心就没法在剿灭关卡列表里认出目标（界面显示 ✗）。
 /// </summary>
 public static class CopilotAnnihilationNavHelper
 {
@@ -72,7 +72,36 @@ public static class CopilotAnnihilationNavHelper
     public static string? FromJob(CopilotSnapshotJob job)
     {
         var raw = string.IsNullOrWhiteSpace(job.StageName) ? ReadStageNameFromFile(job.FilePath) : job.StageName;
-        return Normalize(raw);
+        var name = Normalize(raw);
+
+        // 剿灭导航只认剿灭关卡：后面那个作业是普通关 / 活动关（1-7、CE-6 这种）时按"读不到"处理，
+        // 界面显示 ✗，下发时跳过这一步
+        return IsAnnihilationStage(name) ? name : null;
+    }
+
+    /// <summary>
+    /// 这个名字是不是剿灭关卡：查游戏数据里的同名关卡，看它是不是在 campaign 目录下
+    /// （剿灭关卡的 levelId 形如 obt/campaign/level_camp_01，stageId 形如 camp_01 / camp_r_01）。
+    /// </summary>
+    /// <param name="displayName">关卡显示名（如"龙门市区"）。</param>
+    /// <returns>是剿灭关卡返回 true。</returns>
+    private static bool IsAnnihilationStage(string? displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            return false;
+        }
+
+        foreach (var map in DataHelper.MapData)
+        {
+            if (string.Equals(map.Name, displayName, StringComparison.OrdinalIgnoreCase))
+            {
+                return (map.LevelId?.Contains("/campaign/", StringComparison.OrdinalIgnoreCase) ?? false)
+                       || (map.StageId?.StartsWith("camp", StringComparison.OrdinalIgnoreCase) ?? false);
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

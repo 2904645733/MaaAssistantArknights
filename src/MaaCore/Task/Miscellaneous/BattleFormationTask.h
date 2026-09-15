@@ -161,7 +161,7 @@ protected:
         size_t max_refresh_times = 5,
         Friendship friendship = Friendship::Stranger);
 
-    // 「只借首位」：不自动编队，只把作业里第一个干员借来当助战
+    // 「只借首位6星」：不自动编队，只把作业里第一个 6 星干员借来当助战（作业里没有 6 星时退回第一个干员）
     bool borrow_first_required_support_unit();
 
     std::optional<std::string> add_support_unit_from_support_list(

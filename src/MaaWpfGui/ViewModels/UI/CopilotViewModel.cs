@@ -743,7 +743,7 @@ public partial class CopilotViewModel : Screen
         /// <summary>随机加一个, 刷信用点用</summary>
         Random = 3,
 
-        /// <summary>只借首位：不自动编队，只借作业里排在第一位的干员</summary>
+        /// <summary>只借首位6星：不自动编队，只借作业里第一个 6 星干员（作业里没有 6 星时退回借第一位）</summary>
         OnlyFirst = 4,
     }
 

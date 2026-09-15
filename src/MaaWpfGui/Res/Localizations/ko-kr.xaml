@@ -1259,6 +1259,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="SupportUnitUsage.None">미사용</system:String>
     <system:String x:Key="SupportUnitUsage.WhenNeeded">필요 시</system:String>
     <system:String x:Key="SupportUnitUsage.Random">랜덤</system:String>
+    <system:String x:Key="SupportUnitUsage.OnlyFirst">첫 번째 6성만</system:String>
     <system:String x:Key="AddTrust">신뢰도가 낮은 {key=Operator} 추가</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements">{key=Operator} 요구 사항 무시</system:String>
     <system:String x:Key="Copilot.IgnoreRequirements.Tip" xml:space="preserve">일부 작업은 특정 스킬 레벨, 모듈 또는 기타 요구 사항이 필요합니다.

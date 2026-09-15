@@ -57,7 +57,7 @@ bool asst::BattleFormationTask::_run()
         return true; // 编队不可用，直接返回，常见于TR关卡
     }
 
-    // 「只借首位」：不自动编队（队伍保持游戏里现在的样子），只把作业里第一个干员借来当助战
+    // 「只借首位6星」：不自动编队（队伍保持游戏里现在的样子），只把作业里第一个 6 星干员借来当助战
     if (m_support_unit_usage == SupportUnitUsage::OnlyFirst) {
         return borrow_first_required_support_unit();
     }
@@ -991,14 +991,34 @@ bool asst::BattleFormationTask::borrow_first_required_support_unit()
         return false;
     }
 
-    const OperGroup& first_group = groups->front();
-    const battle::OperUsage& first_oper = first_group.opers.front();
+    // 「只借首位6星」：按作业顺序（先看第一组，组内按顺序）找第一个 6 星干员借
+    const OperGroup* target_group = nullptr;
+    const battle::OperUsage* target_oper = nullptr;
+    for (const auto& group : *groups) {
+        for (const auto& oper : group.opers) {
+            if (BattleData.get_rarity(battle::Role::Unknown, oper.name) >= 6) {
+                target_group = &group;
+                target_oper = &oper;
+                break;
+            }
+        }
+        if (target_oper != nullptr) {
+            break;
+        }
+    }
+
+    // 作业里一个 6 星都没有：退回作业里排在最前面的那个干员，至少不白跑一趟
+    if (target_oper == nullptr) {
+        target_group = &groups->front();
+        target_oper = &target_group->opers.front();
+        Log.info(__FUNCTION__, "| No 6-star oper in the job, fall back to the first one:", target_oper->name);
+    }
     // 和正常补漏借干员的做法保持一致：只带"借谁 + 用哪个技能"，不卡技能等级/练度
     // （MAA 原本就不拿作业里的专精等级去筛助战干员，多这一条只会把合格的好友干员挡掉）
     const RequiredOper required_oper {
-        .role = BattleData.get_first_role(first_oper.name),
-        .name = first_oper.name,
-        .skill = first_oper.skill,
+        .role = BattleData.get_first_role(target_oper->name),
+        .name = target_oper->name,
+        .skill = target_oper->skill,
     };
 
     // 就在关卡详情页点「助战单位」进助战列表（正常编队流程也是离开快速编队页面之后在这一步借的），
@@ -1006,12 +1026,12 @@ bool asst::BattleFormationTask::borrow_first_required_support_unit()
     // 队伍 = 你现在的队伍 + 借来的这一个
     if (auto opt = add_support_unit({ required_oper })) {
         m_used_support_unit = true;
-        m_opers_in_formation->emplace(*opt, first_group.name);
-        Log.info(__FUNCTION__, "| Borrowed support unit", required_oper.name, "for group", first_group.name);
+        m_opers_in_formation->emplace(*opt, target_group->name);
+        Log.info(__FUNCTION__, "| Borrowed support unit", required_oper.name, "for group", target_group->name);
         return true;
     }
 
-    Log.error(__FUNCTION__, "| Cannot borrow the first required support unit", required_oper.name);
+    Log.error(__FUNCTION__, "| Cannot borrow the required support unit", required_oper.name);
     save_img(utils::path("debug") / utils::path("other"));
     return false;
 }
