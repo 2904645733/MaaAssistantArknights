@@ -45,10 +45,10 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        <!-- 运行中（!Idle）时列表里的小图标变浅：勾选框和按钮有控件自带的禁用样式，Path 没有 -->
+        <!-- 运行中（!Run.Idle）时列表里的小图标变浅：勾选框和按钮有控件自带的禁用样式，Path 没有 -->
         <Style x:Key="StepIconDimStyle" TargetType="Path">
             <Style.Triggers>
-                <DataTrigger Binding="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" Value="False">
+                <DataTrigger Binding="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" Value="False">
                     <Setter Property="Opacity" Value="0.4" />
                 </DataTrigger>
             </Style.Triggers>
@@ -91,7 +91,7 @@
         <!--  常规设置  -->
         <StackPanel Visibility="{c:Binding '!EnableAdvancedSettings', Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingVisibilities}}">
             <!--  战斗小任务：和下面的「导航」一样，标题 + 问号提示 + 按键  -->
-            <StackPanel IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}">
+            <StackPanel IsEnabled="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}">
                 <StackPanel Margin="0,3,0,5" Orientation="Horizontal">
                     <controls:TextBlock Margin="8,0,0,0" Text="{DynamicResource CopilotBattleTitle}" />
                     <controls:TooltipBlock TooltipText="{DynamicResource CopilotBattlePickerTip}" />
@@ -118,7 +118,7 @@
             </StackPanel>
 
             <!--  导航小任务：和"自动肉鸽 · 开局干员"一样直接摆在这里（可搜索下拉框 + 添加），不用先点按钮展开  -->
-            <StackPanel IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}">
+            <StackPanel IsEnabled="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}">
                 <StackPanel Margin="0,3,0,5" Orientation="Horizontal">
                     <controls:TextBlock Margin="8,0,0,0" Text="{DynamicResource CopilotNavTitle}" />
                     <controls:TooltipBlock TooltipText="{DynamicResource CopilotNavPickerTip}" />
@@ -190,7 +190,7 @@
             </StackPanel>
 
             <!--  与主界面任务队列一致的拖拽行为（dd:DragDrop 不会触发选中，避免文字变色）。
-                 跑任务时（Idle=false）只关掉拖拽、勾选框和行内按钮，列表本身不禁用——这样才能继续滚动查看。  -->
+                 跑任务时（Run.Idle=false，官方 dev-v2 起 "是否空闲" 挪到了 Run 上）只关掉拖拽、勾选框和行内按钮，列表本身不禁用——这样才能继续滚动查看。  -->
             <ListBox
                 x:Name="StepList"
                 MaxHeight="220"
@@ -198,8 +198,8 @@
                 HorizontalContentAlignment="Stretch"
                 ItemsSource="{Binding Items}"
                 dd:DragDrop.DragDropContext="{Binding RelativeSource={RelativeSource Self}}"
-                dd:DragDrop.IsDragSource="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
-                dd:DragDrop.IsDropTarget="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                dd:DragDrop.IsDragSource="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                dd:DragDrop.IsDropTarget="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
                 PreviewMouseWheel="List_PreviewMouseWheel"
                 Style="{DynamicResource NoSelectedHighlightListBoxStyle}"
                 s:View.ActionTarget="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
@@ -237,7 +237,7 @@
                                         Margin="0,0,8,0"
                                         VerticalAlignment="Center"
                                         IsChecked="{Binding IsChecked}"
-                                        IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" />
+                                        IsEnabled="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" />
                                     <!--  作战任务：交叉双剑（akar-icons:double-sword）  -->
                                     <Path
                                         Width="16"
@@ -306,8 +306,8 @@
                                                 <DataTrigger Binding="{Binding IsEditing}" Value="True">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                 </DataTrigger>
-                                                <!-- 运行中（!Idle）名字和小图标一起变浅 -->
-                                                <DataTrigger Binding="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" Value="False">
+                                                <!-- 运行中（!Run.Idle）名字和小图标一起变浅 -->
+                                                <DataTrigger Binding="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}" Value="False">
                                                     <Setter Property="Opacity" Value="0.4" />
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -337,7 +337,7 @@
                                     Grid.Column="2"
                                     Margin="6,0,0,0"
                                     VerticalAlignment="Center"
-                                    IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                                    IsEnabled="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
                                     Orientation="Horizontal">
                                     <!-- 战斗小任务：重命名 + 删除 + 高级设置；导航小任务：只有删除 -->
                                     <StackPanel Orientation="Horizontal" Visibility="{Binding IsBattle, Converter={StaticResource BoolToVis}}">
@@ -404,7 +404,7 @@
                 <StackPanel
                     Margin="0,6,0,6"
                     HorizontalAlignment="Left"
-                    IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                    IsEnabled="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
                     Orientation="Horizontal">
                     <Button
                         MinWidth="64"
@@ -428,7 +428,7 @@
                 <!--  章末剧情：只有作战小任务有；勾上后这一步的作业全打完了，会往章节末尾滑地图找剧情关并播完  -->
                 <StackPanel
                     Margin="0,2,0,4"
-                    IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                    IsEnabled="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
                     Orientation="Horizontal"
                     Visibility="{Binding AdvancedOwner.IsBattle, Converter={StaticResource BoolToVis}}">
                     <CheckBox Content="{DynamicResource CopilotEndPlot}" IsChecked="{Binding AdvancedOwner.Model.EndPlot}" />
@@ -446,7 +446,7 @@
                     x:Name="AdvancedList"
                     MaxHeight="260"
                     HorizontalContentAlignment="Stretch"
-                    IsEnabled="{Binding Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
+                    IsEnabled="{Binding Run.Idle, Source={x:Static ui_vms:TaskQueueViewModel.TaskSettingDataContext}}"
                     ItemsSource="{Binding AdvancedItems}"
                     dd:DragDrop.DragDropContext="{Binding RelativeSource={RelativeSource Self}}"
                     dd:DragDrop.IsDragSource="True"
