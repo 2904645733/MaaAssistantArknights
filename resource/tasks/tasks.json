@@ -1374,17 +1374,21 @@
         "next": ["AnnihilationNavClickPrtsAnnihilation", "AnnihilationNavClickPrts"]
     },
     "AnnihilationNavClickPrtsAnnihilation": {
-        "Doc": "战斗任务的「剿灭导航」：剿灭关卡页上识别到「全权委托已开启」的 PRTS 徽章就点它一下，然后这一步就结束（不点「开始行动」，留给后面的作战小任务）",
+        "Doc": "战斗任务的「剿灭导航」：认到「全权委托已开启」的 PRTS 徽章（UsePrts-AnnihilationSuccess.png）就去点 [993,578,44,29] 那一小块把它关掉 —— 徽章本身只是指示灯，点它不生效；用 ClickRect 点这个固定位置（坐标实测）。点完这一步就结束（点「开始行动」是后面作战小任务的事）",
         "template": "UsePrts-AnnihilationSuccess.png",
-        "action": "ClickSelf",
+        "action": "ClickRect",
+        "specificRect": [993, 578, 44, 29],
         "roi": [938, 527, 156, 133],
+        "postDelay": 500,
         "next": []
     },
     "AnnihilationNavClickPrts": {
-        "Doc": "战斗任务的「剿灭导航」：剿灭关卡页上识别到「代理指挥已开启」的按钮就点它一下，然后这一步就结束（不点「开始行动」，留给后面的作战小任务）",
+        "Doc": "战斗任务的「剿灭导航」：认到「代理指挥已开启」就把它关掉。注意 UsePrtsSuccess.png 那个 54x55 的亮方块只是指示灯，点它不生效；能切换开关的是它右边「代理指挥」那串文字，所以用 rectMove 把点击挪到文字上（实测方块在 [1038,565,54,55]、文字在 [1133,574,102,36]，偏移 +95,+9；理智作战的 UsePrts 点的也是这块文字）",
         "template": "UsePrtsSuccess.png",
         "action": "ClickSelf",
         "roi": [985, 523, 159, 165],
+        "rectMove": [95, 9, 102, 36],
+        "postDelay": 500,
         "next": []
     },
     "AnnihilationNavSwipeUp": {

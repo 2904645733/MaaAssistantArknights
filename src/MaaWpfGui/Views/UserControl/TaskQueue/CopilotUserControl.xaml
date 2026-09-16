@@ -128,59 +128,61 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+                    <!--  搜索/过滤由界面逻辑做（NavFilteredOptions），不用 MakeComboBoxSearchable：
+                          那套要自己换 ItemsSource + 设 Items.Filter，在这个框上没挂住（打字后列表不过滤）。
+                          输入的文本由 code-behind 直接监听里面那个 TextBox 写回界面逻辑（不依赖 Text 绑定的默认模式）。
+                          回车：只匹配到一个就直接"添加"，多个或零个就打开下拉列出结果  -->
                     <hc:ComboBox
                         x:Name="NavTargetComboBox"
                         DisplayMemberPath="Display"
                         IsEditable="True"
+                        IsSynchronizedWithCurrentItem="False"
                         IsTextSearchEnabled="False"
-                        IsVisibleChanged="NavTargetComboBox_IsVisibleChanged"
-                        ItemsSource="{Binding NavChapterOptions}"
-                        Loaded="{s:Action MakeComboBoxSearchable,
-                                          Target={x:Type ui_vms:SettingsViewModel}}"
+                        ItemsSource="{Binding NavFilteredOptions}"
+                        Loaded="NavTargetComboBox_Loaded"
+                        LostKeyboardFocus="NavTargetComboBox_LostKeyboardFocus"
                         MaxDropDownHeight="380"
+                        PreviewKeyDown="NavTargetComboBox_PreviewKeyDown"
                         SelectedItem="{Binding SelectedNavOption}"
-                        Text="{Binding NavSearchText, UpdateSourceTrigger=PropertyChanged}" />
+                        StaysOpenOnEdit="True"
+                        Text="{Binding NavSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                     <Button
                         Grid.Column="1"
                         MinWidth="56"
                         Margin="8,0,0,0"
+                        Click="AddNavButton_Click"
                         Command="{s:Action AddSelectedNav}"
                         Content="{DynamicResource CopilotNavAdd}" />
                 </Grid>
-                <!--  主线 10~14 章有标准 / 磨难两个模式：选中这些章节后才出现  -->
+                <!--  主线 10~14 章有标准 / 磨难两个模式：选中这些章节后才出现。
+                      样式和活动那个 EX / S 一样：不显示"难度"两个字、两个勾选框居中、可不选；
+                      都不勾选 = 不切难度，点完「前往章节」这一步就结束  -->
                 <StackPanel
-                    Margin="8,6,0,4"
-                    HorizontalAlignment="Left"
+                    Margin="0,6,0,4"
+                    HorizontalAlignment="Center"
                     Orientation="Horizontal"
                     Visibility="{Binding ShowNavDifficulty, Converter={StaticResource BoolToVis}}">
-                    <controls:TextBlock
-                        Margin="0,0,8,0"
-                        VerticalAlignment="Center"
-                        Text="{DynamicResource CopilotNavDifficultyLabel}" />
-                    <RadioButton
-                        Margin="0,0,12,0"
+                    <CheckBox
                         Content="{DynamicResource CopilotNavDifficultyNormal}"
                         IsChecked="{Binding NavDifficultyIsNormal}" />
-                    <RadioButton
+                    <CheckBox
+                        Margin="40,0,0,0"
                         Content="{DynamicResource CopilotNavDifficultyHard}"
                         IsChecked="{Binding NavDifficultyIsHard}" />
                 </StackPanel>
-                <!--  活动有 EX / S 两种关卡模式（S 只有部分活动有）：选中活动后才出现；都不勾选 = 普通关  -->
+                <!--  活动有 EX / S 两种关卡模式（S 只有部分活动有）：选中活动后才出现；都不勾选 = 普通关。
+                      这里不显示"模式"两个字，两个勾选框整体在这一行里水平居中  -->
                 <StackPanel
-                    Margin="8,6,0,10"
-                    HorizontalAlignment="Left"
+                    Margin="0,6,0,10"
+                    HorizontalAlignment="Center"
                     Orientation="Horizontal"
                     Visibility="{Binding ShowNavMode, Converter={StaticResource BoolToVis}}">
-                    <controls:TextBlock
-                        Margin="0,0,8,0"
-                        VerticalAlignment="Center"
-                        Text="{DynamicResource CopilotNavModeLabel}" />
                     <CheckBox
-                        Margin="0,0,12,0"
                         Content="{DynamicResource CopilotNavModeEX}"
                         IsChecked="{Binding NavModeIsEX}"
                         Visibility="{Binding SelectedNavOption.HasEx, Converter={StaticResource BoolToVis}}" />
                     <CheckBox
+                        Margin="40,0,0,0"
                         Content="{DynamicResource CopilotNavModeS}"
                         IsChecked="{Binding NavModeIsS}"
                         Visibility="{Binding SelectedNavOption.HasS, Converter={StaticResource BoolToVis}}" />

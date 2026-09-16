@@ -1277,7 +1277,8 @@ C:\leidian\LDPlayer9
     <system:String x:Key="CopilotSubNavName">导航 · 第 {0} 章</system:String>
     <system:String x:Key="CopilotNavPickerTip" xml:space="preserve">支持导航主线、SideStory、剿灭
 
-•主线10-14章可以选择难度，
+•搜索框可以按章节号（如 12）、活动代号（如 SL）或活动名（如 火山旅梦）搜，也可以连在一起写（SL火山旅梦）；按回车只是退出搜索（不会自动选中、也不会自动添加），加哪一个请在下拉里点选后再点"添加"
+•主线10-14章可以勾选难度（标准 / 磨难）；两个都不勾选 = 不切难度，点完「前往章节」这一步就结束
 •SideStory导航可以勾选导航到EX或S关页面，没有勾选默认进入到普通关页面
 •SideStory导航在遇到活动未解锁时会自动消耗事相结晶，没有则导航失败
 •剿灭导航后面必须跟没有勾选多作业模式的剿灭作战，导航会自动识别剿灭作战，后面没有剿灭作战则导航失败</system:String>

@@ -1278,7 +1278,8 @@ For now it only supports the "Main Theme / Story Collection / SideStory" tabs of
     <system:String x:Key="CopilotSubNavName">Nav · Chapter {0}</system:String>
     <system:String x:Key="CopilotNavPickerTip" xml:space="preserve">Supports navigating to Main Theme, SideStory and Annihilation
 
-• Main Theme chapters 10-14 can pick a difficulty
+• The search box matches by chapter number (e.g. 12), event code (e.g. SL) or event name (e.g. 火山旅梦); you can also type them together (SL火山旅梦). Pressing Enter only leaves the search (it never selects or adds anything); click the item you want in the drop-down and then press "Add"
+• Main Theme chapters 10-14 can tick a difficulty; with neither ticked the difficulty is left unchanged and the step ends right after "Go to Episode"
 • SideStory navigation can target the EX or S stage page; with neither ticked it goes to the normal stage page
 • When a SideStory stage is still locked, SideStory navigation spends an event unlock crystal automatically; without one the navigation fails
 • Annihilation navigation must be followed by an annihilation battle step that does not use multi-job mode; the stage is detected automatically, and without such a battle step the navigation fails</system:String>

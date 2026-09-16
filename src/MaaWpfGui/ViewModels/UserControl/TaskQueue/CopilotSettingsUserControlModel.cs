@@ -23,6 +23,7 @@ using MaaWpfGui.Models;
 using MaaWpfGui.Models.AsstTasks;
 using MaaWpfGui.ViewModels.Items;
 using MaaWpfGui.ViewModels.UI;
+using Serilog;
 using Stylet;
 using static MaaWpfGui.Main.AsstProxy;
 
@@ -37,6 +38,8 @@ namespace MaaWpfGui.ViewModels.UserControl.TaskQueue;
 /// </summary>
 public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSettingsUserControlModel.ISerialize
 {
+    private static readonly ILogger _logger = Log.ForContext<CopilotSettingsUserControlModel>();
+
     static CopilotSettingsUserControlModel()
     {
         Instance = new();
@@ -59,6 +62,9 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
                 battle.Jobs = [.. AdvancedItems.Select(i => i.Model)];
             }
         };
+
+        // 导航下拉框的初始内容 = 全部目标（之后随输入实时过滤）
+        RefreshNavFilteredOptions();
     }
 
     private bool _isRefreshing;
@@ -203,8 +209,9 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     private string _navSearchText = string.Empty;
 
     /// <summary>
-    /// Gets or sets 选择器输入框里的搜索词。下拉框做成了可搜索的（和"自动肉鸽 · 开局干员"用的是同一个
-    /// MakeComboBoxSearchable），打字即过滤；输入关键字后不点下拉项、直接点"添加"时也按这个文本找目标。
+    /// Gets or sets 搜索框里的文本（显示用；"添加"按钮和回车也按它找目标）。
+    /// 它和下拉列表的过滤是分开的：选好目标、或手动展开列表时会清掉过滤回到完整列表，
+    /// 但框里的文字保持不动（和 MAA 原本那套可搜索下拉框一致）。
     /// </summary>
     public string NavSearchText
     {
@@ -212,17 +219,104 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         set => SetAndNotify(ref _navSearchText, value);
     }
 
+    /// <summary>下拉列表当前按什么过滤；空 = 显示全部目标。</summary>
+    private string _navFilterKeyword = string.Empty;
+
+    /// <summary>
+    /// Gets 下拉框实际列出来的目标（内容随 <see cref="ApplyNavFilter"/> / <see cref="ClearNavFilter"/> 变化）：
+    /// 过滤词为空时是全部，否则只留关键字匹配到的那几个（包含匹配、忽略空格，所以"巴别塔"能搜到"BB 巴别塔"）。
+    /// 用 ObservableCollection 原地增删、不整体替换 ItemsSource —— 换 ItemsSource 会让 ComboBox 把
+    /// 选中项/输入文本清掉；也不能整体 Clear 再 Add，那会把当前选中项从列表里删掉（表现就是"选不了"）。
+    /// </summary>
+    public ObservableCollection<NavChapterOption> NavFilteredOptions { get; } = [];
+
+    /// <summary>
+    /// 打字时调用：按输入过滤下拉列表（不展开也能边打边出结果）。
+    /// </summary>
+    /// <param name="keyword">输入的关键字。</param>
+    public void ApplyNavFilter(string? keyword)
+    {
+        var text = keyword?.Trim() ?? string.Empty;
+        if (string.Equals(_navFilterKeyword, text, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _navFilterKeyword = text;
+        RefreshNavFilteredOptions();
+    }
+
+    /// <summary>
+    /// 选好一个目标、或者手动展开下拉列表时调用：清掉过滤，回到完整列表
+    /// （不然下次展开只剩刚选的那一个）。
+    /// </summary>
+    public void ClearNavFilter() => ApplyNavFilter(string.Empty);
+
+    /// <summary>
+    /// 按当前过滤词重算下拉框内容（空 = 全部目标）：差量更新，只增删必要的项。
+    /// </summary>
+    private void RefreshNavFilteredOptions()
+    {
+        var wanted = string.IsNullOrEmpty(_navFilterKeyword)
+            ? NavChapterOptions
+            : FindNavMatches(_navFilterKeyword).ToList();
+
+        if (wanted.Count == NavFilteredOptions.Count && wanted.SequenceEqual(NavFilteredOptions))
+        {
+            return;
+        }
+
+        foreach (var stale in NavFilteredOptions.Where(option => !wanted.Contains(option)).ToList())
+        {
+            NavFilteredOptions.Remove(stale);
+        }
+
+        for (var i = 0; i < wanted.Count; i++)
+        {
+            var existing = NavFilteredOptions.IndexOf(wanted[i]);
+            if (existing < 0)
+            {
+                NavFilteredOptions.Insert(i, wanted[i]);
+            }
+            else if (existing != i)
+            {
+                NavFilteredOptions.Move(existing, i);
+            }
+        }
+
+        while (NavFilteredOptions.Count > wanted.Count)
+        {
+            NavFilteredOptions.RemoveAt(NavFilteredOptions.Count - 1);
+        }
+
+        _logger.Information("[NavSearch] 过滤「{Keyword}」→ 下拉列出 {Count} 个", _navFilterKeyword, wanted.Count);
+    }
+
+    /// <summary>
+    /// 按关键字找导航目标（可能 0 个 / 1 个 / 多个），给"添加"按钮和搜索框回车用。
+    /// </summary>
+    /// <param name="keyword">搜索词。</param>
+    /// <returns>匹配到的目标。</returns>
+    public IReadOnlyList<NavChapterOption> FindNavMatches(string? keyword)
+    {
+        var text = keyword?.Trim();
+        return string.IsNullOrEmpty(text)
+            ? []
+            : NavChapterOptions.Where(option => MatchesNavKeyword(option, text)).ToList();
+    }
+
     private const string NavDifficultyNormal = "Normal";
     private const string NavDifficultyHard = "Hard";
     private const string NavModeEX = "EX";
     private const string NavModeS = "S";
 
-    private string _navDifficulty = NavDifficultyNormal;
+    private string? _navDifficulty;
 
     /// <summary>
-    /// Gets or sets 选中的难度（只对主线 10~14 章有效）："Normal" = 标准、"Hard" = 磨难。
+    /// Gets or sets 选中的难度（只对主线 10~14 章有效）："Normal" = 标准、"Hard" = 磨难；
+    /// 两个都不勾选时为 null = 不切难度（点完「前往章节」这一步就结束）。
     /// </summary>
-    public string NavDifficulty
+    public string? NavDifficulty
     {
         get => _navDifficulty;
         set
@@ -286,22 +380,27 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     public bool ShowNavMode => SelectedNavOption?.HasStageMode == true;
 
     /// <summary>
-    /// Gets or sets a value indicating whether 选的是「标准」（默认）。
+    /// Gets or sets a value indicating whether 选的是「标准」（和「磨难」互斥；两个都不勾 = 不切难度）。
     /// </summary>
     public bool NavDifficultyIsNormal
     {
-        get => !NavDifficultyIsHard;
+        get => string.Equals(_navDifficulty, NavDifficultyNormal, StringComparison.OrdinalIgnoreCase);
         set
         {
             if (value)
             {
                 NavDifficulty = NavDifficultyNormal;
             }
+            else if (string.Equals(_navDifficulty, NavDifficultyNormal, StringComparison.OrdinalIgnoreCase))
+            {
+                // 取消勾选「标准」→ 两个都不勾（不切难度）；勾着「磨难」时取消「标准」不动「磨难」
+                NavDifficulty = null;
+            }
         }
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether 选的是「磨难」。
+    /// Gets or sets a value indicating whether 选的是「磨难」（和「标准」互斥；两个都不勾 = 不切难度）。
     /// </summary>
     public bool NavDifficultyIsHard
     {
@@ -311,6 +410,10 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
             if (value)
             {
                 NavDifficulty = NavDifficultyHard;
+            }
+            else if (string.Equals(_navDifficulty, NavDifficultyHard, StringComparison.OrdinalIgnoreCase))
+            {
+                NavDifficulty = null;
             }
         }
     }
@@ -365,7 +468,9 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         var option = SelectedNavOption ?? ResolveNavOption(NavSearchText);
         if (option is null)
         {
+            // 没选到目标：除了状态栏，也写一行日志（不然点了"添加"像是没反应）
             StatusMessage = LocalizationHelper.GetString("CopilotNavNeedPick");
+            Instances.TaskQueueViewModel.AddLog(StatusMessage, MaaWpfGui.Constants.UiLogColor.Error);
             return;
         }
 
@@ -392,6 +497,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         NavSearchText = string.Empty;
         NavModeIsEX = false;
         NavModeIsS = false;
+        NavDifficulty = null;
         StatusMessage = string.Empty;
     }
 
@@ -418,14 +524,35 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     }
 
     /// <summary>
-    /// 关键字能不能匹配这个导航目标：显示文本（"CE 龙门币"），或资源关项的完整关卡代号别名（"CE-6"）。
+    /// 关键字能不能匹配这个导航目标：显示文本（"SL 火山旅梦"、"CE 龙门币"），
+    /// 或资源关项的完整关卡代号别名（"CE-6"）。忽略空格的写法也算匹配
+    /// （「火山旅梦」「SL火山旅梦」「火山 旅梦」都能搜到）。
     /// </summary>
     /// <param name="option">导航目标。</param>
     /// <param name="keyword">搜索词。</param>
     /// <returns>匹配则为 true。</returns>
     private static bool MatchesNavKeyword(NavChapterOption option, string keyword)
-        => option.Display.Contains(keyword, StringComparison.CurrentCultureIgnoreCase)
-           || option.SearchAliases.Any(alias => alias.Contains(keyword, StringComparison.CurrentCultureIgnoreCase));
+    {
+        if (option.Display.Contains(keyword, StringComparison.CurrentCultureIgnoreCase)
+            || option.SearchAliases.Any(alias => alias.Contains(keyword, StringComparison.CurrentCultureIgnoreCase)))
+        {
+            return true;
+        }
+
+        var compact = Compact(keyword);
+        return compact.Length > 0
+               && (Compact(option.Display).Contains(compact, StringComparison.CurrentCultureIgnoreCase)
+                   || option.SearchAliases.Any(alias => Compact(alias).Contains(compact, StringComparison.CurrentCultureIgnoreCase)));
+    }
+
+    /// <summary>
+    /// 去掉空格、制表符和拼音隔音符号（输入法打 "ad" 会变成 "a'd"）：用于"忽略这些字符"的搜索
+    /// （"SL 火山旅梦" → "SL火山旅梦"、"a'd" → "ad"）。
+    /// </summary>
+    /// <param name="text">原文本。</param>
+    /// <returns>去掉空白字符和隔音符号的文本。</returns>
+    private static string Compact(string text)
+        => string.Concat(text.Where(ch => !char.IsWhiteSpace(ch) && ch is not ('\'' or '’' or '‘')));
 
     #endregion
 
@@ -2055,7 +2182,14 @@ public class NavChapterOption
     /// </summary>
     /// <returns>用于搜索的文本。</returns>
     public override string ToString()
-        => SearchAliases.Count == 0 ? Display : $"{Display} {string.Join(' ', SearchAliases)}";
+    {
+        var text = SearchAliases.Count == 0 ? Display : $"{Display} {string.Join(' ', SearchAliases)}";
+
+        // 再附一份去掉空格的写法：这样带代号搜（"SL"）、按名字搜（"火山旅梦"）、
+        // 连在一起写（"SL火山旅梦"）都能命中；显示仍然只用 Display。
+        var compact = string.Concat(text.Where(ch => !char.IsWhiteSpace(ch)));
+        return compact == text ? text : $"{text} {compact}";
+    }
 }
 
 /// <summary>
