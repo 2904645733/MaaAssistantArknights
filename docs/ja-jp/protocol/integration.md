@@ -474,7 +474,7 @@ Bilibili：`张三`、入力可能：`张三`、`张`、`三`
 <br>
 `mode = 0` の場合、この配列は有効化セットとして扱われ、順序と重複はスケジューリングに影響しません（交代順序はアルゴリズムが自動的に決定します）。`mode = 10000` / `20000` の場合は配列の順序で処理されます。
 <br>
-施設名：`Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training`  
+施設名：`Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training` | `AssistantChange`  
 :::  
 ::: field drones  
 @type string
@@ -762,6 +762,35 @@ OF-1 実行時に使用する編成スロットのインデックス。
    "orundum": false,
    "mining": true,
    "specialaccess": false
+}
+```
+
+</details>
+
+- `SwitchTheme`  
+  ゲームのメイン画面テーマを切り替える
+
+:::: field-group  
+::: field enable  
+@type boolean
+@default true
+@optional
+このタスクを有効にするかどうか。  
+:::  
+::: field themes  
+@type string[]
+@required
+候補テーマ名のリスト。ゲーム内のテーマ一覧に表示される名称と一致させてください。複数指定した場合は実行ごとにランダムに 1 つ選択され、空の配列の場合はスキップします。  
+:::  
+::::
+
+<details>
+<summary>Example</summary>
+
+```json
+{
+   "enable": true,
+   "themes": ["夜间", "银凇"]
 }
 ```
 

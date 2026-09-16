@@ -460,7 +460,7 @@ Yituliu 전송 ID, 기본값 비어 있음. `report_to_yituliu`가 true일 때�
 <br>
 `mode = 0`일 때 이 배열은 활성화 집합으로 취급되며, 순서와 중복 항목은 스케줄링에 영향을 주지 않습니다(교대 순서는 알고리즘이 자동으로 결정). `mode = 10000` / `20000`일 때는 배열 순서대로 처리됩니다.
 <br>
-시설명: `Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training`  
+시설명: `Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training` | `AssistantChange`  
 :::  
 ::: field drones  
 @type string
@@ -748,6 +748,35 @@ OF-1 플레이 시 사용할 편성 슬롯 번호
    "orundum": false,
    "mining": true,
    "specialaccess": false
+}
+```
+
+</details>
+
+- `SwitchTheme`  
+   게임 메인 화면 테마 전환
+
+:::: field-group  
+::: field enable  
+@type boolean
+@default true
+@optional
+본 작업 활성화 여부  
+:::  
+::: field themes  
+@type string[]
+@required
+후보 테마 이름 목록으로, 게임 내 테마 목록에 표시되는 이름과 일치해야 합니다. 여러 개를 입력하면 실행할 때마다 무작위로 하나가 선택되며, 빈 배열이면 작업을 건너뜁니다.  
+:::  
+::::
+
+<details>
+<summary>Example</summary>
+
+```json
+{
+   "enable": true,
+   "themes": ["夜间", "银凇"]
 }
 ```
 

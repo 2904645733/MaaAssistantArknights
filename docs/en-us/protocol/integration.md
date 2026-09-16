@@ -474,7 +474,7 @@ Facilities for shifting. Editing in run-time is not supported.
 <br>
 When `mode = 0`, this array acts as an enabled set; the order and duplicates do not affect scheduling (the shift order is planned automatically by the algorithm). When `mode = 10000` / `20000`, facilities are processed in array order.
 <br>
-Facility name: `Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training`  
+Facility name: `Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training` | `AssistantChange`  
 :::  
 ::: field drones  
 @type string
@@ -762,6 +762,35 @@ Collect monthly card rewards from 5th anniversary.
    "orundum": false,
    "mining": true,
    "specialaccess": false
+}
+```
+
+</details>
+
+- `SwitchTheme`  
+   Switch the game's main interface theme
+
+:::: field-group  
+::: field enable  
+@type boolean
+@default true
+@optional
+Whether to enable this task.  
+:::  
+::: field themes  
+@type string[]
+@required
+List of candidate theme names, matching the names shown in the in-game theme list; with multiple entries, one is picked at random each run; an empty array skips the task.  
+:::  
+::::
+
+<details>
+<summary>Example</summary>
+
+```json
+{
+   "enable": true,
+   "themes": ["夜间", "银凇"]
 }
 ```
 

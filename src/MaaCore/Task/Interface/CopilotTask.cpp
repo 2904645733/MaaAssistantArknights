@@ -33,7 +33,7 @@ asst::CopilotTask::CopilotTask(const AsstCallback& callback, Assistant* inst) :
     m_medicine_task_ptr = std::make_shared<ProcessTask>(callback, inst, TaskType);
     m_medicine_task_ptr->set_tasks({ "BattleStartPre@UseMedicine", "BattleStartPre@BattleQuickFormation" })
         .set_ignore_error(true);
-    m_medicine_task_ptr->register_plugin<MedicineCounterTaskPlugin>()->set_count(999999);
+    m_medicine_task_ptr->register_plugin<MedicineCounterTaskPlugin>()->set_count(999'999);
     m_subtasks.emplace_back(m_medicine_task_ptr);
 
     // 「使用源石」：和理智作战一样，理智不足时用源石补理智（能碎几颗由 set_params 里的 stone 限制 StoneConfirm）

@@ -475,7 +475,7 @@ Tag 等級（大於等於 3）對應的期望招募時限（單位：分鐘）�
 <br>
 `mode = 0` 時該陣列為啟用集合，順序與重複項不參與調度（換班順序由演算法統一安排）；`mode = 10000` / `20000` 時按陣列順序執行。
 <br>
-設施名稱：`Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training`  
+設施名稱：`Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training` | `AssistantChange`  
 :::  
 ::: field drones  
 @type string
@@ -763,6 +763,35 @@ Tag 等級（大於等於 3）對應的期望招募時限（單位：分鐘）�
    "orundum": false,
    "mining": true,
    "specialaccess": false
+}
+```
+
+</details>
+
+- `SwitchTheme`  
+   更換遊戲主介面主題
+
+:::: field-group  
+::: field enable  
+@type boolean
+@default true
+@optional
+是否啟用本任務。  
+:::  
+::: field themes  
+@type string[]
+@required
+候選主題名稱列表，需與遊戲內主題列表中顯示的名稱一致；包含多個時每次執行隨機選擇一個，為空陣列時跳過本任務。  
+:::  
+::::
+
+<details>
+<summary>Example</summary>
+
+```json
+{
+   "enable": true,
+   "themes": ["夜間", "銀淞"]
 }
 ```
 

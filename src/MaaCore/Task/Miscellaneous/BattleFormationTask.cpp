@@ -13,9 +13,9 @@
 #include "Task/ProcessTask.h"
 #include "Utils/Logger.hpp"
 #include "Vision/Matcher.h"
-#include "Vision/Miscellaneous/OperNameAnalyzer.h"
 #include "Vision/Miscellaneous/PipelineAnalyzer.h"
 #include "Vision/MultiMatcher.h"
+#include "Vision/Oper/OperNameAnalyzer.h"
 #include "Vision/RegionOCRer.h"
 
 asst::BattleFormationTask::BattleFormationTask(
@@ -663,7 +663,7 @@ bool asst::BattleFormationTask::select_opers_in_cur_page(const std::vector<OperG
             continue;
         }
 
-        if (oper->requirements.module >= 0 && oper->requirements.module <= 4) {
+        if (oper->requirements.module >= 0 && oper->requirements.module <= 5) {
             ret = ProcessTask(*this, { "BattleQuickFormationModulePage" }).run();
             ret =
                 ret &&

@@ -474,7 +474,7 @@ Tag 等级（大于等于 3）和对应的希望招募时限，单位为分钟�
 <br>
 `mode = 0` 时该数组为启用集合，顺序与重复项不参与调度（换班顺序由算法统一安排）；`mode = 10000` / `20000` 时按数组顺序执行。
 <br>
-设施名：`Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training`  
+设施名：`Mfg` | `Trade` | `Power` | `Control` | `Reception` | `Office` | `Dorm` | `Processing` | `Training` | `AssistantChange`  
 :::  
 ::: field drones  
 @type string
@@ -762,6 +762,35 @@ Tag 等级（大于等于 3）和对应的希望招募时限，单位为分钟�
    "orundum": false,
    "mining": true,
    "specialaccess": false
+}
+```
+
+</details>
+
+- `SwitchTheme`  
+   更换游戏主界面主题
+
+:::: field-group  
+::: field enable  
+@type boolean
+@default true
+@optional
+是否启用本任务。  
+:::  
+::: field themes  
+@type string[]
+@required
+候选主题名称列表，需与游戏内主题列表中显示的名称一致；包含多个时每次运行随机选择一个，为空数组时跳过本任务。  
+:::  
+::::
+
+<details>
+<summary>Example</summary>
+
+```json
+{
+   "enable": true,
+   "themes": ["夜间", "银凇"]
 }
 ```
 
