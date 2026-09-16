@@ -379,6 +379,12 @@ bool asst::StageNavigationTask::_run()
 
 void asst::StageNavigationTask::clear() noexcept
 {
+    // 导航链里每一步都已经有自己的重试（各 ProcessTask 都 set_retry_times(20)，每轮 500ms），
+    // 再让 AbstractTask::run() 把整条 _run() 跑 m_retry_times（默认 20）+ 1 遍纯属浪费：
+    // 一旦某一步真失败，表现就是「卡着好几分钟」才报错（剿灭导航实测每遍 10 秒 × 21 遍 ≈ 3.6 分钟）。
+    // 收紧到只重试 1 次（最多跑 2 遍），失败能很快反馈出来。
+    set_retry_times(1);
+
     m_is_directly = false;
     m_chapter_only = false;
     m_annihilation = false;

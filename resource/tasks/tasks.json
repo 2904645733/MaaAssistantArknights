@@ -1366,24 +1366,33 @@
         "next": ["AnnihilationNavSelectStage", "AnnihilationNavSwipeUp"]
     },
     "AnnihilationNavSelectStage": {
-        "Doc": "战斗任务的「剿灭导航」：在剿灭关卡列表里认出目标关卡名并点击（认到就点，然后去处理剿灭关卡页上的代理/全权委托）。text 故意留空，由核心运行时注入（界面从「导航后面第一个作战任务的作业」里读出的关卡名，见 StageNavigationTask::set_annihilation）",
+        "Doc": "战斗任务的「剿灭导航」：在剿灭关卡列表里认出目标关卡名并点击（认到就点，然后交给 AnnihilationNavPrtsCheck 去处理剿灭关卡页上的代理/全权委托）。text 故意留空，由核心运行时注入（界面从「导航后面第一个作战任务的作业」里读出的关卡名，见 StageNavigationTask::set_annihilation）。postDelay 是等关卡页加载出来再去认代理/全权委托",
         "algorithm": "OcrDetect",
         "text": [],
         "action": "ClickSelf",
         "roi": [721, 22, 529, 693],
-        "next": ["AnnihilationNavClickPrtsAnnihilation", "AnnihilationNavClickPrts"]
+        "postDelay": 2000,
+        "next": ["AnnihilationNavPrtsCheck"]
+    },
+    "AnnihilationNavPrtsCheck": {
+        "Doc": "战斗任务的「剿灭导航」收尾用的容错壳：认到「全权委托已开启」或「代理指挥已开启」就各点掉一次；两个都认不到（开关本来就都是关着的，这是常见情况）也算这一步正常结束。maxTimes 是给自己留的退路 —— 试满 3 次没得点就走 exceededNext，而 exceededNext 为空在 ProcessTask 里等于「正常完成」（见 Task/ProcessTask.cpp 的 to_be_recognized.empty() 分支），所以「本来就是关的」不会被当成失败。之前这里没有退路，会一路失败到把整条导航重跑 20 多遍（每遍 10 秒），表现就是「一直卡着」",
+        "algorithm": "JustReturn",
+        "action": "DoNothing",
+        "maxTimes": 3,
+        "next": ["AnnihilationNavClickPrtsAnnihilation", "AnnihilationNavClickPrts", "#self"],
+        "exceededNext": []
     },
     "AnnihilationNavClickPrtsAnnihilation": {
-        "Doc": "战斗任务的「剿灭导航」：认到「全权委托已开启」的 PRTS 徽章（UsePrts-AnnihilationSuccess.png）就去点 [993,578,44,29] 那一小块把它关掉 —— 徽章本身只是指示灯，点它不生效；用 ClickRect 点这个固定位置（坐标实测）。点完这一步就结束（点「开始行动」是后面作战小任务的事）",
+        "Doc": "战斗任务的「剿灭导航」：认到「全权委托已开启」的 PRTS 徽章（UsePrts-AnnihilationSuccess.png）就去点 [993,578,44,29] 那一小块把它关掉 —— 徽章本身只是指示灯，点它不生效；用 ClickRect 点这个固定位置（坐标实测）。点完接着看看「代理指挥」是不是也开着，没有就直接收工（走 AnnihilationNavPrtsCheck 正常结束）",
         "template": "UsePrts-AnnihilationSuccess.png",
         "action": "ClickRect",
         "specificRect": [993, 578, 44, 29],
         "roi": [938, 527, 156, 133],
         "postDelay": 500,
-        "next": []
+        "next": ["AnnihilationNavClickPrts", "AnnihilationNavPrtsCheck"]
     },
     "AnnihilationNavClickPrts": {
-        "Doc": "战斗任务的「剿灭导航」：认到「代理指挥已开启」就把它关掉。注意 UsePrtsSuccess.png 那个 54x55 的亮方块只是指示灯，点它不生效；能切换开关的是它右边「代理指挥」那串文字，所以用 rectMove 把点击挪到文字上（实测方块在 [1038,565,54,55]、文字在 [1133,574,102,36]，偏移 +95,+9；理智作战的 UsePrts 点的也是这块文字）",
+        "Doc": "战斗任务的「剿灭导航」：认到「代理指挥已开启」就把它关掉。注意 UsePrtsSuccess.png 那个 54x55 的亮方块只是指示灯，点它不生效；能切换开关的是它右边「代理指挥」那串文字，所以用 rectMove 把点击挪到文字上（实测方块在 [1038,565,54,55]、文字在 [1133,574,102,36]，偏移 +95,+9；理智作战的 UsePrts 点的也是这块文字）。点掉就结束本步导航（只点一次，不会因为画面还没刷新而重复点成「又开回来」）",
         "template": "UsePrtsSuccess.png",
         "action": "ClickSelf",
         "roi": [985, 523, 159, 165],
@@ -1392,7 +1401,7 @@
         "next": []
     },
     "AnnihilationNavSwipeUp": {
-        "Doc": "战斗任务的「剿灭导航」：关卡列表里没认出目标关卡名时，在列表区域上滑一段再认一次（最多 10 次）。10 次都没认到就让这一步失败报错，不会静默跳过",
+        "Doc": "战斗任务的「剿灭导航」：关卡列表里没认出目标关卡名时，在列表区域上滑一段再认一次（最多 10 次）。注意：10 次都认不到时走的是 exceededNext，而「exceededNext 为空」在 ProcessTask 里等于正常完成（不是报错、会静默跳过这一步）—— 想让认不到就报错，得把 exceededNext 改成指向一个永远匹配不上的任务，那样会走 RetryFailed 分支真的报错（还没做，先记在这）",
         "baseTask": "SlowlySwipeToTheUp",
         "specificRect": [985, 600, 20, 20],
         "rectMove": [985, 200, 20, 20],
