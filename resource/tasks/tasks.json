@@ -1947,18 +1947,18 @@
         "preDelay": 5000,
         "action": "ClickSelf",
         "roi": [36, 226, 482, 269],
-        "next": ["FightMissionFailedLevelTooLow", "EndOfAction", "OfflineConfirm", "StartUpThemes#next", "StartButton1"],
+        "next": ["EndOfAction", "FightMissionFailedLevelTooLow", "OfflineConfirm", "StartUpThemes#next", "StartButton1"],
         "maxTimes": 3,
         "maxTimesDoc": "这是失败次数的限制，超过此限制会停止任务",
         "exceededNext": ["FightMissionFailedAndStop"],
         "onErrorNext": ["ClickCornerAfterPRTS"]
     },
     "FightMissionFailedLevelTooLow": {
-        "Doc": "「任务失败」点掉之后可能出现的等级过低提示：再点一下，然后继续走失败之后的流程",
-        "algorithm": "OcrDetect",
-        "text": ["等级过低"],
+        "Doc": "「任务失败」点掉之后可能出现的「干员等级过低」提示（PRTS提示横幅，整个画面静止不动）：改用模板图认 —— 那句黄字是风格化字体，OCR 认不稳（历史上 0 次命中）。模板实测：源帧 1.0000、其他帧最高仅 0.27（不会误报）、模拟 1920x1080 缩放流程 0.9973。认到点一下，然后继续走失败之后的流程",
+        "template": "FightMissionFailedLevelTooLow.png",
         "action": "ClickSelf",
-        "roi": [384, 250, 760, 209],
+        "roi": [430, 320, 514, 134],
+        "templThreshold": 0.8,
         "preDelay": 1000,
         "next": ["EndOfAction", "OfflineConfirm", "StartUpThemes#next", "StartButton1"]
     },
@@ -4561,10 +4561,16 @@
         "next": ["BattleStartPre"]
     },
     "BattleStartPre@UseStone": {
-        "doc": "使用源石补理智（能碎几颗由 Copilot 的 stone 参数限制 StoneConfirm 的执行次数）",
+        "doc": "使用源石补理智（能碎几颗由 Copilot 的 stone 参数限制 StoneConfirm 的执行次数）。确认碎石走 Copilot 专用的 BattleStartPre@StoneConfirm，不要用官方 StoneConfirm —— 原因见那条任务的 Doc",
         "template": "UseStone.png",
         "roi": [600, 130, 420, 420],
-        "next": ["StoneConfirm"]
+        "next": ["BattleStartPre@StoneConfirm"]
+    },
+    "BattleStartPre@StoneConfirm": {
+        "Doc": "Copilot 专用碎石确认（官方 StoneConfirm 的派生任务）。碎完石游戏会回到关卡页、必须再点一次「开始行动」才能进编队页，所以确认之后要把候选列表换回 BattleStartPre 那套：认到编队页就直接结束本子链，否则用 BattleStartPre 再点一次开始行动（它 next 为空 = 子链结束），这样才会走到后面的编队/「借助战」子任务。绝不能像官方 StoneConfirm.next 那样接着走 StartButton1 —— 那会把整条子链拖进理智作战的开打流程（StartButton1→StartButton2→PRTS→…），编队与借助战整段被跳过、以空编队开打并任务失败（日志 19:35 / 19:56 / 20:44 三次碎石全是这个下场）；突袭关更糟：StartButton1 的词表里没有「开始突袭」，它根本认不到，19 秒后直接报错、后续步骤全乱（21:50 那次）。碎石次数上限不受影响：calc_time_limit 按 @ 后缀回退匹配，Copilot 里的 set_times_limit(\"StoneConfirm\") 对这个名字一样生效。注意 template 必须显式写：X@Y 这种派生任务不写的话 MAA 会按任务名去找 BattleStartPre@StoneConfirm.png，找不到会让整个资源加载失败（启动直接报「资源损坏」）",
+        "template": "MedicineConfirm.png",
+        "baseTask": "StoneConfirm",
+        "next": ["BattleStartPre@BattleQuickFormation", "BattleStartPre"]
     },
     "BattleStartPre@BattleQuickFormation": {
         "baseTask": "BattleQuickFormation",
@@ -5592,15 +5598,16 @@
         "next": ["Copilot@EndOfAction", "Copilot@EndOfAction-Sandbox", "Copilot@ClickCornerUntilStartButton"]
     },
     "Copilot@WaitUntilEndOfAction": {
+        "Doc": "等战斗结束的主循环（每轮从上往下认，最多 50 轮）。顺序按出现频率排：剧情跳过、结算最常见放前面；任务失败次之；「等级提升」3 小时才出现 1 次，所以放最后。注意它必须排在最后那条「继续等」之前 —— 那条是 JustReturn，永远能匹配，排在它后面的候选永远轮不到",
         "algorithm": "JustReturn",
         "maxTimes": 50,
         "exceededNext": ["Copilot@EndOfAction"],
         "next": [
-            "Copilot@CheckLevelUp",
             "Copilot@SkipThePreBattlePlot",
             "Copilot@EndOfAction",
             "Copilot@EndOfAction-Sandbox",
             "Copilot@FightMissionFailed",
+            "Copilot@CheckLevelUp",
             "Copilot@WaitUntilEndOfAction"
         ]
     },
@@ -5609,11 +5616,11 @@
         "maxTimes": 50,
         "exceededNext": ["Copilot@EndOfAction-Bypass"],
         "next": [
-            "Copilot@CheckLevelUp",
             "Copilot@SkipThePreBattlePlot",
             "Copilot@EndOfAction-Bypass",
             "Copilot@EndOfAction-Sandbox",
             "Copilot@FightMissionFailed-Bypass",
+            "Copilot@CheckLevelUp",
             "Copilot@WaitUntilEndOfAction-Bypass"
         ]
     },
@@ -5637,18 +5644,20 @@
         ]
     },
     "Copilot@FightMissionFailed": {
+        "Doc": "点掉「任务失败」之后的候选（每轮从上往下认）。先认结算画面：结算认不到时自然会落到「等级过低」（那个弹窗会完全挡住结算，两者不会同时认到）；「等级过低」点掉后会重新去认结算",
         "exceededNext": [],
         "onErrorNext": [],
-        "next": ["Copilot@FightMissionFailedLevelTooLow", "Copilot@EndOfAction", "Copilot@EndOfAction-Sandbox"]
+        "next": ["Copilot@EndOfAction", "Copilot@FightMissionFailedLevelTooLow", "Copilot@EndOfAction-Sandbox"]
     },
     "Copilot@FightMissionFailedLevelTooLow": {
+        "template": "FightMissionFailedLevelTooLow.png",
         "exceededNext": [],
         "onErrorNext": [],
         "next": ["Copilot@EndOfAction", "Copilot@EndOfAction-Sandbox"]
     },
     "Copilot@FightMissionFailed-Bypass": {
         "baseTask": "Copilot@FightMissionFailed",
-        "next": ["Copilot@FightMissionFailedLevelTooLow", "Copilot@EndOfAction-Bypass", "Copilot@EndOfAction-Sandbox"]
+        "next": ["Copilot@EndOfAction-Bypass", "Copilot@FightMissionFailedLevelTooLow", "Copilot@EndOfAction-Sandbox"]
     },
     "Copilot@StageDrops-Stars-3": {
         "Doc": "如果没有三星就终止",
