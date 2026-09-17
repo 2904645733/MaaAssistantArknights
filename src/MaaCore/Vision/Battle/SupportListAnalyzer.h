@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "Common/AsstBattleDef.h"
 #include "Vision/Matcher.h"
 #include "Vision/MultiMatcher.h"
@@ -20,6 +22,10 @@ public:
     /// 识别 <c>m_image</c> 中显示的助战列表页。
     /// </summary>
     /// <param name="role">当前助战列表所选择的职业，仅用于对干员名进行消歧义以区分不同升变形态下的阿米娅。</param>
+    /// <param name="enough">
+    /// 可选判据。每识别出一名助战干员就调用一次，返回 <c>true</c> 表示"已经够了"，立即停止识别剩余栏位
+    /// （已识别的结果照样放在 <c>m_result</c> 里）。用于避免"已经找到目标、还要把整页干员全部识别一遍"。
+    /// </param>
     /// <returns>
     /// 若完整识别到至少一名助战干员，则返回 <c>true</c>，反之则返回 <c>false</c>。
     /// </returns>
@@ -28,7 +34,7 @@ public:
     /// 对每位助战干员，将依次识别其名称、精英阶段、等级与潜能；若遇到识别失败的项目，则跳过当前助战干员。
     /// 此外，还会判断与助战干员提供者之间的好友关系。
     /// </remarks>
-    bool analyze(battle::Role role);
+    bool analyze(battle::Role role, const std::function<bool(const std::vector<SupportUnit>&)>& enough = nullptr);
 
     /// <summary>
     /// 将 <c>new_image</c> 从右方拼接到 <c>m_image</c>。

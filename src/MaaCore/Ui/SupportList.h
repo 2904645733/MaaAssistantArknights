@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "Common/AsstBattleDef.h"
 #include "Common/AsstMsg.h"
 #include "InstHelper.h"
@@ -32,10 +34,18 @@ public:
     /// <summary>
     /// 从左往右依次获取助战列表页截图并以此更新助战列表信息记录。
     /// </summary>
+    /// <param name="enough">
+    /// 可选判据，含义与 <c>SupportListAnalyzer::analyze</c> 的同名参数一致：每识别出一名助战干员就询问一次，
+    /// 返回 <c>true</c> 表示已经够了。
+    /// </param>
     /// <returns>
     /// 若操作成功，则返回 <c>true</c>，反之则返回 <c>false</c>。
     /// </returns>
-    bool update();
+    /// <remarks>
+    /// 传了 <paramref name="enough"/> 且当前确实在列表头时，先只识别当前这一屏：一旦够了就直接返回
+    /// （不翻页、也不用回滑），用于"要找的干员就在眼前"的常见情况；否则按原来的方式完整扫描。
+    /// </remarks>
+    bool update(const std::function<bool(const std::vector<SupportUnit>&)>& enough = nullptr);
 
     /// <summary>
     /// 选择助战干员以展开其详情界面。

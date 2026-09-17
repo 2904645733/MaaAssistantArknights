@@ -7,7 +7,9 @@
 #include "Vision/Miscellaneous/PixelAnalyzer.h"
 #include "Vision/RegionOCRer.h"
 
-bool asst::SupportListAnalyzer::analyze(const battle::Role role)
+bool asst::SupportListAnalyzer::analyze(
+    const battle::Role role,
+    const std::function<bool(const std::vector<SupportUnit>&)>& enough)
 {
     LogTraceFunction;
 
@@ -207,6 +209,14 @@ bool asst::SupportListAnalyzer::analyze(const battle::Role role)
                 support_unit.potential,
                 support_unit.module_enabled ? "enabled" : "disabled"));
         results.emplace_back(std::move(support_unit));
+
+        // 命中即停：调用方已经拿到需要的干员，剩下的栏位不必再识别（每名干员约 0.3 秒）。
+        // 已识别的部分照常返回，未识别的栏位保持"未识别"状态，由调用方决定要不要补扫。
+        if (enough != nullptr && enough(results)) {
+            LogInfo << __FUNCTION__ << "| Enough support units recognised; stop analysing the rest";
+            m_result = std::move(results);
+            return true;
+        }
     }
 
 #ifdef ASST_DEBUG

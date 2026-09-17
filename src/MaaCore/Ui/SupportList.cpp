@@ -52,7 +52,7 @@ bool asst::SupportList::select_role(const Role role)
     return false;
 }
 
-bool asst::SupportList::update()
+bool asst::SupportList::update(const std::function<bool(const std::vector<SupportUnit>&)>& enough)
 {
     LogTraceFunction;
 
@@ -71,7 +71,23 @@ bool asst::SupportList::update()
         }
     }
 
-    move_to_list_head();
+    // 快路径：调用方给了"够了"的判据、且当前确实在列表头（刚进助战列表就是这种情况）时，
+    // 先只识别当前这一屏 —— 一旦命中就直接返回，不翻页、也不用再回滑。
+    // 找第一个助战干员时能省掉两次滑动，以及后面几个栏位的识别（每名干员约 0.3 秒）。
+    if (enough != nullptr && m_view_begin == 0) {
+        SupportListAnalyzer quick_analyzer(ctrler()->get_image());
+        if (quick_analyzer.analyze(m_selected_role, enough)) {
+            m_list = quick_analyzer.get_result();
+            print_support_list();
+            update_view();
+            return true;
+        }
+    }
+
+    // 当前视野里没找到 → 按原来的方式完整扫描（此时才需要先确保视图在列表头）
+    if (m_view_begin != 0) {
+        move_to_list_head();
+    }
 
     SupportListAnalyzer analyzer(ctrler()->get_image());
 
@@ -87,7 +103,7 @@ bool asst::SupportList::update()
         }
     }
 
-    if (!analyzer.analyze(m_selected_role)) {
+    if (!analyzer.analyze(m_selected_role, enough)) {
         return false;
     }
     m_list = analyzer.get_result();
