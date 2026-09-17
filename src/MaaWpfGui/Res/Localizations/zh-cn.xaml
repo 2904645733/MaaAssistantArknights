@@ -1367,7 +1367,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="AutoSquad">自动编队</system:String>
     <system:String x:Key="AutoSquadTip">自动编队可能无法识别带有 ｢特别关注｣ 标记的{key=Operator}</system:String>
     <system:String x:Key="SupportUnitUsage">借助战</system:String>
-    <system:String x:Key="SupportUnitUsage.Tip">缺一个还能用用，缺两个以上还是换份作业吧；选「只借首位6星」则不做自动编队（队伍保持游戏里现在的样子），只把作业里第一个 6 星干员借来当助战（作业里没有 6 星就退回借第一位）。</system:String>
+    <system:String x:Key="SupportUnitUsage.Tip">缺一个还能用用，缺两个以上还是换份作业吧；选「只借首位6星」则不做自动编队（不会点游戏里的「快捷编队」、也不会补干员）：勾了「{key=UseFormation}」就先切到你选的那个编队，然后直接去借作业里第一个 6 星干员当助战（作业里没有 6 星就退回借第一位）。</system:String>
     <system:String x:Key="SupportUnitUsage.None">不借用</system:String>
     <system:String x:Key="SupportUnitUsage.WhenNeeded">补漏</system:String>
     <system:String x:Key="SupportUnitUsage.Random">随机</system:String>

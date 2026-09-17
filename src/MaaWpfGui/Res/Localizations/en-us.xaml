@@ -1368,7 +1368,7 @@ For now it only supports the "Main Theme / Story Collection / SideStory" tabs of
     <system:String x:Key="AutoSquad">Auto Squad</system:String>
     <system:String x:Key="AutoSquadTip">｢Favourite｣ marked {key=Operator}s may not be recognized</system:String>
     <system:String x:Key="SupportUnitUsage">Use Support Unit</system:String>
-    <system:String x:Key="SupportUnitUsage.Tip">Missing one operator is manageable, but if two or more are missing, consider switching to a different job. With "First 6-star Only" no auto-squad is built (the in-game squad stays as it is) and only the first 6-star operator listed in the job is borrowed (if the job has no 6-star operator, the very first one is borrowed instead).</system:String>
+    <system:String x:Key="SupportUnitUsage.Tip">Missing one operator is manageable, but if two or more are missing, consider switching to a different job. With "First 6-star Only" no auto-squad is built (MAA never opens the in-game quick-formation page and never adds operators): if "{key=UseFormation}" is checked it first switches to the formation you picked, then borrows the first 6-star operator listed in the job (if the job has no 6-star operator, the very first one is borrowed instead).</system:String>
     <system:String x:Key="SupportUnitUsage.None">Never</system:String>
     <system:String x:Key="SupportUnitUsage.WhenNeeded">When Needed</system:String>
     <system:String x:Key="SupportUnitUsage.Random">Random</system:String>

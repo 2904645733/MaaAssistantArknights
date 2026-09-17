@@ -57,8 +57,15 @@ bool asst::BattleFormationTask::_run()
         return true; // 编队不可用，直接返回，常见于TR关卡
     }
 
-    // 「只借首位6星」：不自动编队（队伍保持游戏里现在的样子），只把作业里第一个 6 星干员借来当助战
+    // 「只借首位6星」：先按「使用编队」切到指定编队（设了才切，和正常流程用同一步），
+    // 然后不解析作业编队、不点「快捷编队」、不补干员、不清空队伍，直接去借作业里第一个 6 星干员当助战
+    // —— 队伍 = 你在游戏里预设的那套编队 + 借来的这一个；没勾「使用编队」时就保持当前队伍
     if (m_support_unit_usage == SupportUnitUsage::OnlyFirst) {
+        if (m_select_formation_index > 0 && !select_formation(m_select_formation_index, img)) {
+            Log.error(__FUNCTION__, "| Cannot select the designated formation", m_select_formation_index);
+            return false;
+        }
+
         return borrow_first_required_support_unit();
     }
 
@@ -1106,41 +1113,62 @@ std::optional<std::string> asst::BattleFormationTask::add_support_unit_from_supp
 
     using SupportUnit = battle::SupportUnit;
 
-    support_list.update();
-    const std::vector<SupportUnit> support_units = support_list.get_list();
+    const auto is_usable = [friendship](const SupportUnit& support_unit, const RequiredOper& required_oper) {
+        return support_unit.name == battle::canonical_oper_name(required_oper.role, required_oper.name) &&
+               (support_unit.elite > required_oper.elite ||
+                (support_unit.elite == required_oper.elite && support_unit.level >= required_oper.level)) &&
+               support_unit.potential >= required_oper.potential &&
+               (required_oper.module == OperModule::Unspecified || required_oper.module == OperModule::Original ||
+                support_unit.module_enabled) &&
+               static_cast<int>(support_unit.friendship) >= static_cast<int>(friendship);
+    };
 
-    if (required_opers.empty()) {
-        auto it = std::ranges::find_if(support_units, [friendship](const SupportUnit& support_unit) {
-            return static_cast<int>(support_unit.friendship) >= static_cast<int>(friendship);
+    // 「够了」判据：列表里已经出现某个需求的合格候选就够了 —— 技能等级/模组要展开详情才知道能不能用，
+    // 所以这只是"还要不要继续往下识别"的判据，不影响最终挑谁，也不影响点开之后的检查。
+    const auto enough = [&](const std::vector<SupportUnit>& support_units) {
+        if (required_opers.empty()) {
+            return std::ranges::any_of(support_units, [friendship](const SupportUnit& support_unit) {
+                return static_cast<int>(support_unit.friendship) >= static_cast<int>(friendship);
+            });
+        }
+
+        return std::ranges::any_of(support_units, [&](const SupportUnit& support_unit) {
+            return std::ranges::any_of(required_opers, [&](const RequiredOper& required_oper) {
+                return is_usable(support_unit, required_oper);
+            });
         });
-        if (it == support_units.end()) {
-            return std::nullopt;
+    };
+
+    const auto try_pick = [&](const std::vector<SupportUnit>& support_units) -> std::optional<std::string> {
+        if (required_opers.empty()) { // 随机模式
+            auto it = std::ranges::find_if(support_units, [friendship](const SupportUnit& support_unit) {
+                return static_cast<int>(support_unit.friendship) >= static_cast<int>(friendship);
+            });
+            if (it == support_units.end()) {
+                return std::nullopt;
+            }
+
+            const size_t support_unit_index = std::distance(support_units.begin(), it);
+            if (!support_list.select_support_unit(support_unit_index)) {
+                return std::nullopt;
+            }
+
+            if (!support_list.confirm_to_use_support_unit()) {
+                support_list.leave_support_unit_detail_panel();
+                return std::nullopt;
+            }
+
+            return it->name;
         }
 
-        const size_t support_unit_index = std::distance(support_units.begin(), it);
-        if (!support_list.select_support_unit(support_unit_index)) {
-            return std::nullopt;
-        }
+        for (const RequiredOper& required_oper : required_opers) {
+            auto it = std::ranges::find_if(support_units, [&](const SupportUnit& support_unit) {
+                return is_usable(support_unit, required_oper);
+            });
+            if (it == support_units.end()) {
+                continue;
+            }
 
-        if (!support_list.confirm_to_use_support_unit()) {
-            support_list.leave_support_unit_detail_panel();
-            return std::nullopt;
-        }
-
-        return it->name;
-    }
-
-    for (const RequiredOper& required_oper : required_opers) {
-        auto it = std::ranges::find_if(support_units, [friendship, &required_oper](const SupportUnit& support_unit) {
-            return support_unit.name == battle::canonical_oper_name(required_oper.role, required_oper.name) &&
-                   (support_unit.elite > required_oper.elite ||
-                    (support_unit.elite == required_oper.elite && support_unit.level >= required_oper.level)) &&
-                   support_unit.potential >= required_oper.potential &&
-                   (required_oper.module == OperModule::Unspecified || required_oper.module == OperModule::Original ||
-                    support_unit.module_enabled) &&
-                   static_cast<int>(support_unit.friendship) >= static_cast<int>(friendship);
-        });
-        if (it != support_units.end()) {
             const size_t support_unit_index = std::distance(support_units.begin(), it);
             const SupportUnit& support_unit = *it;
             if (!support_list.select_support_unit(support_unit_index)) {
@@ -1163,7 +1191,20 @@ std::optional<std::string> asst::BattleFormationTask::add_support_unit_from_supp
 
             return it->name;
         }
+
+        return std::nullopt;
+    };
+
+    // 快路径：先只识别当前视野，命中就直接挑 —— 要找的干员就在眼前时，一次滑动都不用做。
+    support_list.update(enough);
+    const std::vector<SupportUnit> first_view = support_list.get_list();
+    if (auto opt = try_pick(first_view)) {
+        return opt;
     }
 
-    return std::nullopt;
+    // 快路径没成（当前视野里没有候选，或者候选点开之后技能/模组不满足）→ 完整扫描一遍再来一次。
+    // 此时行为与改动前一致，只是当前视野的栏位会被多识别一次（有候选但不可用的情况才会走到这里）。
+    support_list.update();
+    const std::vector<SupportUnit> full_list = support_list.get_list();
+    return try_pick(full_list);
 }
