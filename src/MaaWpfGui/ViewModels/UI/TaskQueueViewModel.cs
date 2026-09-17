@@ -712,11 +712,21 @@ public class TaskQueueViewModel : Screen
         ToastNotification.ShowDirect(message);
         if (SettingsViewModel.ExternalNotificationSettings.ExternalNotificationSendWhenStalled)
         {
-            var lastLogs = LogItemViewModels
-                .TakeLast(5)
-                .Aggregate(string.Empty, (current, logItem) => current + $"[{logItem.Time}][{logItem.Color}]{logItem.Content}\n");
-            ExternalNotificationService.Send(message, lastLogs);
+            ExternalNotificationService.Send(message, BuildRecentLogsText(5));
         }
+    }
+
+    /// <summary>
+    /// 取最近几条界面日志拼成一段文本，用作外部通知的正文。
+    /// 出错/卡住时带上现场，否则邮件里只有"任务出错: 自动战斗"一句，看不出是哪一关、哪一步出的问题。
+    /// </summary>
+    /// <param name="count">要取的日志条数。</param>
+    /// <returns>拼好的文本，每条一行。</returns>
+    public string BuildRecentLogsText(int count)
+    {
+        return LogItemViewModels
+            .TakeLast(count)
+            .Aggregate(string.Empty, (current, logItem) => current + $"[{logItem.Time}][{logItem.Color}]{logItem.Content}\n");
     }
 
     protected override void OnInitialActivate()

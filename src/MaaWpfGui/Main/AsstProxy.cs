@@ -1332,15 +1332,21 @@ public class AsstProxy
                     Instances.TaskQueueViewModel.AddLog(log, UiLogColor.Error, updateCardImage: true, fetchLatestImage: true, useCardImageAsToolTip: true);
 
                     ToastNotification.ShowDirect(log);
-                    if (SettingsViewModel.ExternalNotificationSettings.ExternalNotificationSendWhenError)
-                    {
-                        ExternalNotificationService.Send(log, log);
-                    }
 
                     // 战斗任务（队列）：导航 / 作战 / 章尾剧情任何一步失败，都写一条说明并停止整条战斗任务
                     // （后面的步骤不再执行；修好后重新开始即可）
-                    if ((taskChain is "Copilot" or "ChapterNavigation" or "Custom")
-                        && CopilotSettingsUserControlModel.HandleTaskFailed(taskId))
+                    // 这里刻意排在发外部通知之前：说明先写进日志，邮件正文才能把它一起带出去
+                    var battleTaskFailed = (taskChain is "Copilot" or "ChapterNavigation" or "Custom")
+                        && CopilotSettingsUserControlModel.HandleTaskFailed(taskId);
+
+                    if (SettingsViewModel.ExternalNotificationSettings.ExternalNotificationSendWhenError)
+                    {
+                        // 正文带上最近 10 条界面日志（含上面那条失败说明）：
+                        // 否则邮件里只有"任务出错: 自动战斗"一句，看不出是第几关、哪一步出的问题
+                        ExternalNotificationService.Send(log, Instances.TaskQueueViewModel.BuildRecentLogsText(10));
+                    }
+
+                    if (battleTaskFailed)
                     {
                         _ = Instances.TaskQueueViewModel.Stop();
                     }
