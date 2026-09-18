@@ -267,7 +267,11 @@
     <system:String x:Key="StartingSquad">最初の分隊</system:String>
     <system:String x:Key="StartingRoles">最初の職業</system:String>
     <system:String x:Key="StartingCoreChar">最初の{key=Operator}</system:String>
-    <system:String x:Key="StartingCoreCharTip">記入がない場合はデフォルトの方針を使用します。</system:String>
+    <system:String x:Key="StartingCoreCharTip">記入がない場合はデフォルトの方針を使用します。3つの位置の職業は同じにできません。</system:String>
+    <system:String x:Key="EnableAdditionalStartingCoreChar">2・3人目の{key=StartingCoreChar}を有効化</system:String>
+    <system:String x:Key="EnableAdditionalStartingCoreCharTip" xml:space="preserve">有効にすると、一般設定で2・3人目の最初のオペレーターを指定でき、募集は位置の順番で行われます。&#10;募集は先頭の数ページのみを検索するため、希望消費の低いオペレーターは見つからないことがあり、その位置はデフォルトの方針に戻ります。&#10;希望消費の高いオペレーターを前に配置することをお勧めします。</system:String>
+    <system:String x:Key="StartingCoreChar2">2人目の{key=StartingCoreChar}</system:String>
+    <system:String x:Key="StartingCoreChar3">3人目の{key=StartingCoreChar}</system:String>
     <system:String x:Key="RoguelikeThemeTipRecommended">←必読推奨</system:String>
     <system:String x:Key="RoguelikeStartingCoreCharNotFound">この{key=Operator}がbattle_dataにありません。</system:String>
     <system:String x:Key="RoguelikeCoreCharSet">{key=StartingCoreChar}を設定しました: {0}</system:String>
@@ -280,7 +284,10 @@
     <system:String x:Key="Roguelike3FirstFloorFoldartalTip">予見啓示板の名前を入力し、複数は半角セミコロン;で区切ります</system:String>
     <system:String x:Key="RoguelikeCollapseList">崩壊パラダイムリスト</system:String>
     <system:String x:Key="RoguelikeCollapseListTip">英語のセミコロン ｢;｣ で区切る、空白のままにするとデフォルトリストが使用されます。</system:String>
-    <system:String x:Key="RoguelikeUseSupportUnit">｢{key=StartingCoreChar}｣ をサポートから選択</system:String>
+    <system:String x:Key="RoguelikeUseSupportUnitFormat">{0} をサポートから選択</system:String>
+    <system:String x:Key="StartingCoreCharPosition1">1人目の{key=Operator}</system:String>
+    <system:String x:Key="StartingCoreCharPosition2">2人目の{key=Operator}</system:String>
+    <system:String x:Key="StartingCoreCharPosition3">3人目の{key=Operator}</system:String>
     <system:String x:Key="RoguelikeRequireStartingCoreChar">まず ｢{key=StartingCoreChar}｣ を入力してください</system:String>
     <system:String x:Key="RoguelikeUseNonFriendSupport">戦友以外のサポートの使用を許可</system:String>
     <system:String x:Key="RoguelikeDelayAbortUntilCombatComplete">自動ローグ 戦闘終了まえに ｢{key=Stop}｣ を遅らせる</system:String>
@@ -290,6 +297,7 @@
     <!--<system:String x:Key="RoguelikeStartWithSeed">投資のシードを有効にする</system:String>-->
     <system:String x:Key="RoguelikeMonthlySquadAutoIterate">月次小隊自動切替</system:String>
     <system:String x:Key="RoguelikeMonthlySquadCheckComms">月次小隊通信</system:String>
+    <system:String x:Key="RoguelikeMonthlySquadCheckCommsTip" xml:space="preserve">有効にすると、MAAは現在の小隊の通信がすべて解放されているかを確認し、すべて解放されてから次の月次小隊に切り替えます。&#10;報酬の獲得のみが目的の場合は、この設定を無効にすると探索の繰り返しを減らせます。&#10;この設定を無効にしたからといって、MAAが進行中の探索を早めに終了することはありません。</system:String>
     <system:String x:Key="RoguelikeDeepExplorationAutoIterate">多面調査自動切替</system:String>
     <system:String x:Key="DeploymentWithPause">統合戦略/保全駐在でポーズトリックを使用します（ベータ機能のため非推奨です）</system:String>
     <system:String x:Key="DeploymentWithPauseTip">自動戦闘で{key=Operator}を配置する際にゲームを一時停止し、次の{key=Operator}を配置します</system:String>
@@ -567,6 +575,8 @@ MAA は非インストール型のアプリケーションであり、レジス�
     <system:String x:Key="UseWeeklySchedule">週次スケジュールを有効にする</system:String>
     <system:String x:Key="UseWeeklyScheduleTip">ここでの曜日はゲーム内時間に基づいており、現実時間ではありません。例えば、ゲームが4:00にリセットされる場合、3:59は前日としてカウントされます。</system:String>
     <system:String x:Key="FightSkippedWeeklySchedule">週次スケジュールで今日が未選択</system:String>
+    <system:String x:Key="FightSkippedEmptyStagePlan">ステージ計画が空です</system:String>
+    <system:String x:Key="FightSkippedNoOpenStage">計画内に本日開放中のステージがありません</system:String>
     <system:String x:Key="HelpUsWithOverseasServersTip">グローバルサーバーの対応は非常に大変で、皆様の協力が必要です！プログラミングの知識は必要ありません。</system:String>
     <system:String x:Key="OpenEmulatorAfterLaunch">起動時にエミュレータ自動起動</system:String>
     <system:String x:Key="OpenEmulatorAfterLaunchTip">エミュレータは MAA 起動時に一度だけ起動され、｢{key=LinkStart}｣ をクリックするたびに起動されるわけではありません。\nそのような動作が必要な場合は ｢{key=RetryOnDisconnected}｣ を有効にしてください</system:String>
@@ -740,6 +750,8 @@ MAA は非インストール型のアプリケーションであり、レジス�
     <system:String x:Key="ReceiveOrundum">ラッキーウォールから毎日合成玉の報酬を受け取る</system:String>
     <system:String x:Key="ReceiveMining">期間限定の採掘許可で毎日合成玉の報酬を受け取る</system:String>
     <system:String x:Key="ReceiveSpecialAccess">スペシャルアクセス特典を集める</system:String>
+    <system:String x:Key="ReceiveSignInEvent">期間限定スタンプラリー報酬を受け取る</system:String>
+    <system:String x:Key="ReceiveSignInEventTip">横型レイアウトのみ対応。それ以外のレイアウトは非対応で、正常に動作しない可能性があります</system:String>
     <system:String x:Key="DroneUsage">ドローンの使用</system:String>
     <system:String x:Key="UseTray">トレイアイコンを表示</system:String>
     <system:String x:Key="HideTray">トレイアイコンを隠す</system:String>
@@ -769,7 +781,8 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settin
     <system:String x:Key="AllowUseStoneSaveTip">デフォルトでは ｢{key=UseOriginitePrime}｣ は一度だけ有効です。チェックするとその状態が保存され、左クリックで通常どおり切り替えられ、右クリックで選択した場合も一度だけ有効になります</system:String>
     <system:String x:Key="AllowUseStoneSaveWarning">この機能は危険な機能と見なされます。 ｢{key=Confirm}｣ ボタンを押すと、リスクを理解し、受け入れることに同意したと見なされます。</system:String>
     <system:String x:Key="UseAlternateStage">代替ステージを選択可能にする</system:String>
-    <system:String x:Key="UseExpiringMedicine">N時間以内に期限が切れる回復剤を無制限に使用</system:String>
+    <system:String x:Key="UseExpiringMedicine">N日未満で期限が切れる回復剤を無制限に使用</system:String>
+    <system:String x:Key="MedicineExpireDaysTip">ゲーム内で「N日」未満と表示される回復剤のみ使用し、「N日」以上は使用しません。</system:String>
     <system:String x:Key="UseExpireMedicineForActivity">今週中に期限切れとなる正気回復ポーションは、アクティビティ終了の48時間以内に使用してください。</system:String>
     <system:String x:Key="NoActivity">活動なし</system:String>
     <system:String x:Key="HideUnavailableStage">リストに当日開放されないステージを隠す</system:String>
@@ -932,6 +945,9 @@ C:\leidian\LDPlayer9
     <system:String x:Key="PostActionOnceTip" xml:space="preserve">チェックすると、オプションの変更が保存されず、次回 MAA 起動時または {key=LinkStart} 後に復元されます
 このオプションのチェックを解除すると、他のオプションの状態は正常に保存されます
 他のオプションを右クリックすると、このオプションも同時にチェック/チェック解除されます</system:String>
+    <system:String x:Key="SkipPostActionOnError">タスク失敗時はスキップ</system:String>
+    <system:String x:Key="SkipPostActionOnErrorTip">チェックすると、タスクリスト内の1つ以上のタスクが失敗した場合、上記のすべての動作をスキップします。</system:String>
+    <system:String x:Key="PostActionSkippedDueToError">タスクが失敗したため、完了後アクションをスキップしました：{0}</system:String>
     <system:String x:Key="IfNoOtherMaa">他のMAAがない場合</system:String>
     <system:String x:Key="IfNoOtherMaaTip">チェックすると、他の MAA インスタンスが実行されていない場合にのみ、スリープ/休止状態/シャットダウンを実行します</system:String>
     <system:String x:Key="BackToAndroidHome">エミュレータのホーム画面に戻る</system:String>
@@ -979,6 +995,10 @@ C:\leidian\LDPlayer9
     <system:String x:Key="Inventory">在庫</system:String>
     <system:String x:Key="InventoryUpdateTip">在庫データは ｢{key=Toolbox}-{key=DepotRecognition}｣ で更新できます</system:String>
     <system:String x:Key="SpecifiedDropsInventoryUnavailable">タスク ｢{0}｣ では {key=TargetInventory} が有効ですが、利用可能な在庫データがないためスキップされました。｢{key=Toolbox}-{key=DepotRecognition}｣ で在庫を更新してください。</system:String>
+    <system:String x:Key="SpecifiedDropsInventoryEnough">{0} 十分 {1}/{2}</system:String>
+    <system:String x:Key="UserDataUpdateCannotModifyExistingTask">追加済みの ｢{key=UserDataUpdate}｣ タスクのパラメータは変更できません</system:String>
+    <system:String x:Key="UserDataUpdateNothingSelected">｢{key=OperBoxRecognition}｣ と ｢{key=DepotRecognition}｣ のどちらも選択されていません</system:String>
+    <system:String x:Key="UserDataUpdateIntervalNotReached">前回の同期から ｢{0}｣ の実行間隔に達していません</system:String>
     <!--  在庫維持  -->
     <system:String x:Key="DepotUpdateBeforeStart">タスク開始前に在庫データを更新</system:String>
     <system:String x:Key="AddPlan">追加</system:String>
@@ -999,6 +1019,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="DepotPlanSanityInsufficient">#{0}：理性不足（現在 {1}、消費 {2} 未満）、スキップしました</system:String>
     <system:String x:Key="DepotPlanStageNotOpen">#{0}：ステージ ｢{1}｣ は公開されていません</system:String>
     <system:String x:Key="DepotPlanAddTaskFailed">#{0}：タスクの追加に失敗しました</system:String>
+    <system:String x:Key="DepotPlanNoPlan">計画が設定されていません</system:String>
     <system:String x:Key="DepotSkipDuringActivity">イベント期間中はスキップ</system:String>
     <system:String x:Key="DepotSkipDuringResourceCollection">資源收集限時全日開放期間中はスキップ</system:String>
     <system:String x:Key="DepotOnlyFirstInsufficientPlan">在庫不足の最初のプランのみ実行</system:String>
@@ -1471,12 +1492,15 @@ C:\leidian\LDPlayer9
     <system:String x:Key="IdentifyTheMistakes">認識エラー</system:String>
     <system:String x:Key="RecruitRefreshLimitReached">更新回数が上限に達しました</system:String>
     <system:String x:Key="TaskError" xml:space="preserve">タスクエラー: </system:String>
+    <system:String x:Key="TaskErrorSummaryTitle">今回の実行で以下のエラーが発生しました：</system:String>
+    <system:String x:Key="TaskErrorSummaryItem">{0}</system:String>
     <system:String x:Key="OutOfMemoryError">メモリ不足により{0}タスクが停止しました。他のプログラムを閉じるか、MAA を再起動してもう一度お試しください</system:String>
     <system:String x:Key="CombatError">戦闘エラー</system:String>
     <system:String x:Key="StartTask" xml:space="preserve">タスク開始: </system:String>
     <system:String x:Key="CompleteTask" xml:space="preserve">タスク完了: </system:String>
     <system:String x:Key="StartCombat" xml:space="preserve">戦闘開始: </system:String>
     <system:String x:Key="CompleteCombat">戦闘完了</system:String>
+    <system:String x:Key="TaskCompletedWithErrors">すべてのタスクは完了しましたが、エラーが発生しました！\n({0} 後)</system:String>
     <system:String x:Key="AllTasksComplete">すべてのタスクが完了しました！\n({0} 後)</system:String>
     <system:String x:Key="SanityReport">({TimeDiff} 後)、{DateTime} に理性が完全回復します。</system:String>
     <system:String x:Key="AllTaskCompleteContent">({TimeDiff} 後) MAA は、{DateTime} の {Preset} 構成の下にあるすべてのプリセット タスクを完了しました。</system:String>
@@ -1506,7 +1530,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="MedicineUsedTimesWithExpiring" xml:space="preserve">薬: {0},{1}(期限切れ)  </system:String>
     <system:String x:Key="StoneUsedTimes" xml:space="preserve">石: {0}  </system:String>
     <system:String x:Key="MedicineUsed">回復剤を使った</system:String>
-    <system:String x:Key="ExpiringMedicineUsed">{0}時間以内に期限が切れる回復剤を使った</system:String>
+    <system:String x:Key="ExpiringMedicineUsed">{0}日以内に期限が切れる回復剤を使った</system:String>
     <system:String x:Key="UseMedicine.MedicineInfo">回復剤：{0}、在庫：{1}</system:String>
     <system:String x:Key="StoneUsed">源石を使った</system:String>
     <system:String x:Key="ActingCommandError">自動指揮のミスが生じました</system:String>
@@ -1753,6 +1777,8 @@ C:\leidian\LDPlayer9
     <system:String x:Key="Refreshed">現在のタグが更新されました</system:String>
     <system:String x:Key="ContinueRefresh">採用許可がないため、タグを更新しようとしています</system:String>
     <system:String x:Key="NoRecruitmentPermit">採用許可がないため返却されました</system:String>
+    <system:String x:Key="RecruitPermitReserved">求人票の残数は {0} で、保留数以下のため、現在の星3募集をスキップしました</system:String>
+    <system:String x:Key="RecruitPermitCountRecognitionFailed">求人票の残数を認識できませんでした。保留分を消費しないよう現在の星3募集をスキップしました</system:String>
     <system:String x:Key="AutoRecruitSelectStrategy">公開求人でのタグを複数選択する場合の作戦</system:String>
     <system:String x:Key="DefaultNoExtraTags">追加のタグを選択しない</system:String>
     <system:String x:Key="SelectExtraTags">常に 3 つのタグを選択する</system:String>
@@ -1825,7 +1851,7 @@ C:\leidian\LDPlayer9
 4. アークナイツ設定 → ゲーム → UI スケール を 100% に設定してください
 5. アークナイツ設定で マウスカーソルサイズ を小さくし、認識領域の隠れを軽減してください
 6. ゲーム解像度は 16:9 である必要があります。推奨設定：1280x720 または 1920x1080</system:String>
-    <system:String x:Key="UseAttachWindowWarningRecommendation" xml:space="preserve">7. マウス入力方式には SendMsg-WindowPos の使用を推奨します。この方式により、PC クライアントでの認識エラーやフリーズの問題を大幅に軽減できます</system:String>
+    <system:String x:Key="UseAttachWindowWarningRecommendation" xml:space="preserve">7. マウス入力方式には PostMsg-WindowPos の使用を推奨します。この方式により、PC クライアントでの認識エラーやフリーズの問題を大幅に軽減できます</system:String>
     <system:String x:Key="AttachWindowScreencapMethod">スクリーンキャプチャ方式</system:String>
     <system:String x:Key="AttachWindowMouseMethod">マウス入力方式</system:String>
     <system:String x:Key="AttachWindowKeyboardMethod">キーボード入力方式</system:String>
@@ -1836,8 +1862,10 @@ C:\leidian\LDPlayer9
     <system:String x:Key="AttachWindowInputSeize">Seize（フォアグラウンド、マウスを完全に取得）</system:String>
     <system:String x:Key="AttachWindowInputSendMsgDisabled">SendMsg（フルバックグラウンド、アークナイツは実マウス位置のみ参照、無効）</system:String>
     <system:String x:Key="AttachWindowInputPostMsgDisabled">PostMsg（フルバックグラウンド、アークナイツは実マウス位置のみ参照、無効）</system:String>
-    <system:String x:Key="AttachWindowInputSendWithCursor">SendMsg-CursorPos（半バックグラウンド、一時的にマウスを取得）</system:String>
-    <system:String x:Key="AttachWindowInputSendWithWindowPos">SendMsg-WindowPos（推奨、フルバックグラウンド、マウス不要、ウィンドウが動く可能性あり、PrintWindow のみ対応、最小化推奨）</system:String>
+    <system:String x:Key="AttachWindowInputSendWithCursorDisabled">SendMsg-CursorPos（遅延過大、無効）</system:String>
+    <system:String x:Key="AttachWindowInputPostWithCursor">PostMsg-CursorPos（半バックグラウンド、一時的にマウスを取得）</system:String>
+    <system:String x:Key="AttachWindowInputSendWithWindowPosDisabled">SendMsg-WindowPos（遅延過大、無効）</system:String>
+    <system:String x:Key="AttachWindowInputPostWithWindowPos">PostMsg-WindowPos（推奨、フルバックグラウンド、マウス不要、ウィンドウが動く可能性あり、PrintWindow のみ対応、最小化推奨）</system:String>
     <system:String x:Key="AttachWindowInputSendMsg">SendMsg（安定）</system:String>
     <system:String x:Key="AttachWindowInputPostMsg">PostMsg（高効率）</system:String>
     <!--  !AsstProxy  -->
@@ -1885,6 +1913,8 @@ DEBUGディレクトリに保存される画像には数量制限があり、超
     <system:String x:Key="RecruitMaxTimes">1回の実行あたりの求人の最大回数</system:String>
     <system:String x:Key="PreserveTags">指定タグを保留する</system:String>
     <system:String x:Key="AutoSelectLevel3">星3を自動的に確認する</system:String>
+    <system:String x:Key="RecruitLevel3PermitReserve">星3用に求人票を残す</system:String>
+    <system:String x:Key="RecruitLevel3PermitReserveTip">求人票の残数がこの値以下の場合、星3募集をスキップします</system:String>
     <system:String x:Key="AutoSelectLevel4">星4を自動的に確認する</system:String>
     <system:String x:Key="AutoSelectLevel5">星5を自動的に確認する</system:String>
     <system:String x:Key="AutoSelectLevel6">星6を自動的に確認する</system:String>
@@ -2251,7 +2281,7 @@ MAA を複数開くには、新しい MAA を他のフォルダにコピーし�
     <system:String x:Key="Achievement.SnapshotChallenge2.Conditions">平均スクリーンショット時間が 400ms から 800ms の間</system:String>
 
     <system:String x:Key="Achievement.SnapshotChallenge3.Title">スクリーンショットチャレンジ · Normal</system:String>
-    <system:String x:Key="Achievement.SnapshotChallenge3.Description">スクリーンショットを強化してみませんか？</system:String>
+    <system:String x:Key="Achievement.SnapshotChallenge3.Description">エミュレーターのスクリーンショット強化を試してみませんか？</system:String>
     <system:String x:Key="Achievement.SnapshotChallenge3.Conditions">平均スクリーンショット時間が 400ms 未満</system:String>
 
     <system:String x:Key="Achievement.SnapshotChallenge4.Title">スクリーンショットチャレンジ · Fast</system:String>

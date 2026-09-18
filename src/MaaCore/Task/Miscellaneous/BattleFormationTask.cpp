@@ -1114,7 +1114,8 @@ std::optional<std::string> asst::BattleFormationTask::add_support_unit_from_supp
     using SupportUnit = battle::SupportUnit;
 
     const auto is_usable = [friendship](const SupportUnit& support_unit, const RequiredOper& required_oper) {
-        return support_unit.name == battle::canonical_oper_name(required_oper.role, required_oper.name) &&
+        // 依官方 edadc3351 的改动：升变阿米娅的职业后缀已移除，直接比 role + name 即可
+        return support_unit.role == required_oper.role && support_unit.name == required_oper.name &&
                (support_unit.elite > required_oper.elite ||
                 (support_unit.elite == required_oper.elite && support_unit.level >= required_oper.level)) &&
                support_unit.potential >= required_oper.potential &&
