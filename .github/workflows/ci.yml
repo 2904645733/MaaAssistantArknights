@@ -145,6 +145,8 @@ jobs:
       - name: Download MaaFramework
         uses: robinraju/release-downloader@v1
         with:
+          # 这个动作要求必须传 token，不传会报 Input required and not supplied: token
+          token: ${{ secrets.GITHUB_TOKEN }}
           repository: MaaXYZ/MaaFramework
           tag: v5.13.0
           fileName: ${{ matrix.arch == 'arm64' && '*win-aarch64*.zip' || '*win-x86_64*.zip' }}
@@ -290,3 +292,4 @@ jobs:
           files: |
             assets/*
           prerelease: ${{ needs.meta.outputs.prerelease != 'false' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
