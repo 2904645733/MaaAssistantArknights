@@ -30,17 +30,16 @@ asst::CopilotTask::CopilotTask(const AsstCallback& callback, Assistant* inst) :
     start_1_tp->set_tasks({ "BattleStartPre" }).set_retry_times(3).set_ignore_error(true);
     m_subtasks.emplace_back(start_1_tp);
 
+    // 「理智药 / 源石」合成一条候选列表：游戏里理智药用完才轮到源石，两者不会同时出现在弹窗上，
+    // 所以一轮里按「先药后石」试即可，不需要拆成两个子任务。拆开的话前一个子任务（理智药）必须先把
+    // 自己的重试次数耗光（默认 20 轮，每轮约 0.5 秒）才会轮到源石 —— 而理智不足弹窗挡住了「快捷编队」，
+    // 每轮都认不到，于是碎石前白白空转约 11 秒。
+    // 候选列表在 set_params 里按「是否用理智药 / 是否允许碎石」动态拼。
     m_medicine_task_ptr = std::make_shared<ProcessTask>(callback, inst, TaskType);
-    m_medicine_task_ptr->set_tasks({ "BattleStartPre@UseMedicine", "BattleStartPre@BattleQuickFormation" })
+    m_medicine_task_ptr->set_tasks({ "BattleStartPre@UseMedicine", "BattleStartPre@UseStone", "BattleStartPre@BattleQuickFormation" })
         .set_ignore_error(true);
     m_medicine_task_ptr->register_plugin<MedicineCounterTaskPlugin>()->set_count(999'999);
     m_subtasks.emplace_back(m_medicine_task_ptr);
-
-    // 「使用源石」：和理智作战一样，理智不足时用源石补理智（能碎几颗由 set_params 里的 stone 限制 StoneConfirm）
-    m_stone_task_ptr = std::make_shared<ProcessTask>(callback, inst, TaskType);
-    m_stone_task_ptr->set_tasks({ "BattleStartPre@UseStone", "BattleStartPre@BattleQuickFormation" })
-        .set_ignore_error(true);
-    m_subtasks.emplace_back(m_stone_task_ptr);
 
     m_subtasks.emplace_back(m_formation_task_ptr)->set_retry_times(0);
 
@@ -151,12 +150,22 @@ bool asst::CopilotTask::set_params(const json::value& params)
         }
     }
 
-    m_medicine_task_ptr->set_enable(use_sanity_potion);
-
-    // 「使用源石」：stone = 允许吃几颗源石，0 = 不吃（和理智作战的 stone 参数同义）
+    // 「理智药 / 源石」：stone = 允许吃几颗源石，0 = 不吃（和理智作战的 stone 参数同义）
     const int stone = params.get("stone", 0);
-    m_stone_task_ptr->set_enable(stone > 0);
-    m_stone_task_ptr->set_times_limit("StoneConfirm", stone);
+
+    // 有理智药时用理智药，理智药用完自动改用源石（游戏里两者互斥，同一轮里先药后石即可）
+    std::vector<std::string> sanity_tasks;
+    if (use_sanity_potion) {
+        sanity_tasks.emplace_back("BattleStartPre@UseMedicine");
+    }
+    if (stone > 0) {
+        sanity_tasks.emplace_back("BattleStartPre@UseStone");
+        m_medicine_task_ptr->set_times_limit("StoneConfirm", stone);
+    }
+    sanity_tasks.emplace_back("BattleStartPre@BattleQuickFormation");
+    m_medicine_task_ptr->set_tasks(std::move(sanity_tasks));
+    m_medicine_task_ptr->set_enable(use_sanity_potion || stone > 0); // 不吃药也不碎石时整段跳过
+    LogInfo << __FUNCTION__ << "| use_sanity_potion:" << use_sanity_potion << ", stone:" << stone;
 
     // 「只借首位6星」不自动编队，但仍然要靠这个子任务去借助战干员：所以这种情况下没勾"自动编队"也要跑
     m_formation_task_ptr->set_enable(with_formation || support_unit_usage == SupportUnitUsage::OnlyFirst);

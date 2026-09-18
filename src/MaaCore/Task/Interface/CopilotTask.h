@@ -40,8 +40,8 @@ private:
     std::optional<std::filesystem::path> parse_copilot_filename(const std::string& name);
 
     std::shared_ptr<MultiCopilotTaskPlugin> m_multi_copilot_plugin_ptr = nullptr;
+    // 「理智药 / 源石」子任务：候选列表在 set_params 里按设置拼（先药后石），限碎石颗数也设在这上面
     std::shared_ptr<ProcessTask> m_medicine_task_ptr = nullptr;
-    std::shared_ptr<ProcessTask> m_stone_task_ptr = nullptr;
     std::shared_ptr<BattleFormationTask> m_formation_task_ptr = nullptr;
     std::shared_ptr<BattleProcessTask> m_battle_task_ptr = nullptr;
     std::shared_ptr<ProcessTask> m_stop_task_ptr = nullptr;
