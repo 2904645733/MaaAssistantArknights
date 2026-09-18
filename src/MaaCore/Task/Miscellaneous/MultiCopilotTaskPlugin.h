@@ -43,6 +43,7 @@ private:
     std::vector<MultiCopilotConfig> m_copilot_configs;
     int m_index_current = 0; // 当前执行的索引
     std::shared_ptr<BattleProcessTask> m_battle_task_ptr = nullptr;
-    int m_max_retry = 20;
+    int m_max_retry = 20;    // 一次关卡导航内扫全章时的滑动次数上限，不要随便改小，否则扫不到章节左半边的关卡
+    int m_max_nav_retry = 2; // 整段关卡导航失败后重来几遍（原来 20 遍 ≈ 20 分钟，改成 2 遍 ≈ 2 分钟）
 };
 }

@@ -63,7 +63,7 @@ bool asst::MultiCopilotTaskPlugin::_run()
     callback(AsstMsg::SubTaskExtraInfo, info);
 
     bool ret = true;
-    for (int i = 0; i < m_max_retry; ++i) {
+    for (int i = 0; i < m_max_nav_retry; ++i) {
         ret = navigate_to_stage(config.nav_name);
         sleep(Config.get_options().task_delay);
         if (ret) {
@@ -72,6 +72,9 @@ bool asst::MultiCopilotTaskPlugin::_run()
         if (need_exit()) {
             return false;
         }
+    }
+    if (!ret) {
+        Log.info("stage navigation failed after", m_max_nav_retry, "attempts, stage:", config.nav_name);
     }
 
     ProcessTask(*this, { "NotUsePrts" }).set_ignore_error(true).set_retry_times(0).run();
