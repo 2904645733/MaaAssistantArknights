@@ -441,15 +441,14 @@
                                 <controls:TooltipBlock TooltipText="{DynamicResource UseCopilotListTip}" />
                             </StackPanel>
 
-                            <!--  UseSanityPotion  -->
+                            <!--  UseSanityPotion：勾「使用源石」会自动勾上它；取消它会连「使用源石」一起取消  -->
                             <CheckBox
                                 Margin="2.5,5"
                                 Content="{DynamicResource UseSanityPotion}"
                                 IsChecked="{Binding UseSanityPotion}"
-                                IsEnabled="{c:Binding !UseStone}"
                                 Visibility="{c:Binding 'CopilotTabIndex == 0'}" />
 
-                            <!--  UseStone：和理智作战的「使用源石」一样（勾上会连「使用药剂」一起勾上，且这时不能取消）  -->
+                            <!--  UseStone：和理智作战的「使用源石」一样（勾上会连「使用药剂」一起勾上）  -->
                             <StackPanel
                                 Margin="2.5,5"
                                 Orientation="Horizontal"

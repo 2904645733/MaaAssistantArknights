@@ -942,7 +942,7 @@ Right-clicking other options will check/uncheck this option simultaneously</syst
     <!--  FightSettings  -->
     <system:String x:Key="UseSanityPotion">Use Sanity Potion</system:String>
     <system:String x:Key="UseOriginitePrime">Use Originium</system:String>
-    <system:String x:Key="UseStoneTip">Use Originium to restore sanity when it runs out (same as in the fight task). Checking it also checks "Use Sanity Potion", which cannot be unchecked while this is on. No limit on how many are used.</system:String>
+    <system:String x:Key="UseStoneTip">Use Originium to restore sanity when it runs out (same as in the fight task). Checking it also checks "Use Sanity Potion"; unchecking "Use Sanity Potion" will uncheck this too. No limit on how many are used.</system:String>
     <system:String x:Key="PerformBattles">Perform Battles</system:String>
     <system:String x:Key="AssignedMaterial">Material</system:String>
     <system:String x:Key="Quantity">Farm</system:String>

@@ -459,10 +459,10 @@ public partial class CopilotViewModel : Screen
     {
         get => field;
         set {
-            // 勾了「使用源石」时不允许取消「使用药剂」（和理智作战一致）
+            // 游戏里理智药用完才能碎源石，所以「使用药剂」一取消，「使用源石」也跟着取消
             if (!value && UseStone)
             {
-                return;
+                UseStone = false;
             }
 
             SetAndNotify(ref field, value);
@@ -473,7 +473,7 @@ public partial class CopilotViewModel : Screen
 
     /// <summary>
     /// Gets or sets a value indicating whether 理智不足时使用源石（和理智作战的「使用源石」一样）。
-    /// 勾上时会自动勾上「使用药剂」，并且这时不允许取消「使用药剂」（和理智作战一致）；不限制碎几颗。
+    /// 勾上时会自动勾上「使用药剂」；取消「使用药剂」时这一项也跟着取消。不限制碎几颗。
     /// </summary>
     public bool UseStone
     {

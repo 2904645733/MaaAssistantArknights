@@ -941,7 +941,7 @@ C:\leidian\LDPlayer9
     <!--  战斗设置  -->
     <system:String x:Key="UseSanityPotion">使用药剂</system:String>
     <system:String x:Key="UseOriginitePrime">使用源石</system:String>
-    <system:String x:Key="UseStoneTip">理智不足时用源石补理智（和理智作战的「使用源石」一样）；勾上后会一起勾上「使用药剂」，并且这时「使用药剂」不能取消。不限制碎几颗。</system:String>
+    <system:String x:Key="UseStoneTip">理智不足时用源石补理智（和理智作战的「使用源石」一样）；勾上后会一起勾上「使用药剂」，反过来取消「使用药剂」也会取消这一项。不限制碎几颗。</system:String>
     <system:String x:Key="PerformBattles">指定次数</system:String>
     <system:String x:Key="AssignedMaterial">指定材料</system:String>
     <system:String x:Key="Quantity">刷取数量</system:String>
