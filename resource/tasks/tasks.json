@@ -538,19 +538,19 @@
         "exceededNext": ["Stop"]
     },
     "EnterStageModeEX": {
-        "Doc": "base_task：活动内的关卡模式入口——EX 模式。各活动用 xx@EnterStageModeEX 这个「已声明派生任务」机制取同名模板图（注意 @ 后面的整段必须是本任务名，否则派生任务会退化成空任务、动作变成 DoNothing 不点击）；在 roi [797,432,480,285]（右下角模式按钮那一片）里扫，命中就点。preDelay 4000 是等「进入活动」的转场/黑屏加载；认不到会在 C++ 里报错并把这一步判为失败，不会悄悄当成普通关。",
+        "Doc": "base_task：活动内的关卡模式入口——EX 模式。各活动用 xx@EnterStageModeEX 这个「已声明派生任务」机制取同名模板图（注意 @ 后面的整段必须是本任务名，否则派生任务会退化成空任务、动作变成 DoNothing 不点击）；在 roi [797,432,480,285]（右下角模式按钮那一片）里扫，命中就点。preDelay 1000 是等「进入活动」的转场/黑屏加载（原先 4000，实测认出按钮只要 0.06 秒，多等 3 秒纯属白等；如果哪天在很卡的模拟器上出现点了没反应，再往回调大）；认不到会在 C++ 里报错并把这一步判为失败，不会悄悄当成普通关。",
         "template": "empty.png",
         "action": "ClickSelf",
         "roi": [797, 432, 480, 285],
-        "preDelay": 4000,
+        "preDelay": 1000,
         "postDelay": 1000
     },
     "EnterStageModeS": {
-        "Doc": "base_task：活动内的关卡模式入口——S 模式。同 EnterStageModeEX（同一个 roi）。",
+        "Doc": "base_task：活动内的关卡模式入口——S 模式。同 EnterStageModeEX（同一个 roi、同样 1 秒 preDelay）。",
         "template": "empty.png",
         "action": "ClickSelf",
         "roi": [797, 432, 480, 285],
-        "preDelay": 4000,
+        "preDelay": 1000,
         "postDelay": 1000
     },
     "Episode0": {
