@@ -408,6 +408,59 @@ void asst::BattleProcessTask::notify_action(const battle::copilot::Action& actio
     callback(AsstMsg::SubTaskExtraInfo, info);
 }
 
+bool asst::BattleProcessTask::need_early_deployment_update(const cv::Mat& image, const cv::Mat& image_prev)
+{
+    if (image.empty() || image_prev.empty() || image.size() != image_prev.size()) {
+        return false;
+    }
+
+    // 限流：识别一次要 0.3~0.5 秒，认不出还要暂停点开，最短间隔 1 秒
+    const auto now = std::chrono::steady_clock::now();
+    if (now - m_last_deployment_update < std::chrono::milliseconds(1000)) {
+        return false;
+    }
+
+    // 部署栏那一条卡的位置：BattleAvatarReMatch 的 roi 就是它
+    static const Rect bar_roi = Task.get<MatchTaskInfo>("BattleAvatarReMatch")->roi;
+    const cv::Mat cur = make_roi(image, bar_roi);
+    const cv::Mat prev = make_roi(image_prev, bar_roi);
+    if (cur.empty() || prev.empty()) {
+        return false;
+    }
+
+    cv::Mat cur_gray, prev_gray, diff;
+    cv::cvtColor(cur, cur_gray, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(prev, prev_gray, cv::COLOR_BGR2GRAY);
+    cv::absdiff(cur_gray, prev_gray, diff);
+
+    // 冷却中的卡自带每秒跳动的倒计时遮罩，那不是"部署区变了"：先把它们的区域抹掉再统计
+    for (const auto& oper : m_cur_deployment_opers) {
+        if (!oper.cooling) {
+            continue;
+        }
+        const int x = std::max(0, oper.rect.x - bar_roi.x);
+        const int y = std::max(0, oper.rect.y - bar_roi.y);
+        const int w = std::min(oper.rect.width, diff.cols - x);
+        const int h = std::min(oper.rect.height, diff.rows - y);
+        if (w <= 0 || h <= 0) {
+            continue;
+        }
+        diff(cv::Rect(x, y, w, h)).setTo(0);
+    }
+
+    cv::threshold(diff, diff, 25, 255, cv::THRESH_BINARY);
+    const int changed_pixels = cv::countNonZero(diff);
+    // 约半张卡（60x60）的面积明显变了才算真的变了，忽略数字跳动、光效这类小面积变化
+    constexpr int ChangedPixelsThreshold = 1500;
+    if (changed_pixels < ChangedPixelsThreshold) {
+        return false;
+    }
+
+    Log.info("deployment area changed, update opers early, changed pixels:", changed_pixels);
+    m_last_deployment_update = now;
+    return true;
+}
+
 bool asst::BattleProcessTask::wait_condition(const Action& action)
 {
     cv::Mat image, image_prev;
@@ -422,6 +475,11 @@ bool asst::BattleProcessTask::wait_condition(const Action& action)
         do_strategic_action(image);
         image_prev = std::move(image);
         image = ctrler()->get_image();
+        // 部署区一变（例如召唤物随干员上场才出现）就顺手把卡认掉：把"轮到这一步才认卡"的开销
+        // （认不出的卡还要暂停 + 点开 + OCR，约 1~2 秒）挪到等条件期间，免得动作被推后
+        if (need_early_deployment_update(image, image_prev)) {
+            update_deployment(false, image);
+        }
     };
 
     if (action.cost_changes != 0) {
