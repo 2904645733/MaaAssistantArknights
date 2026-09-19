@@ -78,6 +78,15 @@ public class Bootstrapper : Bootstrapper<RootViewModel>
     [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
     private static extern bool FreeLibrary(IntPtr hModule);
 
+    /// <summary>
+    /// 自行发版：自包含（self-contained）部署会把 .NET 运行时一起放进目录，
+    /// 那些运行时 DLL 并不是"未知 DLL"。识别出来，避免正版自包含包启动即被判为 DLL 劫持后退出。
+    /// </summary>
+    private static bool IsSelfContainedDeployment()
+    {
+        return File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "coreclr.dll"));
+    }
+
     private static List<string> UnknownDllDetected()
     {
         try
@@ -593,7 +602,8 @@ public class Bootstrapper : Bootstrapper<RootViewModel>
         }
 
         // Debug 模式下 DLL 是未打包的
-        if (maaEnv != "Debug" && !isBuildOutputFolder)
+        // 自行发版：自包含部署（目录里有 coreclr.dll）里全是 .NET 运行时 DLL，不该按"未知 DLL"处理
+        if (maaEnv != "Debug" && !isBuildOutputFolder && !IsSelfContainedDeployment())
         {
             var unknownDlls = UnknownDllDetected();
             if (unknownDlls.Count > 0)
