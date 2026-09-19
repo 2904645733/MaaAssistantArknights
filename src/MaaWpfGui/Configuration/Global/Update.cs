@@ -44,7 +44,8 @@ public partial class Update : NotifyPropertyChangedWithValue
 
     public long MirrorChyanCdkExpiredTime { get; set; }
 
-    public bool CheckOnStartup { get; set; } = true;
+    // 自行发版：默认不检查更新 —— 本版修改了官方资源文件，一旦自动更新成官方版，新增功能会消失
+    public bool CheckOnStartup { get; set; }
 
     public bool CheckOnSchedule { get; set; }
 
@@ -52,7 +53,8 @@ public partial class Update : NotifyPropertyChangedWithValue
 
     public string ProxyType { get; set; } = "Http";
 
-    public bool AutoDownloadUpdatePackage { get; set; } = true;
+    // 同上：默认不自动下载更新包（想更新的用户可以自己在设置里勾上）
+    public bool AutoDownloadUpdatePackage { get; set; }
 
     public bool AutoInstallUpdatePackage { get; set; }
 
