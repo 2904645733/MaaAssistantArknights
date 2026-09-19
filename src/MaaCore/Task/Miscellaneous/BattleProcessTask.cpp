@@ -414,9 +414,10 @@ bool asst::BattleProcessTask::need_early_deployment_update(const cv::Mat& image,
         return false;
     }
 
-    // 限流：识别一次要 0.3~0.5 秒，认不出还要暂停点开，最短间隔 1 秒
+    // 限流：识别一次约 30 毫秒，但认不出的卡要暂停 + 点开 + OCR（约 1.5 秒）。
+    // 实机日志里冷却动画之类的持续变化能把 1 秒的限流顶满（约每 6 秒一次），放到 3 秒
     const auto now = std::chrono::steady_clock::now();
-    if (now - m_last_deployment_update < std::chrono::milliseconds(1000)) {
+    if (now - m_last_deployment_update < std::chrono::milliseconds(3000)) {
         return false;
     }
 
@@ -433,15 +434,27 @@ bool asst::BattleProcessTask::need_early_deployment_update(const cv::Mat& image,
     cv::cvtColor(prev, prev_gray, cv::COLOR_BGR2GRAY);
     cv::absdiff(cur_gray, prev_gray, diff);
 
-    // 冷却中的卡自带每秒跳动的倒计时遮罩，那不是"部署区变了"：先把它们的区域抹掉再统计
+    // 冷却中的卡自带每秒跳动的倒计时遮罩和冷却进度条，那不是"部署区变了"：先把整张卡的区域抹掉再统计。
+    // oper.rect 是点击范围，比卡片本身窄（头像右半边和左下角的进度条都落在它外面），所以往外扩一圈
     for (const auto& oper : m_cur_deployment_opers) {
         if (!oper.cooling) {
             continue;
         }
-        const int x = std::max(0, oper.rect.x - bar_roi.x);
-        const int y = std::max(0, oper.rect.y - bar_roi.y);
-        const int w = std::min(oper.rect.width, diff.cols - x);
-        const int h = std::min(oper.rect.height, diff.rows - y);
+        constexpr int pad_left = 15;
+        constexpr int pad_right = 40;
+        constexpr int pad_bottom = 15;
+        const Rect card_rect(
+            oper.rect.x - pad_left,
+            oper.rect.y,
+            oper.rect.width + pad_left + pad_right,
+            oper.rect.height + pad_bottom);
+
+        const int raw_x = card_rect.x - bar_roi.x;
+        const int raw_y = card_rect.y - bar_roi.y;
+        const int x = std::max(0, raw_x);
+        const int y = std::max(0, raw_y);
+        const int w = std::min(card_rect.width - (x - raw_x), diff.cols - x);
+        const int h = std::min(card_rect.height - (y - raw_y), diff.rows - y);
         if (w <= 0 || h <= 0) {
             continue;
         }
@@ -450,13 +463,22 @@ bool asst::BattleProcessTask::need_early_deployment_update(const cv::Mat& image,
 
     cv::threshold(diff, diff, 25, 255, cv::THRESH_BINARY);
     const int changed_pixels = cv::countNonZero(diff);
-    // 约半张卡（60x60）的面积明显变了才算真的变了，忽略数字跳动、光效这类小面积变化
+    // 这个阈值不能再提高：统计"真的冒出新卡"（召唤物上场）的日志，最小的一次只有 1588 像素，
+    // 抬到 2000 就会把这类事件漏掉。噪声改用"抹掉冷却卡区域 + 3 秒限流"来压
     constexpr int ChangedPixelsThreshold = 1500;
     if (changed_pixels < ChangedPixelsThreshold) {
         return false;
     }
 
-    Log.info("deployment area changed, update opers early, changed pixels:", changed_pixels);
+    const cv::Rect changed_rect = cv::boundingRect(diff);
+    Log.info(
+        "deployment area changed, update opers early, changed pixels:",
+        changed_pixels,
+        "bbox:",
+        changed_rect.x,
+        changed_rect.y,
+        changed_rect.width,
+        changed_rect.height);
     m_last_deployment_update = now;
     return true;
 }
