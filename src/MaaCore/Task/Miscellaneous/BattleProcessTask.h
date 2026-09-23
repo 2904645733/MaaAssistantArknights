@@ -6,8 +6,6 @@
 #include "Common/AsstTypes.h"
 #include "Config/Miscellaneous/TilePack.h"
 
-#include <chrono>
-
 namespace asst
 {
 class BattleProcessTask : public AbstractTask, public BattleHelper
@@ -40,9 +38,6 @@ protected:
     bool to_group();
     bool do_action(const battle::copilot::Action& action, size_t index);
 
-    // 部署区（下方那排卡）有变化就提前认卡：把"轮到这一步才认卡"的开销挪到等条件期间
-    bool need_early_deployment_update(const cv::Mat& image, const cv::Mat& image_prev);
-
     // 将作业步骤中的name转换为具体干员名
     battle::OperNameTag get_name_from_group(battle::Role role, const std::string& oper_name_in_action);
     void notify_action(const battle::copilot::Action& action);
@@ -55,7 +50,6 @@ protected:
 
     bool m_in_bullet_time = false;
     bool m_need_to_wait_until_end = false;
-    std::chrono::steady_clock::time_point m_last_deployment_update {}; // 上次"提前认卡"的时间，用于限流
     std::shared_ptr<std::unordered_map<battle::OperNameTag, std::string>> m_formation_ptr = nullptr;
 };
 }
