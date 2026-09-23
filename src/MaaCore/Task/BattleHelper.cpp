@@ -59,6 +59,7 @@ void asst::BattleHelper::clear()
     m_cur_deployment_opers.clear();
     m_battlefield_opers.clear();
     m_used_tiles.clear();
+    m_deployment_paused = false;
 }
 
 bool asst::BattleHelper::calc_tiles_info(const std::string& stage_name, double shift_x, double shift_y)
@@ -258,7 +259,11 @@ bool asst::BattleHelper::update_deployment_(
     return true;
 }
 
-bool asst::BattleHelper::update_deployment(bool init, const cv::Mat& reusable, bool need_oper_cost)
+bool asst::BattleHelper::update_deployment(
+    bool init,
+    const cv::Mat& reusable,
+    bool need_oper_cost,
+    bool keep_paused_after_identify)
 {
     LogTraceFunction;
 
@@ -291,16 +296,22 @@ bool asst::BattleHelper::update_deployment(bool init, const cv::Mat& reusable, b
     const auto old_deployment_opers = std::move(m_cur_deployment_opers);
 
     if (!update_deployment_(oper_result_opt->deployment, old_deployment_opers, false)) {
-        // 发现未知干员，暂停游戏后再重新识别干员
-        do {
-            pause();
-            // 在刚进入游戏的时候（画面刚刚完全亮起来的时候），点暂停是没反应的
-            // 所以这里一直点，直到真的点上了为止
-            if (!init || !check_pause_button()) {
-                break;
-            }
-            std::this_thread::yield();
-        } while (!m_inst_helper.need_exit());
+        // 发现未知干员，暂停游戏后再重新识别干员。
+        // 如果上一轮认卡留下的暂停还在（状态是冻结的，一般不会重复进来），就别再点一次暂停键
+        if (m_deployment_paused) {
+            Log.info("deployment pause is still held, skip pausing again");
+        }
+        else {
+            do {
+                pause();
+                // 在刚进入游戏的时候（画面刚刚完全亮起来的时候），点暂停是没反应的
+                // 所以这里一直点，直到真的点上了为止
+                if (!init || !check_pause_button()) {
+                    break;
+                }
+                std::this_thread::yield();
+            } while (!m_inst_helper.need_exit());
+        }
 
         // 重新截图
         image = m_inst_helper.ctrler()->get_image();
@@ -324,8 +335,16 @@ bool asst::BattleHelper::update_deployment(bool init, const cv::Mat& reusable, b
             return false;
         }
         update_deployment_(oper_result_opt->deployment, old_deployment_opers, true);
-        pause();
-        cancel_oper_selection();
+        if (keep_paused_after_identify) {
+            // 认完卡先别恢复：紧接着要部署的通常就是刚认出来的那张卡，在暂停里直接拖上去就行。
+            // 游戏暂停时状态是冻结的，费用与再部署冷却都不会变，不必"解除暂停 → 重新判断 → 再暂停"
+            Log.info("keep paused after identifying unknown opers, the following deploy reuses this pause");
+            m_deployment_paused = true;
+        }
+        else {
+            pause();
+            cancel_oper_selection();
+        }
         image = m_inst_helper.ctrler()->get_image();
     }
 
@@ -402,6 +421,21 @@ bool asst::BattleHelper::update_cost(const cv::Mat& image, const cv::Mat& image_
     return true;
 }
 
+void asst::BattleHelper::release_deployment_pause()
+{
+    if (!m_deployment_paused) {
+        return;
+    }
+    m_deployment_paused = false;
+    // check_pause_button() 返回 true 表示还能看到暂停按钮，也就是说"并没有处在暂停中"
+    if (!check_pause_button()) {
+        pause(); // 暂停键是个开关，再点一次即恢复
+    }
+    else {
+        Log.info("deployment pause was already released elsewhere");
+    }
+}
+
 bool asst::BattleHelper::deploy_oper(const std::string& name, const Point& loc, DeployDirection direction)
 {
     return deploy_oper(battle::Role::Unknown, name, loc, direction);
@@ -452,7 +486,9 @@ bool asst::BattleHelper::deploy_oper(
     bool depoly_when_pause_not_support =
         Task.get("BattleDeployWhenPause")->special_params[0] ==
         0; // Oversea client support, remove when all clients support this feature !!! by status102
-    if (deploy_with_pause && !depoly_when_pause_not_support) {
+    // 认卡时留下的暂停：这次部署直接复用它，不再自己暂停一次
+    const bool reuse_pause = m_deployment_paused;
+    if (deploy_with_pause && !depoly_when_pause_not_support && !reuse_pause) {
         pause();
     }
     Point oper_point(oper_rect.x + oper_rect.width / 2, oper_rect.y + oper_rect.height / 2);
@@ -463,7 +499,7 @@ bool asst::BattleHelper::deploy_oper(
         SwipeExtraDirection::None,
         swipe_oper_task_ptr->special_params.at(2) / 10.0,
         swipe_oper_task_ptr->special_params.at(3) / 10.0,
-        deploy_with_pause && depoly_when_pause_not_support);
+        deploy_with_pause && depoly_when_pause_not_support && !reuse_pause);
 
     // 拖动干员朝向
     if (direction != DeployDirection::None) {
@@ -495,7 +531,11 @@ bool asst::BattleHelper::deploy_oper(
         m_inst_helper.sleep(use_oper_task_ptr->pre_delay);
     }
 
-    if (deploy_with_pause) {
+    if (reuse_pause) {
+        // 这次部署是在认卡留下的那个暂停里完成的，收尾时恢复
+        release_deployment_pause();
+    }
+    else if (deploy_with_pause) {
         // m_inst_helper.ctrler()->press_esc();
         ProcessTask(this_task(), { "BattlePauseCancel" }).run();
     }

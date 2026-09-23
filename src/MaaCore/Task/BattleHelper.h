@@ -48,7 +48,18 @@ protected:
     bool speed_up();
     bool abandon();
 
-    bool update_deployment(bool init = false, const cv::Mat& reusable = cv::Mat(), bool need_oper_cost = false);
+    bool update_deployment(
+        bool init = false,
+        const cv::Mat& reusable = cv::Mat(),
+        bool need_oper_cost = false,
+        bool keep_paused_after_identify = false);
+
+    /// <summary>
+    /// 认卡时留下的暂停（update_deployment 传 keep_paused_after_identify=true 时）：
+    /// 紧接着的部署可以直接复用这次暂停，省掉"解除暂停 → 重新判断 → 再暂停"的来回。
+    /// 没被部署用掉时必须调用它兜底恢复，别把游戏留在暂停状态里。
+    /// </summary>
+    void release_deployment_pause();
     // 更新部署区的干员，仅当存在未识别干员且不处于冷却中return false
     bool update_deployment_(
         std::vector<battle::DeploymentOper>& cur_opers,
@@ -147,6 +158,7 @@ protected:
     std::chrono::steady_clock::time_point m_stopwatch_start_time;
 
     std::vector<battle::DeploymentOper> m_cur_deployment_opers;
+    bool m_deployment_paused = false; // 认卡后游戏是否仍处于暂停状态（留给紧接着的部署复用）
 
     std::map<battle::OperNameTag, Point> m_battlefield_opers; // 已部署的干员, <实际职业,名称> -> <坐标>
     std::map<Point, battle::OperNameTag> m_used_tiles;        // 已占用的格子, <坐标> -> <实际职业,名称>

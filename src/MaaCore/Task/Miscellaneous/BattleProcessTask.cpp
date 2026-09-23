@@ -254,6 +254,9 @@ bool asst::BattleProcessTask::do_action(const battle::copilot::Action& action, s
     switch (action.type) {
     case ActionType::Deploy:
         ret = deploy_oper(role, name, location, action.direction);
+        // 兜底：认卡留下的暂停若没被这次部署用掉（例如格子找不到、中途 return），
+        // 在这里恢复，避免把游戏留在暂停状态里
+        release_deployment_pause();
         if (ret) {
             m_in_bullet_time = false;
         }
@@ -513,7 +516,9 @@ bool asst::BattleProcessTask::wait_condition(const Action& action)
         const auto& action_oper = get_name_from_group(action.role, action.name);
         update_image_if_empty();
         while (!need_exit()) {
-            if (!update_deployment(false, image)) {
+            // keep_paused=true：认卡那一刻若目标干员已经可用，就保持暂停，
+            // 让紧接着的部署在同一个暂停里完成，省掉"解除暂停 → 重新判断 → 再暂停"
+            if (!update_deployment(false, image, false, true)) {
                 return false;
             }
             if (auto iter = std::ranges::find_if(
@@ -525,6 +530,8 @@ bool asst::BattleProcessTask::wait_condition(const Action& action)
                 iter != m_cur_deployment_opers.end() && iter->available) {
                 break;
             }
+            // 费用不够或在再部署冷却里：暂停坐着等没意义，先恢复再继续等
+            release_deployment_pause();
             do_strategy_and_update_image();
         }
     }
