@@ -36,7 +36,8 @@ private:
     OCRer::ResultsVec find_stage(
         const cv::Mat& image,
         std::tuple<int, int, int> threshold_low,
-        std::tuple<int, int, int> threshold_high);
+        std::tuple<int, int, int> threshold_high,
+        const std::string& stage_name);
     bool is_stage_detail_opened(const cv::Mat& image); // 检查关卡介绍是否已展开
     bool confirm_stage_name(const cv::Mat& image, const std::string& stage_name);
 

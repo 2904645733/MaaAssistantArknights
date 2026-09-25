@@ -123,12 +123,27 @@ bool asst::MultiCopilotTaskPlugin::navigate_to_stage(const std::string& stage_na
         task->special_params[4],
         task->special_params[5],
     };
-    auto stages = find_stage(image, threshold_low, threshold_high);
+    auto stages = find_stage(image, threshold_low, threshold_high, stage_name);
     auto it = std::ranges::find_if(stages, [&](const OcrPack::Result& r) { return r.text == stage_name; });
     if (it != stages.end()) {
         if (enter_stage(it->rect, stage_name)) {
             return true;
         }
+    }
+
+    // 刚点完"前往章节"时地图还在推入/缩放动画里，头一两张截图上的关卡名是糊的：
+    // 表现为画面上明明有目标关卡却读不出来，于是白白开始滑动找图（手动暂停再开始一次就正常了）。
+    // 注意下面的 map_visible 只要求"画面里有任意关卡名"，而此时别的关卡名可能已经清晰、唯独目标那张还糊着，
+    // 所以这里不看别的关卡，认不到目标就原地重认两次（每次间隔 0.7 秒），等地图稳定再决定要不要滑动。
+    for (int settle = 0; settle < 2 && it == stages.end() && !need_exit(); ++settle) {
+        Log.info("target stage not recognised yet, wait for the map to settle:", stage_name);
+        sleep(700);
+        image = ctrler()->get_image();
+        stages = find_stage(image, threshold_low, threshold_high, stage_name);
+        it = std::ranges::find_if(stages, [&](const OcrPack::Result& r) { return r.text == stage_name; });
+    }
+    if (it != stages.end() && enter_stage(it->rect, stage_name)) {
+        return true;
     }
 
     // 刚点完"前往章节"时地图还在加载，画面里一个关卡名都没有。此时若直接盲点剧情图标，会点进别的关卡
@@ -140,7 +155,7 @@ bool asst::MultiCopilotTaskPlugin::navigate_to_stage(const std::string& stage_na
         Log.info("stage map not visible yet, wait before plot probing", stage_name);
         sleep(1000);
         image = ctrler()->get_image();
-        stages = find_stage(image, threshold_low, threshold_high);
+        stages = find_stage(image, threshold_low, threshold_high, stage_name);
         it = std::ranges::find_if(stages, [&](const OcrPack::Result& r) { return r.text == stage_name; });
         if (it != stages.end() && enter_stage(it->rect, stage_name)) {
             return true;
@@ -175,7 +190,7 @@ bool asst::MultiCopilotTaskPlugin::navigate_to_stage(const std::string& stage_na
     if (plot_touched) {
         sleep(Config.get_options().task_delay);
         image = ctrler()->get_image();
-        stages = find_stage(image, threshold_low, threshold_high);
+        stages = find_stage(image, threshold_low, threshold_high, stage_name);
         it = std::ranges::find_if(stages, [&](const OcrPack::Result& r) { return r.text == stage_name; });
         if (it != stages.end()) {
             if (enter_stage(it->rect, stage_name)) {
@@ -191,7 +206,7 @@ bool asst::MultiCopilotTaskPlugin::navigate_to_stage(const std::string& stage_na
     ProcessTask(*this, { "Copilot@FullStageNavigation" }).set_retry_times(20).run();
     sleep(Config.get_options().task_delay);
     image = ctrler()->get_image();
-    stages = find_stage(image, threshold_low, threshold_high);
+    stages = find_stage(image, threshold_low, threshold_high, stage_name);
     it = std::ranges::find_if(stages, [&](const OcrPack::Result& r) { return r.text == stage_name; });
     if (it != stages.end()) {
         if (enter_stage(it->rect, stage_name)) {
@@ -206,7 +221,7 @@ bool asst::MultiCopilotTaskPlugin::navigate_to_stage(const std::string& stage_na
         ProcessTask(*this, { "Copilot@StageNavigationSlowlySwipeLeft" }).set_retry_times(20).run();
         sleep(Config.get_options().task_delay);
         image = ctrler()->get_image();
-        stages = find_stage(image, threshold_low, threshold_high);
+        stages = find_stage(image, threshold_low, threshold_high, stage_name);
         it = std::ranges::find_if(stages, [&](const OcrPack::Result& r) { return r.text == stage_name; });
         if (it != stages.end()) {
             if (enter_stage(it->rect, stage_name)) {
@@ -223,7 +238,7 @@ bool asst::MultiCopilotTaskPlugin::navigate_to_stage(const std::string& stage_na
     if (plot_task.run()) {
         sleep(Config.get_options().task_delay);
         image = ctrler()->get_image();
-        stages = find_stage(image, threshold_low, threshold_high);
+        stages = find_stage(image, threshold_low, threshold_high, stage_name);
         it = std::ranges::find_if(stages, [&](const OcrPack::Result& r) { return r.text == stage_name; });
         if (it != stages.end()) {
             if (enter_stage(it->rect, stage_name)) {
@@ -251,8 +266,14 @@ bool asst::MultiCopilotTaskPlugin::enter_stage(const Rect rect, const std::strin
 asst::OCRer::ResultsVec asst::MultiCopilotTaskPlugin::find_stage(
     const cv::Mat& image,
     std::tuple<int, int, int> threshold_low,
-    std::tuple<int, int, int> threshold_high)
+    std::tuple<int, int, int> threshold_high,
+    const std::string& stage_name)
 {
+    // 掩膜只留「很亮且接近纯白」的像素，本意是把关卡名那圈白色横幅抠出来。
+    // 但遇到「以白色为主体的背景」（例如第七章地图的白色城市模型）时，横幅会和背景糊成一大块白斑，
+    // 标签直接读不出来——表现为画面上明明有该关卡却一直找不到、然后开始滑动找图。
+    // 所以掩膜之外还备了两遍 OCR 兜底（原图、黑帽变换），但**只在第一遍没认出目标关卡时**才跑，
+    // 正常情况下的耗时和加兜底之前完全一样。
     cv::Mat gray;
     cv::cvtColor(image, gray, cv::COLOR_BGR2HSV);
     auto [l1, l2, l3] = threshold_low;
@@ -263,13 +284,56 @@ asst::OCRer::ResultsVec asst::MultiCopilotTaskPlugin::find_stage(
     cv::Mat gray3;
     cv::merge(channels, gray3);
     cv::bitwise_and(image, gray3, gray3);
-    OCRer ocr(gray3);
-    ocr.set_task_info("ClickStageName");
-    if (!ocr.analyze()) {
-        return {};
+
+    OCRer::ResultsVec result;
+    const auto analyze_and_merge = [&](OCRer& analyzer) {
+        if (!analyzer.analyze()) {
+            return;
+        }
+        auto part = analyzer.get_result();
+        std::erase_if(part, [](const OcrPack::Result& r) { return r.text.size() == 1 || r.score < 0.5; });
+        for (const auto& r : part) {
+            if (std::ranges::none_of(result, [&](const OcrPack::Result& existed) { return existed.text == r.text; })) {
+                result.emplace_back(r);
+            }
+        }
+    };
+    const auto target_found = [&]() {
+        return std::ranges::any_of(result, [&](const OcrPack::Result& r) { return r.text == stage_name; });
+    };
+
+    // 一：掩膜后的图（原逻辑，擅长"深色背景上的白色横幅"）
+    OCRer masked_ocr(gray3);
+    masked_ocr.set_task_info("ClickStageName");
+    analyze_and_merge(masked_ocr);
+
+    // 二：原图直接 OCR（白色背景把掩膜废掉时的兜底）——仅在第一遍没认出目标时跑
+    if (!target_found()) {
+        OCRer raw_ocr(image);
+        raw_ocr.set_task_info("ClickStageName");
+        analyze_and_merge(raw_ocr);
     }
-    auto result = ocr.get_result();
-    std::erase_if(result, [](const OcrPack::Result& r) { return r.text.size() == 1 || r.score < 0.5; });
+
+    // 三：黑帽变换——突出"亮底上的暗字"，正是关卡横幅的样式，且不受大面积亮背景影响
+    if (!target_found()) {
+        cv::Mat image_gray;
+        cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY);
+        cv::Mat blackhat;
+        cv::morphologyEx(
+            image_gray,
+            blackhat,
+            cv::MORPH_BLACKHAT,
+            cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15)));
+        cv::normalize(blackhat, blackhat, 0, 255, cv::NORM_MINMAX);
+        // 反相：黑帽出来的是"亮字黑底"，而 OCR 模型更擅长"暗字亮底"，反一下更好认
+        cv::bitwise_not(blackhat, blackhat);
+        cv::Mat blackhat_bgr;
+        cv::cvtColor(blackhat, blackhat_bgr, cv::COLOR_GRAY2BGR);
+        OCRer blackhat_ocr(blackhat_bgr);
+        blackhat_ocr.set_task_info("ClickStageName");
+        analyze_and_merge(blackhat_ocr);
+    }
+
     LogInfo << __FUNCTION__ << "stage results:" << result;
     return result;
 }
