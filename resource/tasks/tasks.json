@@ -261,6 +261,7 @@
         "text": [],
         "next": ["ClickedCorrectStageOrSwipe", "#self"],
         "ocrReplaceDoc": "和 ClickedCorrectStage 同步，但去除 OPERATION",
+        "specialParamsDoc": "关卡名搜索前的掩膜：只留「很亮且接近纯白」的像素，把关卡的白色横幅抠出来。V 由 160 上调到 200、S 由 30 收到 20——160/30 时第 7 章这类「白色 3D 建筑当背景」的画面会把横幅和背景糊成一整块白斑，OCR 直接读不到（日志里表现为明明在画面上的关卡标签只读出个「-」）。如某天遇到浅色主题下的横幅读不到，再往 190/25 回调。",
         "ocrReplace": [
             ["-\\]", "-1"],
             [" ", ""],
@@ -277,7 +278,7 @@
             [".*?([A-Z]{2}-EX-\\d+)", "$1"],
             ["-I$", "-1"]
         ],
-        "specialParams": [0, 0, 160, 180, 30, 255]
+        "specialParams": [0, 0, 200, 180, 20, 255]
     },
     "StageNavigationSlowlySwipeLeft": {
         "baseTask": "ChapterSlowlySwipeToTheLeft",
@@ -538,20 +539,20 @@
         "exceededNext": ["Stop"]
     },
     "EnterStageModeEX": {
-        "Doc": "base_task：活动内的关卡模式入口——EX 模式。各活动用 xx@EnterStageModeEX 这个「已声明派生任务」机制取同名模板图（注意 @ 后面的整段必须是本任务名，否则派生任务会退化成空任务、动作变成 DoNothing 不点击）；在 roi [797,432,480,285]（右下角模式按钮那一片）里扫，命中就点。preDelay 1000 是等「进入活动」的转场/黑屏加载（原先 4000，实测认出按钮只要 0.06 秒，多等 3 秒纯属白等；如果哪天在很卡的模拟器上出现点了没反应，再往回调大）；认不到会在 C++ 里报错并把这一步判为失败，不会悄悄当成普通关。",
+        "Doc": "base_task：活动内的关卡模式入口——EX 模式。各活动用 xx@EnterStageModeEX 这个「已声明派生任务」机制取同名模板图（注意 @ 后面的整段必须是本任务名，否则派生任务会退化成空任务、动作变成 DoNothing 不点击）；在 roi [797,432,480,285]（右下角模式按钮那一片）里扫，命中就点。preDelay/postDelay 各 200ms 是留一点余量（原先 1000/1000，实测认出按钮只要 0.06 秒，两秒几乎全是白等）；页面加载慢时由 C++ 那边的 5 次重试兜底，认不到会在 C++ 里报错并把这一步判为失败，不会悄悄当成普通关。",
         "template": "empty.png",
         "action": "ClickSelf",
         "roi": [797, 432, 480, 285],
-        "preDelay": 1000,
-        "postDelay": 1000
+        "preDelay": 200,
+        "postDelay": 200
     },
     "EnterStageModeS": {
-        "Doc": "base_task：活动内的关卡模式入口——S 模式。同 EnterStageModeEX（同一个 roi、同样 1 秒 preDelay）。",
+        "Doc": "base_task：活动内的关卡模式入口——S 模式。同 EnterStageModeEX（同一个 roi、同样 200ms preDelay/postDelay）。",
         "template": "empty.png",
         "action": "ClickSelf",
         "roi": [797, 432, 480, 285],
-        "preDelay": 1000,
-        "postDelay": 1000
+        "preDelay": 200,
+        "postDelay": 200
     },
     "Episode0": {
         "baseTask": "00@EpisodeNew",

@@ -414,8 +414,8 @@ bool asst::StageNavigationTask::chapter_wayfinding()
     }
 
     // 活动模式入口（EX / S）：命中就点；认不到就报错、这一步判为失败——选了模式却没切成功，
-    // 绝不能悄悄落到普通关去。任务里配了 preDelay 4000（等「进入活动」的转场/黑屏加载），
-    // 这里再给 5 次机会（每次间隔约 0.5s），总共约 6 秒窗口。低分匹配日志本来不打印，
+    // 绝不能悄悄落到普通关去。任务里 preDelay/postDelay 各 200ms，这里再给 5 次机会
+    // （每次间隔约 0.5s），认不到的兜底窗口约 2.7 秒。低分匹配日志本来不打印，
     // 所以这里额外写明确的结果日志。
     if (!m_stage_mode_task.empty()) {
         const bool clicked = ProcessTask(*this, { m_stage_mode_task }).set_retry_times(5).run();
