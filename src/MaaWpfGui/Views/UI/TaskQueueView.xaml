@@ -397,10 +397,6 @@
                                                 CommandParameter="{Binding TaskTypeList[11].Value}"
                                                 Header="{Binding TaskTypeList[11].Display}"
                                                 Visibility="{c:Binding ShowDebugTask}" />
-                                            <MenuItem
-                                                Command="{s:Action AddTaskQueueTask}"
-                                                CommandParameter="{Binding TaskTypeList[11].Value}"
-                                                Header="{Binding TaskTypeList[11].Display}" />
                                             <!-- 战斗任务（TaskTypeList[12]）：漏了这一项会导致全新配置下菜单里找不到「战斗任务」 -->
                                             <MenuItem
                                                 Command="{s:Action AddTaskQueueTask}"
