@@ -1,7 +1,8 @@
 {
     "Tutorial@Dialog@Top": {
-        "Doc": "对话判定（头像在屏幕上方那处）：认到头像上的固定图案才算在对话，然后点上面那个文字框内部；点不到对话框就什么都不做",
+        "Doc": "对话判定（头像在屏幕上方那处）：认到头像上的固定图案才算在对话，然后点上面那个文字框内部；点不到对话框就什么都不做。模板必须显式写出来：baseTask 不会继承模板名，MAA 会按任务自己的名字去找 png",
         "baseTask": "BattleAvatarDialog",
+        "template": "BattleAvatarDialog.png",
         "roi": [60, 20, 150, 60],
         "action": "ClickRect",
         "specificRect": [660, 110, 80, 40],
@@ -12,6 +13,7 @@
     "Tutorial@Dialog@Bottom": {
         "Doc": "对话判定（头像在屏幕下方那处）：同上，点下面那个文字框内部",
         "baseTask": "BattleAvatarDialog",
+        "template": "BattleAvatarDialog.png",
         "roi": [90, 460, 150, 60],
         "action": "ClickRect",
         "specificRect": [660, 545, 80, 40],
