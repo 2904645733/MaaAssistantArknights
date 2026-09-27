@@ -17,8 +17,29 @@
             Margin="0,0,0,10"
             Text="{DynamicResource TutorialTaskTip}"
             TextWrapping="Wrap" />
+
+        <!--  已写好、现在就能跑的教学段落：一段一个方框  -->
+        <ItemsControl ItemsSource="{Binding ImplementedStages}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border
+                        Margin="0,0,0,6"
+                        Padding="8,6"
+                        Background="{DynamicResource RegionBrushOpacity25}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <TextBlock
+                            Text="{Binding}"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap" />
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
         <controls:TextBlock
-            Margin="0,0,0,10"
+            Margin="0,10,0,0"
             FontSize="12"
             Foreground="{DynamicResource TraceLogBrush}"
             Text="{DynamicResource TutorialTaskProgressTip}"
