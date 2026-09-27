@@ -135,9 +135,9 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         ("BP", "生路", "EX"), ("CB", "喧闹法则", "EX"), ("CW", "孤星", "EXS"), ("CV", "不义之财", "EX"), ("DH", "多索雷斯夏日", "EXS"),
         ("DM", "生于黑夜", "EXS"), ("DV", "绿野幻梦", "EX"), ("EA", "挽歌燃烧殆尽", "EX"), ("EP", "出苍白海", "EX"), ("FC", "照我以火", "EX"),
         ("GA", "吾导先路", "EX"), ("GO", "追迹日落以西", "EX"), ("GT", "骑兵与猎人", "EX"), ("HE", "空想花庭", "EX"), ("HS", "怀黍离", "EXS"),
-        ("IC", "理想城 夏日狂欢季", "EXS"), ("IS", "叙拉古人", ""), ("IW", "将进酒", "EX"), ("LE", "尘影余音", "EX"), ("MB", "孤岛风云", "EX"),
+        ("IC", "理想城 夏日狂欢季", "EXS"), ("IS", "叙拉古人", string.Empty), ("IW", "将进酒", "EX"), ("LE", "尘影余音", "EX"), ("MB", "孤岛风云", "EX"),
         ("MN", "玛莉娅·临光", "EX"), ("MT", "众生行记", "EXS"), ("NL", "长夜临光", "EXS"), ("OF", "火蓝之心", "EXS"), ("OR", "相见欢", "EXS"),
-        ("PV", "揭幕者们", "EXS"), ("RI", "密林悍将归来", "EX"), ("RS", "银心湖列车", "EX"), ("SL", "火山旅梦", "EXS"), ("SN", "愚人号", ""),
+        ("PV", "揭幕者们", "EXS"), ("RI", "密林悍将归来", "EX"), ("RS", "银心湖列车", "EX"), ("SL", "火山旅梦", "EXS"), ("SN", "愚人号", string.Empty),
         ("SV", "覆潮之下", "EX"), ("TW", "沃伦姆德的薄暮", "EXS"), ("WB", "登临意", "EX"), ("WD", "遗尘漫步", "EX"), ("WR", "画中人", "EX"),
         ("ZT", "崔林特尔梅之金", "EXS"),
     ];
@@ -613,6 +613,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 点击小任务的"重命名"：进入名字编辑状态。
     /// </summary>
+    /// <param name="item">要重命名的小任务。</param>
     public void RenameItem(CopilotSubTaskItem item)
     {
         if (item is null)
@@ -632,6 +633,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 点击小任务的设置图标：选中该小任务并切换到队列任务的"高级设置"面板。
     /// </summary>
+    /// <param name="item">要打开高级设置的小任务。</param>
     public void OpenAdvanced(CopilotSubTaskItem item)
     {
         if (item?.Model.Kind != CopilotSubTaskKind.Battle || item.Model.Battle is not { } battle)
@@ -658,6 +660,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 把高级设置中的某个作业载入作业页（与作业页列表的"载入"图标行为一致）。
     /// </summary>
+    /// <param name="item">要载入作业页的作业。</param>
     public void LoadJobToPage(CopilotJobItem item)
     {
         if (item is null)
@@ -673,6 +676,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 从高级设置中删除某个作业。
     /// </summary>
+    /// <param name="item">要删除的作业。</param>
     public void RemoveAdvancedJob(CopilotJobItem item)
     {
         if (item is null)
@@ -690,6 +694,8 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 高级设置作业拖拽排序（兼容旧调用）。
     /// </summary>
+    /// <param name="source">被拖动的作业。</param>
+    /// <param name="target">拖到的位置（为空表示移到末尾）。</param>
     public void MoveAdvancedJob(CopilotJobItem source, CopilotJobItem? target)
     {
         if (source is null || AdvancedOwner?.Model.Battle is not { } battle)
@@ -792,6 +798,8 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 核心开始执行某个作业时调用：把此前已开始的作业标记为已完成（取消勾选），并写日志。
     /// </summary>
+    /// <param name="taskId">任务 id。</param>
+    /// <param name="jobIndex">刚开始执行的作业序号。</param>
     public static void HandleJobStarted(int taskId, int jobIndex)
     {
         if (!_runMap.TryGetValue(taskId, out var info))
@@ -820,6 +828,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// 任务链结束时调用：把最后开始的作业标记为已完成，并把整条小任务标记为已完成（写日志）。
     /// 勾了「章尾剧情」时，战斗部分跑完先不标记，等最后一条章尾剧情任务跑完才标记。
     /// </summary>
+    /// <param name="taskId">任务 id。</param>
     public static void HandleTaskFinished(int taskId)
     {
         if (!_runMap.Remove(taskId, out var info))
@@ -978,6 +987,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 编辑小任务：把快照载入作业页（列表 + 设置），供用户在作业页修改。
     /// </summary>
+    /// <param name="item">要编辑的小任务。</param>
     public void EditItem(CopilotSubTaskItem item)
     {
         if (item?.Model.Kind != CopilotSubTaskKind.Battle || item.Model.Battle is not { } snapshot)
@@ -1016,6 +1026,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 保存小任务：把作业页当前状态（列表 + 设置）写回该小任务。
     /// </summary>
+    /// <param name="item">要保存的小任务。</param>
     public void SaveItem(CopilotSubTaskItem item)
     {
         if (item?.Model.Kind != CopilotSubTaskKind.Battle)
@@ -1032,7 +1043,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
         item.Model.Battle = null;
         DeleteSnapshotCopies(oldPaths);
 
-        if (!TryCaptureFromPage(out var snapshot, out var reasonKey))
+        if (!TryCaptureFromPage(out var snapshot, out var reasonKey) || snapshot is null)
         {
             item.Model.Battle = oldBattle; // 没抓到作业：把这一步还原回去
             StatusMessage = reasonKey;
@@ -1125,6 +1136,7 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 删除一个小任务。
     /// </summary>
+    /// <param name="item">要删除的小任务。</param>
     public void DeleteItem(CopilotSubTaskItem item)
     {
         Items.Remove(item);
@@ -1302,6 +1314,8 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
     /// <summary>
     /// 拖拽排序：把 source 移到 target 的位置（target 为空则移到末尾）。
     /// </summary>
+    /// <param name="source">被拖动的小任务。</param>
+    /// <param name="target">拖到的位置（为空表示移到末尾）。</param>
     public void MoveItem(CopilotSubTaskItem source, CopilotSubTaskItem? target)
     {
         if (source is null)
@@ -1947,280 +1961,4 @@ public class CopilotSettingsUserControlModel : TaskSettingsViewModel, CopilotSet
             };
         }
     }
-}
-
-/// <summary>
-/// 战斗任务中的一个小任务的界面包装。
-/// </summary>
-public class CopilotSubTaskItem : PropertyChangedBase
-{
-    public CopilotSubTaskItem(CopilotSubTask model)
-    {
-        Model = model;
-    }
-
-    public CopilotSubTask Model { get; }
-
-    private bool _isEditing;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether 名字处于编辑状态（仅点重命名按钮后为真）。
-    /// </summary>
-    public bool IsEditing
-    {
-        get => _isEditing;
-        set => SetAndNotify(ref _isEditing, value);
-    }
-
-    public string Name
-    {
-        get => Model.Name;
-        set {
-            Model.Name = value;
-            NotifyOfPropertyChange();
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether 该小任务是否勾选执行（跑完会自动取消勾选，和作业列表一致）。
-    /// </summary>
-    public bool IsChecked
-    {
-        get => Model.IsChecked;
-        set {
-            if (Model.IsChecked == value)
-            {
-                return;
-            }
-
-            Model.IsChecked = value;
-            NotifyOfPropertyChange();
-        }
-    }
-
-    /// <summary>
-    /// Gets a value indicating whether 该小任务是战斗（作业页快照）。
-    /// </summary>
-    public bool IsBattle => Model.Kind == CopilotSubTaskKind.Battle;
-
-    /// <summary>
-    /// Gets a value indicating whether 该小任务是导航（章节入口切换，只有删除按钮）。
-    /// </summary>
-    public bool IsNav => Model.Kind == CopilotSubTaskKind.Nav;
-
-    /// <summary>
-    /// Gets a value indicating whether 该小任务是「剿灭导航」（图标显示对 / 错）。
-    /// </summary>
-    public bool IsAnnihilationNav => Model.Kind == CopilotSubTaskKind.Nav && Model.NavAnnihilation;
-
-    /// <summary>
-    /// Gets a value indicating whether 剿灭导航已经从"下一个作战任务的作业"里读到了剿灭关卡名。
-    /// 读到 = 图标 ✓（这一步能执行），读不到 = 图标 ✗（下发时会跳过并写错误日志）。
-    /// </summary>
-    public bool HasAnnihilationStage => !string.IsNullOrEmpty(Model.NavAnnihilationStage);
-
-    /// <summary>Gets a value indicating whether 显示战斗图标（斜向短剑）。</summary>
-    public bool ShowBattleIcon => !IsNav;
-
-    /// <summary>Gets a value indicating whether 显示普通导航图标（向右箭头）。</summary>
-    public bool ShowNavIcon => IsNav && !IsAnnihilationNav;
-
-    /// <summary>Gets a value indicating whether 显示剿灭导航"识别到了"的图标（✓）。</summary>
-    public bool ShowAnnihilationOkIcon => IsAnnihilationNav && HasAnnihilationStage;
-
-    /// <summary>Gets a value indicating whether 显示剿灭导航"没识别到"的图标（✗）。</summary>
-    public bool ShowAnnihilationFailIcon => IsAnnihilationNav && !HasAnnihilationStage;
-
-    /// <summary>
-    /// Gets 剿灭导航图标的提示：图钉同样是拖拽把手，所以第一行固定写"标签顺序可拖动"，
-    /// 第二行再写读到了就切到哪一关、读不到时去哪儿找关卡名。
-    /// </summary>
-    public string AnnihilationIconTip => IsAnnihilationNav
-        ? LocalizationHelper.GetString("LabelSequenceTip") + Environment.NewLine
-          + LocalizationHelper.GetStringFormat(
-              HasAnnihilationStage ? "CopilotNavAnnihilationOkTip" : "CopilotNavAnnihilationFailTip",
-              Model.NavAnnihilationStage ?? string.Empty)
-        : string.Empty;
-
-    /// <summary>
-    /// 剿灭关卡名重新解析完之后刷新名字、图标和提示（图标可能从 ✗ 变成 ✓，也可能反过来）。
-    /// </summary>
-    public void RefreshAnnihilationStage()
-    {
-        NotifyOfPropertyChange(nameof(Name));
-        NotifyOfPropertyChange(nameof(IsAnnihilationNav));
-        NotifyOfPropertyChange(nameof(HasAnnihilationStage));
-        NotifyOfPropertyChange(nameof(ShowBattleIcon));
-        NotifyOfPropertyChange(nameof(ShowNavIcon));
-        NotifyOfPropertyChange(nameof(ShowAnnihilationOkIcon));
-        NotifyOfPropertyChange(nameof(ShowAnnihilationFailIcon));
-        NotifyOfPropertyChange(nameof(AnnihilationIconTip));
-    }
-
-    public string KindText => Model.Kind switch {
-        CopilotSubTaskKind.Battle => LocalizationHelper.GetString("CopilotSubBattle"),
-        CopilotSubTaskKind.Nav => LocalizationHelper.GetString("CopilotSubNav"),
-        _ => Model.Kind.ToString(),
-    };
-}
-
-/// <summary>
-/// "导航"小任务的目标选项（章节选择器 ComboBox 的条目）：要么是某一章，要么是某个活动。
-/// </summary>
-public class NavChapterOption
-{
-    /// <summary>主线 10~14 章有「标准 / 磨难」两个模式（对应核心的 PreStageNormalHard 档）。</summary>
-    public const int DifficultyChapterMin = 10;
-
-    /// <summary>主线 10~14 章有「标准 / 磨难」两个模式（对应核心的 PreStageNormalHard 档）。</summary>
-    public const int DifficultyChapterMax = 14;
-
-    /// <summary>
-    /// 「剿灭作战」导航（列在第 0 章上面）。要切哪一个剿灭关卡不在这里选：
-    /// 由"这一步后面第一个作战任务的作业"决定，见 CopilotAnnihilationNavHelper。
-    /// </summary>
-    public NavChapterOption()
-    {
-        IsAnnihilation = true;
-        Display = LocalizationHelper.GetString("CopilotNavAnnihilation");
-    }
-
-    public NavChapterOption(int chapter)
-    {
-        Chapter = chapter;
-        Display = LocalizationHelper.GetStringFormat("CopilotNavChapterItem", chapter);
-    }
-
-    public NavChapterOption(string sideStoryCode, string sideStoryName, string modes)
-    {
-        SideStory = sideStoryCode;
-        Modes = modes;
-
-        // 活动名前面带上活动代号（如 "SL 火山旅梦"）：列表里一眼能看出是哪个活动，也方便按代号搜索。
-        // 活动名来自游戏内中文名，不随界面语言变化，所以这里不用本地化格式串。
-        Display = $"{sideStoryCode} {sideStoryName}";
-    }
-
-    /// <summary>
-    /// 资源关导航项：资源关代号（如 "CE-6"）+ 显示文本（"关卡代号 产物"，和活动项一个格式，如"CE 龙门币"）
-    /// + 搜索别名（完整关卡代号，只在搜索时用）。只切到资源关页面为止，不选具体关卡。
-    /// </summary>
-    /// <param name="resourceStage">理智作战里的资源关代号（任务名），如 "CE-6"、"PR-A-1"。</param>
-    /// <param name="display">显示文本。</param>
-    /// <param name="searchAliases">完整关卡代号（如 "CE-6"、"PR-A-1"/"PR-A-2"），只用于搜索。</param>
-    public NavChapterOption(string resourceStage, string display, string[] searchAliases)
-    {
-        ResourceStage = resourceStage;
-        Display = display;
-        SearchAliases = searchAliases;
-    }
-
-    /// <summary>
-    /// Gets 资源关导航要跑的资源关代号（活动项、章节项、剿灭项为 null），如 "CE-6"、"PR-A-1"。
-    /// </summary>
-    public string? ResourceStage { get; }
-
-    /// <summary>
-    /// Gets 搜索别名（资源关项才有：完整关卡代号，如 "CE-6"、"PR-A-1"/"PR-A-2"）。
-    /// 只用于搜索，不参与显示 —— 显示的是"关卡代号 产物"。
-    /// </summary>
-    public IReadOnlyList<string> SearchAliases { get; } = [];
-
-    /// <summary>
-    /// Gets a value indicating whether 这一项是资源关导航。
-    /// </summary>
-    public bool IsResource => !string.IsNullOrEmpty(ResourceStage);
-
-    /// <summary>
-    /// Gets 章节号（活动项、剿灭项为 null）。
-    /// </summary>
-    public int? Chapter { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether 这一项是「剿灭作战」导航（放在第 0 章上面）。
-    /// </summary>
-    public bool IsAnnihilation { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether 该章节需要选「标准 / 磨难」（主线 10~14 章）。
-    /// </summary>
-    public bool HasDifficulty => Chapter is >= DifficultyChapterMin and <= DifficultyChapterMax;
-
-    /// <summary>
-    /// Gets 活动代码（章节项为 null）。
-    /// </summary>
-    public string? SideStory { get; }
-
-    /// <summary>
-    /// Gets 该活动有哪些关卡模式（章节项为 null）："EX" 或 "EXS"，来自 ss.xlsx 的 C 列。
-    /// </summary>
-    public string? Modes { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether 该活动能切 EX 模式。
-    /// </summary>
-    public bool HasEx => Modes?.Contains("EX", StringComparison.Ordinal) == true;
-
-    /// <summary>
-    /// Gets a value indicating whether 该活动能切 S 模式（只有一部分活动有）。
-    /// </summary>
-    public bool HasS => Modes?.Contains('S') == true;
-
-    /// <summary>
-    /// Gets a value indicating whether 该目标（活动）能选关卡模式。
-    /// </summary>
-    public bool HasStageMode => HasEx || HasS;
-
-    /// <summary>
-    /// Gets 显示文本（"第 8 章" 或 "SL 火山旅梦"）。
-    /// </summary>
-    public string Display { get; }
-
-    /// <summary>
-    /// 可搜索下拉框（MakeComboBoxSearchable）是按 ToString() 过滤的：
-    /// 显示文本 + 搜索别名，这样按"CE 龙门币"和按完整关卡代号"CE-6"都能搜到（显示仍用 Display）。
-    /// </summary>
-    /// <returns>用于搜索的文本。</returns>
-    public override string ToString()
-    {
-        var text = SearchAliases.Count == 0 ? Display : $"{Display} {string.Join(' ', SearchAliases)}";
-
-        // 再附一份去掉空格的写法：这样带代号搜（"SL"）、按名字搜（"火山旅梦"）、
-        // 连在一起写（"SL火山旅梦"）都能命中；显示仍然只用 Display。
-        var compact = string.Concat(text.Where(ch => !char.IsWhiteSpace(ch)));
-        return compact == text ? text : $"{text} {compact}";
-    }
-}
-
-/// <summary>
-/// 高级设置中的作业项（勾选 + 拖动排序）。
-/// </summary>
-public class CopilotJobItem : PropertyChangedBase
-{
-    public CopilotJobItem(CopilotSnapshotJob model)
-    {
-        Model = model;
-    }
-
-    public CopilotSnapshotJob Model { get; }
-
-    public bool IsChecked
-    {
-        get => Model.IsChecked;
-        set {
-            if (Model.IsChecked == value)
-            {
-                return;
-            }
-
-            Model.IsChecked = value;
-            NotifyOfPropertyChange();
-        }
-    }
-
-    public bool IsRaid => Model.IsRaid;
-
-    public string Title => string.IsNullOrEmpty(Model.StageName)
-        ? System.IO.Path.GetFileName(Model.FilePath)
-        : Model.StageName!;
 }

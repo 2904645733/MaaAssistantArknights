@@ -2261,7 +2261,7 @@ public partial class CopilotViewModel : Screen
         else
         {
             var singleTask = BuildSingleJobTask(
-                IsDataFromWeb ? TempCopilotFile : Filename,
+                IsDataFromWeb ? _tempCopilotFile : Filename,
                 Form,
                 UseSupportUnitUsage ? (int)SupportUnitUsage : 0,
                 AddTrust,
@@ -2340,7 +2340,7 @@ public partial class CopilotViewModel : Screen
             return false;
         }
 
-        var path = IsDataFromWeb ? TempCopilotFile : Filename;
+        var path = IsDataFromWeb ? _tempCopilotFile : Filename;
         if (string.IsNullOrWhiteSpace(path))
         {
             return false;

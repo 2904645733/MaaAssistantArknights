@@ -11,6 +11,7 @@
 // but WITHOUT ANY WARRANTY
 // </copyright>
 
+#nullable enable
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -371,7 +372,7 @@ public partial class CopilotUserControl : System.Windows.Controls.UserControl
             _navSearchLogger.Information("[NavSearch] 回车：输入法确认上屏（不退出搜索）");
 
             // 这个回车要留给输入法上屏，但它同时也会被 ComboBox 用来"提交"当前高亮项
-            //（把那一项的文字填进框里、并把它选中）—— 所以上屏完成后再把这一步撤掉。
+            // （把那一项的文字填进框里、并把它选中）—— 所以上屏完成后再把这一步撤掉。
             var textBefore = comboBox.Text;
             comboBox.Dispatcher.BeginInvoke(
                 System.Windows.Threading.DispatcherPriority.Background,
@@ -482,7 +483,7 @@ public partial class CopilotUserControl : System.Windows.Controls.UserControl
         ExitNavSearchAndDropSelection(comboBox);
 
         // ComboBox 可能已经用回车把"当前高亮项"选中并填进框里了：撤掉选中项、把文字换回去
-        //（顺便去掉输入法塞进来的隔音符号）
+        // （顺便去掉输入法塞进来的隔音符号）
         var wanted = StripImeSeparator(_navTextBeforeEnter);
 
         if (comboBox.SelectedItem is NavChapterOption selected
