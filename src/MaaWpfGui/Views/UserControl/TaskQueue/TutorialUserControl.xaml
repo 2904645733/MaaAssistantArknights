@@ -29,7 +29,7 @@
                         BorderBrush="{DynamicResource BorderBrush}"
                         BorderThickness="1"
                         CornerRadius="4">
-                        <TextBlock
+                        <controls:TextBlock
                             Text="{Binding}"
                             TextAlignment="Center"
                             TextWrapping="Wrap" />
