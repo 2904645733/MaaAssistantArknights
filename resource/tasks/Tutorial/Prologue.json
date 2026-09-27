@@ -204,7 +204,24 @@
     },
 
     "Tutorial@Plot@Skip": {
-        "Doc": "教学关结束后会接剧情，复用现成的跳过剧情链路；认不到「跳过」按钮就不匹配，自动落到下一个候选",
-        "baseTask": "SkipBattlePlot"
+        "Doc": "剧情右上角的「跳过」按钮：认到就点一下，点完回轮询。这里不用 baseTask —— MAA 的 template 不随 baseTask 继承，会自动按本任务名去找 Tutorial@Plot@Skip.png，找不到就让整个资源加载失败",
+        "algorithm": "MatchTemplate",
+        "roi": [1096, 0, 182, 131],
+        "template": ["SkipThePreBattlePlot.png", "SkipThePreBattlePlot2.png"],
+        "maskRange": [100, 255],
+        "action": "ClickSelf",
+        "postDelay": 500,
+        "next": ["Tutorial@Plot@SkipConfirm", "Tutorial@Prologue@Loop"]
+    },
+
+    "Tutorial@Plot@SkipConfirm": {
+        "Doc": "「跳过」之后的确认弹窗",
+        "algorithm": "MatchTemplate",
+        "roi": [721, 290, 149, 244],
+        "template": "SkipThePreBattlePlotConfirm.png",
+        "maskRange": [35, 255],
+        "action": "ClickSelf",
+        "postDelay": 500,
+        "next": ["Tutorial@Prologue@Loop"]
     }
 }
