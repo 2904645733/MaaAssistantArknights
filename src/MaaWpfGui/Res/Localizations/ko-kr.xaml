@@ -1375,6 +1375,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="CopilotLocation">작업 파일 경로/코드</system:String>
     <system:String x:Key="CopilotTaskName">스테이지 코드</system:String>
     <system:String x:Key="CopilotTask">전투 임무</system:String>
+    <system:String x:Key="Tutorial">초보자 튜토리얼</system:String>
     <system:String x:Key="TutorialTask">초보자 튜토리얼</system:String>
     <system:String x:Key="TutorialTaskTip" xml:space="preserve">어느 진행도에서든 이어서 진행합니다. 화면에 나온 대사를 인식해 현재 단계를 판단한 뒤 계속합니다.&#10;일반 대사는 자동으로 넘기고, 오퍼레이터 드래그·방향 선택·오퍼레이터/스킬 터치가 필요한 부분은 고정 좌표로 실행합니다.&#10;계정 생성 직후의 초반 튜토리얼(프롤로그 상/하)용입니다(「작전 시작」도 결산도 없는 스테이지).</system:String>
     <system:String x:Key="TutorialTaskProgressTip" xml:space="preserve">시작 전에 게임을 튜토리얼 도중에 두면 됩니다(전투 중이나 대사 중 모두 가능).&#10;중간부터 시작해도 현재 단계를 자동으로 판별합니다.</system:String>

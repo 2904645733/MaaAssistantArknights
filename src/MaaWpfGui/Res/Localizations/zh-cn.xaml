@@ -1376,6 +1376,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="CopilotTaskName">关卡名</system:String>
     <system:String x:Key="CopilotTaskNameTip">关卡名, 例: 1-7</system:String>
     <system:String x:Key="CopilotTask">战斗任务</system:String>
+    <system:String x:Key="Tutorial">新手教程</system:String>
     <system:String x:Key="TutorialTask">新手教程</system:String>
     <system:String x:Key="TutorialTaskTip" xml:space="preserve">从任意进度接手：先认出游戏里正在播的是哪句对话，判断走到哪一步，再接着往下做。&#10;普通对话自动点掉；教学要求拖干员、选朝向、点干员或点技能的地方按固定坐标执行。&#10;适用于账号起名后的前期教学（序章·上 / 序章·下）这类没有「开始行动」、也没有结算的关卡。</system:String>
     <system:String x:Key="TutorialTaskProgressTip" xml:space="preserve">开始前让游戏停在教学过程中即可（战斗中或对话中都可以）。&#10;已经走过一段也没关系，会自动对上是哪一步。</system:String>

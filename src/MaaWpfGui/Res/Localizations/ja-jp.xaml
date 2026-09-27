@@ -1376,6 +1376,7 @@ C:\leidian\LDPlayer9
     <system:String x:Key="CopilotLocation">攻略ファイルパス/ミステリーコード</system:String>
     <system:String x:Key="CopilotTaskName">ステージコード</system:String>
     <system:String x:Key="CopilotTask">戦闘任務</system:String>
+    <system:String x:Key="Tutorial">初心者チュートリアル</system:String>
     <system:String x:Key="TutorialTask">初心者チュートリアル</system:String>
     <system:String x:Key="TutorialTaskTip" xml:space="preserve">どの進度からでも引き継げます：画面に出ているセリフを認識して現在の手順を判断し、そこから続けます。&#10;通常の会話は自動で送ります。ドラッグ・方向選択・干員やスキルのタップが必要な箇所は固定座標で操作します。&#10;アカウント作成直後の序盤チュートリアル（序章・上 / 下）向けです（「行動開始」もリザルトもないステージ）。</system:String>
     <system:String x:Key="TutorialTaskProgressTip" xml:space="preserve">開始前にゲームをチュートリアルの途中で止めておいてください（戦闘中・会話中どちらでも可）。&#10;途中からでも現在の手順を自動で判別します。</system:String>
