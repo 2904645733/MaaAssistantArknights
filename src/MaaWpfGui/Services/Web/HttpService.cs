@@ -23,6 +23,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using MaaWpfGui.Configuration.Factory;
 using MaaWpfGui.Constants;
@@ -37,7 +38,7 @@ namespace MaaWpfGui.Services.Web;
 
 public class HttpService : IHttpService
 {
-    private readonly string UserAgent;
+    private readonly string _userAgent;
 
     private static string Proxy
     {
@@ -60,7 +61,7 @@ public class HttpService : IHttpService
     public HttpService()
     {
         string uiVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0] ?? "0.0.1";
-        UserAgent = $"MaaWpfGui/{uiVersion}";
+        _userAgent = $"MaaWpfGui/{uiVersion}";
 
         VersionUpdateSettingsUserControlModel.Instance.PropertyChanged += (sender, args) => {
             if (args.PropertyName != nameof(VersionUpdateSettingsUserControlModel.Proxy) && args.PropertyName != nameof(VersionUpdateSettingsUserControlModel.ProxyType))
@@ -150,7 +151,7 @@ public class HttpService : IHttpService
         }
     }
 
-    public async Task<HttpResponseMessage> GetAsync(Uri uri, Dictionary<string, string>? extraHeader = null, HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseHeadersRead, UriPartial uriPartial = UriPartial.Query)
+    public async Task<HttpResponseMessage> GetAsync(Uri uri, Dictionary<string, string>? extraHeader = null, HttpCompletionOption httpCompletionOption = HttpCompletionOption.ResponseHeadersRead, UriPartial uriPartial = UriPartial.Query, CancellationToken token = default)
     {
         var request = new HttpRequestMessage { RequestUri = uri, Method = HttpMethod.Get, Version = HttpVersion.Version20, };
         if (extraHeader != null)
@@ -166,7 +167,7 @@ public class HttpService : IHttpService
         }
 
         var stopwatch = Stopwatch.StartNew();
-        var response = await _client.SendAsync(request, httpCompletionOption);
+        var response = await _client.SendAsync(request, httpCompletionOption, token);
         stopwatch.Stop();
         response.Log(uriPartial, stopwatch.Elapsed.TotalMilliseconds);
         return response;
@@ -349,7 +350,7 @@ public class HttpService : IHttpService
         }
 
         HttpClient client = new HttpClient(handler);
-        client.DefaultRequestHeaders.Add("User-Agent", UserAgent);
+        client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
         client.Timeout = TimeSpan.FromSeconds(15);
         return client;
     }

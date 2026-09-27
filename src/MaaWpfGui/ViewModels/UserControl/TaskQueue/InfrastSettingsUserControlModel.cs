@@ -31,11 +31,10 @@ using MaaWpfGui.Utilities.ValueType;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Serilog;
+using static MaaWpfGui.Main.AsstProxy;
+using Mode = MaaWpfGui.ViewModels.UserControl.TaskQueue.InfrastMode;
 
 namespace MaaWpfGui.ViewModels.UserControl.TaskQueue;
-
-using static MaaWpfGui.Main.AsstProxy;
-using Mode = InfrastMode;
 
 /// <summary>
 /// 基建任务
@@ -655,6 +654,9 @@ public class InfrastSettingsUserControlModel : TaskSettingsViewModel, InfrastSet
         InfrastModeList.RefreshLocalization();
         FiammettaTargetList.RefreshLocalization();
         OptionalFiammettaTargetList.RefreshLocalization();
+
+        // 重建显示列表以刷新 _defaultItem 固化的 ｢自动切换（xx）｣ 前缀，选中值由重建逻辑保留
+        RefreshCustomInfrastPlanList();
     }
 
     private interface ISerialize : ITaskQueueModelSerialize

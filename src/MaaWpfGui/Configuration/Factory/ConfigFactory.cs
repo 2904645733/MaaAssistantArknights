@@ -59,7 +59,6 @@ public static class ConfigFactory
 
     public delegate void ConfigurationUpdateEventHandler(string key, object? oldValue, object? newValue);
 
-    // ReSharper disable once EventNeverSubscribedTo.Global
     public static event ConfigurationUpdateEventHandler? ConfigurationUpdateEvent;
 
     private static readonly JsonSerializerOptions _options = new() { WriteIndented = true, Converters = { new DiscordWebhookFixConverter(), new GlobalGuiRenameConverter(), new ThirdPartyMigrationConverter(), new RecruitTaskHoldTagsConverter(), new FightTaskStageResetModeConverter(), new RoguelikeStartingOpersConverter(), new FaultTolerantRootConverter(), new TolerantEnumConverterFactory(), new FightTaskStageResetModeInvalidToIgnoreConverter() }, Encoder = JavaScriptEncoder.Create(UnicodeRanges.All), DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { JsonPredictSerializationModifier.Modify } } };
@@ -304,7 +303,6 @@ public static class ConfigFactory
         }
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global
     public static Root Root => _rootConfig.Value;
 
     public static SpecificConfig CurrentConfig => Root.CurrentConfig;
@@ -344,6 +342,12 @@ public static class ConfigFactory
 
     private static bool Save(string? file = null, Root? root = null)
     {
+        if (Main.Bootstrapper.IsDemoMode)
+        {
+            // README 截图演示模式：不落盘任何配置文件，进程内状态退出即弃
+            return true;
+        }
+
         _semaphore.Wait();
         try
         {
@@ -363,6 +367,12 @@ public static class ConfigFactory
 
     private static async Task<bool> SaveAsync(string? file = null)
     {
+        if (Main.Bootstrapper.IsDemoMode)
+        {
+            // README 截图演示模式：不落盘任何配置文件，进程内状态退出即弃
+            return true;
+        }
+
         await _semaphore.WaitAsync();
         try
         {

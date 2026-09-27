@@ -87,6 +87,8 @@ public class ToolboxViewModel : Screen
             PixelPaintFitModeList.RefreshLocalization();
             PixelPaintDitherModeList.RefreshLocalization();
             SecretFrontEventList.RefreshLocalization();
+            ExportOptionList.RefreshLocalization();
+            OperBoxExportOptionList.RefreshLocalization();
             Application.Current.Dispatcher.InvokeAsync(
                 () => {
                     LoadDepotDetails();
@@ -116,6 +118,18 @@ public class ToolboxViewModel : Screen
     /// Gets the shared run control state for run-state bindings.
     /// </summary>
     public RunControlState Run => RunControlState.Instance;
+
+    private int _toolboxSelectedIndex;
+
+    /// <summary>
+    /// Gets or sets 外层功能 Tab 的选中索引（0 公招识别、1 干员识别、2 仓库识别，后续为隐藏/其他页）。
+    /// XAML 的外层 TabControl 原本无 VM 绑定，此属性供 README 截图演示模式等场景程序化切页。
+    /// </summary>
+    public int ToolboxSelectedIndex
+    {
+        get => _toolboxSelectedIndex;
+        set => SetAndNotify(ref _toolboxSelectedIndex, value);
+    }
 
     #region Recruit
 
@@ -884,14 +898,14 @@ public class ToolboxViewModel : Screen
         Csv = 3,
     }
 
-    public record struct ExportEntry(string Display, int Value);
-
-    public List<ExportEntry> ExportOptionList { get; } = [
-        new(LocalizationHelper.GetString("ExportToArkplanner"), (int)DepotExportFormat.Arkplanner),
-        new(LocalizationHelper.GetString("ExportToLolicon"), (int)DepotExportFormat.Lolicon),
-        new(LocalizationHelper.GetString("ExportToMarkdown"), (int)DepotExportFormat.Markdown),
-        new(LocalizationHelper.GetString("ExportToCsv"), (int)DepotExportFormat.Csv),
-    ];
+    /// <summary>
+    /// Gets 仓库导出格式选项，文案随语言热切换自动刷新。
+    /// </summary>
+    public LocalizedObservableList<int> ExportOptionList { get; } = new(
+        ((int)DepotExportFormat.Arkplanner, "ExportToArkplanner"),
+        ((int)DepotExportFormat.Lolicon, "ExportToLolicon"),
+        ((int)DepotExportFormat.Markdown, "ExportToMarkdown"),
+        ((int)DepotExportFormat.Csv, "ExportToCsv"));
 
     private int _selectedExportValue;
 
@@ -1019,7 +1033,7 @@ public class ToolboxViewModel : Screen
     */
 
     // 需要排除的物品 ID（不统计到仓库）
-    private static readonly HashSet<string> ExcludedItemIds =
+    private static readonly HashSet<string> _excludedItemIds =
     [
         "3401", // 家具
         "3112", "3113", "3114", // 碳
@@ -1034,7 +1048,7 @@ public class ToolboxViewModel : Screen
     private static bool ShouldExcludeItem(string itemId)
     {
         // 排除特定 ID
-        if (ExcludedItemIds.Contains(itemId))
+        if (_excludedItemIds.Contains(itemId))
         {
             return true;
         }
@@ -1338,10 +1352,10 @@ public class ToolboxViewModel : Screen
         /// </summary>
         public List<string> ModBadges =>
         [
-            .. Equips?.Where(e => e.Level > 0).Select(e => $"{ModTypeDisplay.GetValueOrDefault(e.Type, e.Type)}{e.Level}") ?? [],
+            .. Equips?.Where(e => e.Level > 0).Select(e => $"{_modTypeDisplay.GetValueOrDefault(e.Type, e.Type)}{e.Level}") ?? [],
         ];
 
-        private static readonly Dictionary<string, string> ModTypeDisplay = new()
+        private static readonly Dictionary<string, string> _modTypeDisplay = new()
         {
             ["A"] = "α",
             ["B"] = "β",
@@ -1664,7 +1678,14 @@ public class ToolboxViewModel : Screen
 
         _operBoxDataSource = details["source"]?.ToString() == "yituliu" ? "yituliu" : "local";
 
-        var ownOpers = (details["own_opers"] as JArray)?.ToObject<List<OperBoxData.OperData>>()?.Where(o => !string.IsNullOrEmpty(o.Id)).ToList();
+        // 升变形态 ID 先归一到基础形态，后续的拥有去重、未拥有差集与落盘都使用同一 ID
+        var ownOpers = (details["own_opers"] as JArray)?.ToObject<List<OperBoxData.OperData>>()?
+            .Where(o => !string.IsNullOrEmpty(o.Id))
+            .Select(o => {
+                o.Id = DataHelper.GetCanonicalOperId(o.Id);
+                return o;
+            })
+            .ToList();
         if (ownOpers is null)
         {
             return false;
@@ -1902,12 +1923,14 @@ public class ToolboxViewModel : Screen
         StartOperBoxRecognitionTask();
     }
 
-    public List<GenericCombinedData<OperBoxExportFormat>> OperBoxExportOptionList { get; } = [
-        new(LocalizationHelper.GetString("OperBoxExportToClipboard"), OperBoxExportFormat.Clipboard),
-        new(LocalizationHelper.GetString("OperBoxExportToJson"), OperBoxExportFormat.Json),
-        new(LocalizationHelper.GetString("ExportToMarkdown"), OperBoxExportFormat.Markdown),
-        new(LocalizationHelper.GetString("ExportToCsv"), OperBoxExportFormat.Csv),
-    ];
+    /// <summary>
+    /// Gets 干员识别导出格式选项，文案随语言热切换自动刷新。
+    /// </summary>
+    public LocalizedObservableList<OperBoxExportFormat> OperBoxExportOptionList { get; } = new(
+        (OperBoxExportFormat.Clipboard, "OperBoxExportToClipboard"),
+        (OperBoxExportFormat.Json, "OperBoxExportToJson"),
+        (OperBoxExportFormat.Markdown, "ExportToMarkdown"),
+        (OperBoxExportFormat.Csv, "ExportToCsv"));
 
     public OperBoxExportFormat SelectedOperBoxExportValue
     {
@@ -2379,7 +2402,7 @@ public class ToolboxViewModel : Screen
             _logger.Warning("Screenshot Semaphore Full, Reduce Target FPS count to {PeepTargetFps}", --PeepTargetFps);
             _ = Execute.OnUIThreadAsync(() => {
                 Growl.Clear();
-                Growl.Warning($"Screenshot taking too long, reduce Target FPS to {PeepTargetFps}");
+                Growl.Warning(LocalizationHelper.GetStringFormat("PeepScreenshotTooLong", PeepTargetFps));
             });
             return;
         }
@@ -2519,7 +2542,13 @@ public class ToolboxViewModel : Screen
         public bool IsSecretFront => Value == "MiniGame@SecretFront";
 
         public bool IsPixelPaint => Value is "MiniGame@PixelPaint" or "MiniGame@PixelPaint@Begin";
+
+        public bool IsAutoRaisePotential => Value == "MiniGame@AutoRaisePotential@Begin";
+
+        public bool IsMaterialSynthesis => Value == "MiniGame@MaterialSynthesis@Begin";
     }
+
+    public static string MaterialSynthesisVideoPath => Path.Combine(PathsHelper.BaseDir, "Res", "Video", "MaterialSynthesis.mp4");
 
     public ObservableCollection<MiniGameCategoryItem> MiniGameCategoryItems { get; } = [];
 
@@ -2555,9 +2584,16 @@ public class ToolboxViewModel : Screen
         var categorizedItems = Instances.StageManager.MiniGameEntries
             .Select(t => {
                 var isCurrentEvent = t.UtcStartTime != DateTime.MinValue || t.UtcExpireTime != DateTime.MinValue;
-                var category = LocalizationHelper.GetString(isCurrentEvent
-                    ? "MiniGameCategoryCurrentEvent"
-                    : "MiniGameCategoryPermanent");
+                var defaultCategoryKey = isCurrentEvent ? "MiniGameCategoryCurrentEvent" : "MiniGameCategoryPermanent";
+                var category = !string.IsNullOrEmpty(t.CategoryKey)
+                    && LocalizationHelper.TryGetString(t.CategoryKey, out var localizedCategory)
+                    ? localizedCategory
+                    : t.Category;
+                if (string.IsNullOrEmpty(category))
+                {
+                    category = LocalizationHelper.GetString(defaultCategoryKey);
+                }
+
                 return new MiniGameCategoryItem {
                     Display = string.IsNullOrEmpty(t.DisplayKey)
                         ? t.Display
@@ -2676,6 +2712,11 @@ public class ToolboxViewModel : Screen
         ("诡影迷踪", "MiniGame@SecretFront@Event3"));
 
     public string SecretFrontEvent { get; set => SetAndNotify(ref field, value); } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets 自动提升潜能：中坚信物不足时是否消耗普通信物继续提升（不勾选时点 × 跳过该次提升）。
+    /// </summary>
+    public bool MiniGameUseNormalToken { get; set => SetAndNotify(ref field, value); }
 
     #region PixelPaint
 
@@ -3246,7 +3287,7 @@ public class ToolboxViewModel : Screen
         }
         else
         {
-            caught = Instances.AsstProxy.AsstMiniGame(GetMiniGameTask());
+            caught = Instances.AsstProxy.AsstMiniGame(GetMiniGameTask(), MiniGameUseNormalToken);
         }
 
         if (!caught)

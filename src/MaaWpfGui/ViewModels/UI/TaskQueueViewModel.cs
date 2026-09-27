@@ -59,7 +59,6 @@ namespace MaaWpfGui.ViewModels.UI;
 /// The view model of task queue.
 /// </summary>
 // 通过 container.Get<TaskQueueViewModel>(); 实例化或获取实例
-// ReSharper disable once ClassNeverInstantiated.Global
 public class TaskQueueViewModel : Screen
 {
     private readonly RunningState _runningState;
@@ -96,6 +95,11 @@ public class TaskQueueViewModel : Screen
     /// Gets 战斗任务Model
     /// </summary>
     public static FightSettingsUserControlModel FightTask => FightSettingsUserControlModel.Instance;
+
+    /// <summary>
+    /// Gets 干员培养任务Model
+    /// </summary>
+    public static OperProgressTaskUserControlModel OperProgressTask => OperProgressTaskUserControlModel.Instance;
 
     /// <summary>
     /// Gets 招募任务Model
@@ -157,7 +161,7 @@ public class TaskQueueViewModel : Screen
     private static readonly IEnumerable<TaskSettingsViewModel> _taskViewModelTypes = InitTaskViewModelList();
 
     /// <summary>
-    /// 实时更新任务顺序
+    /// 实时更新任务顺序与依赖任务列表的派生属性
     /// </summary>
     /// <param name="sender">ignored object</param>
     /// <param name="e">ignored NotifyCollectionChangedEventArgs</param>
@@ -227,6 +231,12 @@ public class TaskQueueViewModel : Screen
             {
                 ConfigFactory.CurrentConfig.TaskQueue.Clear();
                 TaskSettingVisibilities.SetPostAction(true);
+            }
+
+            // Move 不改变队列内容，其余操作都可能增删开始唤醒任务
+            if (e.Action != NotifyCollectionChangedAction.Move)
+            {
+                NotifyOfPropertyChange(nameof(StartUpTaskCount));
             }
         });
     }
@@ -741,11 +751,12 @@ public class TaskQueueViewModel : Screen
     {
         _runningState = RunningState.Instance;
         _runningState.StateChanged += (_, e) => {
-            // 回到空闲的变化沿时重置主任务进度（原 Idle 镜像置 true 的联动；
-            // 空闲期内其他状态字段的广播不重复触发）
+            // 回到空闲的变化沿时清零主任务进度分母并隐藏任务栏进度
+            // （空闲期内其他状态字段的广播不重复触发）
             if (!e.OldState.Idle && e.NewState.Idle)
             {
-                UpdateMainTasksProgress(0);
+                _mainTasksTotalCount = 0;
+                RefreshMainTasksProgress();
                 _ = GameAudioMuteManager.RestoreWhenCoreIdleAsync(Instances.AsstProxy.AsstRunning);
             }
 
@@ -772,7 +783,8 @@ public class TaskQueueViewModel : Screen
 
         if (Instances.VersionUpdateDialogViewModel.IsDebugVersion() || File.Exists("DEBUG") || File.Exists("DEBUG.txt"))
         {
-            CanShowAutoReload = true;
+            // Debug 版专属的 ｢自动重载资源｣ 勾选项不进 README 演示截图
+            CanShowAutoReload = !Bootstrapper.IsDemoMode;
             ShowDebugTask = true;
         }
     }
@@ -901,6 +913,12 @@ public class TaskQueueViewModel : Screen
 
     private void InitTimer()
     {
+        if (Bootstrapper.IsDemoMode)
+        {
+            // README 截图演示模式：定时器链含更新检查与定时自动任务，全部停用
+            return;
+        }
+
         _timer.Interval = 30 * 1000;
         _timer.Elapsed += Timer1_Elapsed;
         _timer.Start();
@@ -1121,7 +1139,6 @@ public class TaskQueueViewModel : Screen
                 break;
             }
 
-            // ReSharper disable once InvertIf
             if (currentTime == startTime)
             {
                 timeToStart = true;
@@ -1288,6 +1305,8 @@ public class TaskQueueViewModel : Screen
             ConfigFactory.CurrentConfig.TaskQueue.Add(new RecruitTask());
             ConfigFactory.CurrentConfig.TaskQueue.Add(new MallTask());
             ConfigFactory.CurrentConfig.TaskQueue.Add(new AwardTask());
+
+            // ConfigFactory.CurrentConfig.TaskQueue.Add(new OperProgressTask());
             ConfigFactory.CurrentConfig.TaskQueue.Add(new RoguelikeTask());
             ConfigFactory.CurrentConfig.TaskQueue.Add(new ReclamationTask());
             ConfigFactory.CurrentConfig.TaskQueue.Add(new UserDataUpdateTask());
@@ -1328,6 +1347,51 @@ public class TaskQueueViewModel : Screen
         {
             AddLog(LocalizationHelper.GetString("BuyWineOnAprilFoolsDay"), UiLogColor.Info);
         }
+    }
+
+    /// <summary>
+    /// README 截图演示模式专用（仅供 <see cref="MaaWpfGui.Main.DemoShot.DemoShotService"/> 调用）：
+    /// 把配置任务集合整体替换为给定固定序列，并以理智作战（FightTask）行为选中行重建任务条目列表。
+    /// 集合替换、条目重建与选中恢复都在调用线程同步一次成型，不经 <see cref="TaskItemSelectionChanged"/>
+    /// 的 Dispatcher 排队回写，与截图时序无竞争；非演示路径不调用本方法。
+    /// </summary>
+    /// <param name="orderedTasks">演示数据工厂新建的目标序列，调用方已写好每条 <see cref="BaseTask.IsEnable"/>。</param>
+    public void ApplyDemoTaskSequence(IReadOnlyList<BaseTask> orderedTasks)
+    {
+        var configQueue = ConfigFactory.CurrentConfig.TaskQueue;
+
+        // 固定序列整体替换配置集合：序列实例均不在旧集合中，无从 Move 重排；Clear/Add 的集合变更
+        // 只联动同步防抖保存（演示模式已整体拦截），不产生 Dispatcher 排队回调
+        configQueue.Clear();
+        foreach (var task in orderedTasks)
+        {
+            configQueue.Add(task);
+        }
+
+        // 选中理智作战行：TaskSelectedIndex 决定 InitializeItems 的 EnableSetting 落点，任务设置面板与
+        // 候选关卡注入（InjectDemoStages）都要求 CurrentTask 为 FightTask；序列不含 FightTask 时保持 -1，
+        // 由 InitializeItems 走既有回退
+        ConfigFactory.CurrentConfig.TaskSelectedIndex = -1;
+        for (int i = 0; i < orderedTasks.Count; i++)
+        {
+            if (orderedTasks[i] is FightTask)
+            {
+                ConfigFactory.CurrentConfig.TaskSelectedIndex = i;
+                break;
+            }
+        }
+
+        // 旧条目随重建废弃，按条目集合 Remove 分支同样的方式释放事件订阅
+        foreach (var item in TaskItemViewModels)
+        {
+            (item as IDisposable)?.Dispose();
+        }
+
+        InitializeItems();
+
+        // InitializeItems 以新集合实例整体替换 TaskItemViewModels 且该属性 setter 不发通知，
+        // 显式发通知让 ItemsSource 绑定重读到新列表
+        NotifyOfPropertyChange(nameof(TaskItemViewModels));
     }
 
     public DayOfWeek CurDayOfWeek { get; private set; }
@@ -1377,6 +1441,13 @@ public class TaskQueueViewModel : Screen
     /// <returns>可等待</returns>
     public async Task UpdateDatePromptAndStagesWeb()
     {
+        if (Bootstrapper.IsDemoMode)
+        {
+            // README 截图演示模式：跳过活动关卡联网更新，仅做本地刷新
+            UpdateDatePromptAndStagesLocally();
+            return;
+        }
+
         await Instances.StageManager.UpdateStageWeb();
         UpdateDatePromptAndStagesLocally();
     }
@@ -1391,6 +1462,7 @@ public class TaskQueueViewModel : Screen
 
         // yj历的 4/16 点
         var today = DateOnly.FromDateTime(now);
+
         bool isCriticalTime = now is { Minute: 0, Hour: 0 or 12 };
         bool isNewDate = today != _lastPromptDate;
 
@@ -1533,13 +1605,13 @@ public class TaskQueueViewModel : Screen
         Execute.OnUIThread(() => {
             if (needsBeforeSplit)
             {
-                createNewCard();
+                CreateNewCard();
             }
 
             // 确保至少有一个卡片（如果没有内容且不需要切割，也需要确保有卡片才能更新图片）
             if (LogCardViewModels.Count <= 0 && (!isEmpty || updateCardImage))
             {
-                createNewCard();
+                CreateNewCard();
             }
 
             if (LogCardViewModels.Count > 0)
@@ -1557,12 +1629,12 @@ public class TaskQueueViewModel : Screen
 
             if (needsAfterSplit)
             {
-                createNewCard();
+                CreateNewCard();
             }
         });
     }
 
-    private void createNewCard()
+    private void CreateNewCard()
     {
         if (LogCardViewModels.Count > 0 && LogCardViewModels[^1].Items.Count <= 0 && !LogCardViewModels[^1].IsDivider)
         {
@@ -1598,7 +1670,7 @@ public class TaskQueueViewModel : Screen
             // Card log style: render a real hc:Divider as its own card.
             var divider = new LogCardItemViewModel { IsDivider = true, Header = header };
             LogCardViewModels.Add(divider);
-            createNewCard();
+            CreateNewCard();
         });
     }
 
@@ -1659,6 +1731,12 @@ public class TaskQueueViewModel : Screen
         }
     }
 
+    /// <summary>
+    /// Gets the number of StartUp tasks in the task queue.
+    /// 开始唤醒任务至多一个，用于限制添加菜单与复制入口。
+    /// </summary>
+    public int StartUpTaskCount => ConfigFactory.CurrentConfig.TaskQueue.Count(t => t is StartUpTask);
+
     public static ReadOnlyCollection<GenericCombinedData<Type>> TaskTypeList { get; } = Array.AsReadOnly(
         [
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("StartUp"), Value = typeof(StartUpTask) },
@@ -1667,6 +1745,7 @@ public class TaskQueueViewModel : Screen
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("Recruit"), Value = typeof(RecruitTask) },
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("Mall"), Value = typeof(MallTask) },
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("Award"), Value = typeof(AwardTask) },
+            new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("OperProgress"), Value = typeof(OperProgressTask) },
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("Roguelike"), Value = typeof(RoguelikeTask) },
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("Reclamation"), Value = typeof(ReclamationTask) },
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("UserDataUpdate"), Value = typeof(UserDataUpdateTask) },
@@ -1687,6 +1766,7 @@ public class TaskQueueViewModel : Screen
                 nameof(RecruitTask) => LocalizationHelper.GetString("Recruit"),
                 nameof(MallTask) => LocalizationHelper.GetString("Mall"),
                 nameof(AwardTask) => LocalizationHelper.GetString("Award"),
+                nameof(OperProgressTask) => LocalizationHelper.GetString("OperProgress"),
                 nameof(RoguelikeTask) => LocalizationHelper.GetString("Roguelike"),
                 nameof(ReclamationTask) => LocalizationHelper.GetString("Reclamation"),
                 nameof(UserDataUpdateTask) => LocalizationHelper.GetString("UserDataUpdate"),
@@ -1701,6 +1781,12 @@ public class TaskQueueViewModel : Screen
 
     public void AddTaskQueueTask(Type taskName)
     {
+        // 开始唤醒任务至多一个，菜单项禁用之外的行为兜底
+        if (taskName == typeof(StartUpTask) && StartUpTaskCount >= 1)
+        {
+            return;
+        }
+
         if (Activator.CreateInstance(taskName) is BaseTask task)
         {
             if (task is CopilotTask { Name.Length: 0 })
@@ -1755,7 +1841,7 @@ public class TaskQueueViewModel : Screen
             }
             else
             {
-                AddLog("Rename failed", UiLogColor.Error);
+                AddLog(LocalizationHelper.GetString("TaskRenameFailed"), UiLogColor.Error);
             }
         }
     }
@@ -1794,6 +1880,28 @@ public class TaskQueueViewModel : Screen
     }
 
     /// <summary>
+    /// 从指定任务或其后第一个启用的任务开始运行。
+    /// </summary>
+    /// <param name="taskItem">任务项</param>
+    /// <returns>A <see cref="Task"/>representing the asynchronous operation.</returns>
+    [UsedImplicitly]
+    public async Task RunTasksFromHere(TaskItemViewModel taskItem)
+    {
+        if (taskItem == null || !_runningState.GetIdle())
+        {
+            return;
+        }
+
+        var taskQueue = ConfigFactory.CurrentConfig.TaskQueue;
+        if (taskItem.Index < 0 || taskItem.Index >= taskQueue.Count)
+        {
+            return;
+        }
+
+        await LinkStartWithTasks(taskQueue, taskItem.Index);
+    }
+
+    /// <summary>
     /// 复制任务
     /// </summary>
     /// <param name="taskItem">任务项</param>
@@ -1812,6 +1920,13 @@ public class TaskQueueViewModel : Screen
         }
 
         var oldTask = ConfigFactory.CurrentConfig.TaskQueue[index];
+
+        // 开始唤醒任务至多一个，入口按钮禁用之外的行为兜底
+        if (oldTask is StartUpTask && StartUpTaskCount >= 1)
+        {
+            return;
+        }
+
         var oldTaskJson = JsonSerializer.Serialize(oldTask);
         if (JsonSerializer.Deserialize(oldTaskJson, oldTask.GetType()) is not BaseTask newTask)
         {
@@ -2105,33 +2220,33 @@ public class TaskQueueViewModel : Screen
         return false;
     }
 
-    public int MainTasksCompletedCount { get; set; }
-
-    public int MainTasksSelectedCount => TaskItemViewModels.Count(x => (x.IsEnable ?? true));
+    /// <summary>
+    /// 本轮参与条目的有效 chain 总数（LinkStart 序列化产出的 Core 任务 id 数，防御性排除非正 id），
+    /// 作为任务栏进度的分母；0 表示当前无产生进度的主任务轮次。
+    /// </summary>
+    private int _mainTasksTotalCount;
 
     /// <summary>
-    /// updates the main tasks progress.
+    /// Recomputes the main tasks progress from item statuses and pushes it to the taskbar.
+    /// 分子为各条目已处理（完成或出错）的 chain 数之和（未参与条目的 id 映射已在轮首清空，自然贡献 0）；
+    /// 分母为 0（无进行中的轮次）或分子走满时隐藏进度。
     /// </summary>
-    /// <param name="completedCount">已完成任务数，留空则代表 +1</param>
-    public void UpdateMainTasksProgress(int? completedCount = null)
+    public void RefreshMainTasksProgress()
     {
-        var rvm = (RootViewModel)this.Parent;
-        if (MainTasksSelectedCount == 0)
+        var rvm = (RootViewModel?)Parent;
+        if (rvm is null)
+        {
+            return;
+        }
+
+        if (_mainTasksTotalCount == 0)
         {
             rvm.TaskProgress = null;
             return;
         }
 
-        MainTasksCompletedCount = completedCount ?? ++MainTasksCompletedCount;
-
-        if (MainTasksCompletedCount >= MainTasksSelectedCount)
-        {
-            rvm.TaskProgress = null;
-        }
-        else
-        {
-            rvm.TaskProgress = (MainTasksCompletedCount, MainTasksSelectedCount);
-        }
+        var completedChainCount = TaskItemViewModels.Sum(x => x.CompletedChainCount);
+        rvm.TaskProgress = completedChainCount >= _mainTasksTotalCount ? null : (completedChainCount, _mainTasksTotalCount);
     }
 
     public bool ShowDebugTask { get => field; set => SetAndNotify(ref field, value); }
@@ -2207,7 +2322,7 @@ public class TaskQueueViewModel : Screen
     }
 #endif
 
-    public async Task LinkStartWithTasks(IEnumerable<BaseTask> tasks)
+    public async Task LinkStartWithTasks(IEnumerable<BaseTask> tasks, int? startIndex = null)
     {
         if (!_runningState.Idle)
         {
@@ -2261,7 +2376,7 @@ public class TaskQueueViewModel : Screen
         // GPU 相关提示在每次开始运行时重新输出，避免被 ClearLog 清空
         Instances.AsstProxy.LogGpuStatus();
 
-        MainTasksCompletedCount = 0;
+        _mainTasksTotalCount = 0;
         ResetTaskItemStatuses();
 
         // 所有提前 return 都要放在进入运行态之前，否则会导致无法再次点击开始
@@ -2305,6 +2420,7 @@ public class TaskQueueViewModel : Screen
 
         // 直接遍历TaskItemViewModels里面的内容，是排序后的
         int count = 0;
+        int participatingChainCount = 0;
         List<int> coreTaskIds = [];
         bool serializeFailed = false;
         foreach (var item in tasks)
@@ -2315,7 +2431,7 @@ public class TaskQueueViewModel : Screen
                 item.TaskType,
                 item.NameOrTaskType,
                 item.IsEnable);
-            if (!IsTaskEnable(item))
+            if ((startIndex is int firstTaskIndex && index < firstTaskIndex) || !IsTaskEnable(item))
             {
                 SetTaskStatus(index, TaskItemStatus.Skipped);
                 continue;
@@ -2328,8 +2444,19 @@ public class TaskQueueViewModel : Screen
                 {
                     case true:
                         ++count;
-                        coreTaskIds.AddRange(taskIds);
-                        Instances.TaskQueueViewModel.TaskItemViewModels.ElementAtOrDefault(index)?.SetTaskIds(taskIds);
+                        var taskIdList = taskIds.ToList();
+                        coreTaskIds.AddRange(taskIdList);
+
+                        // 进度分母按 Core chain 粒度累计，仅计有效任务 id（防御性过滤 id <= 0：
+                        // 无对应 Core 任务的 id 永无回调，若被计入则分子永远差格、进度走不满）；一图流-only 条目序列化成功但无 Core chain，
+                        // 贡献 0 格；index 为 -1 的临时任务如手动切账号不在配置队列，取不到条目，天然不计入；
+                        // count 另含这类临时任务，仍用于空任务判定与成就统计，两个计数不可合并
+                        if (Instances.TaskQueueViewModel.TaskItemViewModels.ElementAtOrDefault(index) is { } itemViewModel)
+                        {
+                            itemViewModel.SetTaskIds(taskIdList);
+                            participatingChainCount += taskIdList.Count(id => id > 0);
+                        }
+
                         break;
                     case false:
                         serializeFailed = true;
@@ -2364,6 +2491,10 @@ public class TaskQueueViewModel : Screen
             SetStopped();
             return;
         }
+
+        // 分母定死为本轮参与条目的有效 chain 总数（含仅一图流后台执行、无 Core 任务 id 的条目贡献的 0）；分母为 0 时不显示进度
+        _mainTasksTotalCount = participatingChainCount;
+        RefreshMainTasksProgress();
 
         if (coreTaskIds.Count == 0)
         {
@@ -2404,10 +2535,14 @@ public class TaskQueueViewModel : Screen
         }
     }
 
+    // 轮首清空各条目的 id 映射并重置显示状态：超时强制恢复的 SetStopped 不清 _taskIds，
+    // 上一轮残留的 id 映射会被迟到的 Core 回调继续写入（污染 chain 分子、改写条目标签）；
+    // 清空后未参与条目的 StatusList 为空、CompletedChainCount 恒 0，进度分子无需参与标记
     private void ResetTaskItemStatuses()
     {
         foreach (var item in TaskItemViewModels)
         {
+            item.SetTaskIds([]);
             item.StatusDisplay = TaskItemStatus.Idle;
         }
     }

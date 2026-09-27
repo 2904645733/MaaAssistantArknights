@@ -49,6 +49,8 @@ namespace MaaWpfGui.ViewModels.UserControl.Settings;
 /// </summary>
 public class ConnectSettingsUserControlModel : PropertyChangedBase
 {
+    private readonly RunningState _runningState = RunningState.Instance;
+
     static ConnectSettingsUserControlModel()
     {
         Instance = new();
@@ -56,7 +58,7 @@ public class ConnectSettingsUserControlModel : PropertyChangedBase
 
         // MuMu 触控勾选框的跨实例依赖须在 Instance 就绪后注册，
         // 放进构造链会因静态构造重入拿到 null 的 Instance 而静默失败
-        PropertyDependsOnUtility.InitializePropertyDependencies(Instance.Extras.Mumu12);
+        PropertyDependsOnUtility.InitializePropertyDependencies(Instance._extras.Mumu12);
     }
 
     private ConnectSettingsUserControlModel()
@@ -64,9 +66,9 @@ public class ConnectSettingsUserControlModel : PropertyChangedBase
         PropertyDependsOnUtility.InitializePropertyDependencies(this);
 
         // 刷新截图方式选项的可用状态
-        Extras.Win32.UpdateScreencapMethodAvailability();
+        _extras.Win32.UpdateScreencapMethodAvailability();
 
-        Extras.Win32.PropertyChanged += (_, e) => {
+        _extras.Win32.PropertyChanged += (_, e) => {
             if (e.PropertyName == nameof(Win32Extra.MouseMethod))
             {
                 NotifyOfPropertyChange(nameof(ShowWindowRestoreButton));
@@ -86,8 +88,6 @@ public class ConnectSettingsUserControlModel : PropertyChangedBase
     public static ConnectSettingsUserControlModel Instance { get; }
 
     private static readonly ILogger _logger = Log.ForContext<ConnectSettingsUserControlModel>();
-
-    private static RunningState _runningState => RunningState.Instance;
 
     /// <summary>
     /// Gets the list of the configuration of connection.
@@ -209,7 +209,8 @@ public class ConnectSettingsUserControlModel : PropertyChangedBase
     public string AdbPath
     {
         get; set {
-            if (!Path.GetFileName(value).ToLower().Contains("adb"))
+            // 空路径视为用户清空输入、交由自动检测重填，不属于“文件名不含 ADB”
+            if (!string.IsNullOrWhiteSpace(value) && !Path.GetFileName(value).ToLower().Contains("adb"))
             {
                 var count = 3;
                 while (count-- > 0)
@@ -255,13 +256,13 @@ public class ConnectSettingsUserControlModel : PropertyChangedBase
 
     [PropertyDependsOn(nameof(ConnectConfig))]
     public ExtraConfig? ExtraConfig => ConnectConfig switch {
-        ConnectConfig.LDPlayer => Extras.LdPlayer,
-        ConnectConfig.MuMuEmulator12 => Extras.Mumu12,
-        ConnectConfig.PC => Extras.Win32,
+        ConnectConfig.LDPlayer => _extras.LdPlayer,
+        ConnectConfig.MuMuEmulator12 => _extras.Mumu12,
+        ConnectConfig.PC => _extras.Win32,
         _ => null,
     };
 
-    private readonly ExtraConfigs Extras = new();
+    private readonly ExtraConfigs _extras = new();
 
     private class ExtraConfigs
     {
@@ -585,7 +586,7 @@ public class ConnectSettingsUserControlModel : PropertyChangedBase
 
         if (TestLinkImage is null)
         {
-            TestLinkInfo = "Image is null";
+            TestLinkInfo = LocalizationHelper.GetString("ImageIsNull");
             return;
         }
 
@@ -699,7 +700,6 @@ public class ConnectSettingsUserControlModel : PropertyChangedBase
 
         var allLines = File.ReadAllLines(_bluestacksConfig);
 
-        // ReSharper disable once InvertIf
         if (string.IsNullOrEmpty(_bluestacksKeyWord))
         {
             foreach (var line in allLines)
@@ -782,75 +782,101 @@ public class ConnectSettingsUserControlModel : PropertyChangedBase
         Instances.AsstProxy.AsstSetInstanceOption(InstanceOptionKey.KillAdbOnExit, KillAdbOnExit ? "1" : "0");
     }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether 替换 ADB 进行中（含下载与解压全过程），期间禁用按钮防止并发写同一 adb.zip。
+    /// </summary>
+    public bool IsReplacingAdb
+    {
+        get; set {
+            if (SetAndNotify(ref field, value))
+            {
+                NotifyOfPropertyChange(nameof(CanReplaceAdb));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether 当前可触发替换 ADB（非进行中）。
+    /// </summary>
+    public bool CanReplaceAdb => !IsReplacingAdb;
+
     // UI 绑定的方法
     [UsedImplicitly]
     public async Task ReplaceAdb()
     {
-        if (!File.Exists(MaaUrls.GoogleAdbFilename))
+        IsReplacingAdb = true;
+        try
         {
-            string[] downloadUrls =
-            [
-                MaaUrls.GoogleAdbDownloadUrl,
-                MaaUrls.AdbMaaMirrorDownloadUrl,
-                MaaUrls.AdbMaaMirror2DownloadUrl
-            ];
-
-            bool downloadResult = false;
-            foreach (var url in downloadUrls)
+            if (!File.Exists(MaaUrls.GoogleAdbFilename))
             {
-                downloadResult = await Instances.HttpService.DownloadFileAsync(new(url), MaaUrls.GoogleAdbFilename);
-                if (downloadResult)
+                string[] downloadUrls =
+                [
+                    MaaUrls.GoogleAdbDownloadUrl,
+                    MaaUrls.AdbMaaMirrorDownloadUrl,
+                    MaaUrls.AdbMaaMirror2DownloadUrl
+                ];
+
+                bool downloadResult = false;
+                foreach (var url in downloadUrls)
                 {
-                    break;
+                    downloadResult = await Instances.HttpService.DownloadFileAsync(new(url), MaaUrls.GoogleAdbFilename);
+                    if (downloadResult)
+                    {
+                        break;
+                    }
+                }
+
+                if (!downloadResult)
+                {
+                    using var toast = new ToastNotification(LocalizationHelper.GetString("AdbDownloadFailedTitle"));
+                    toast.AppendContentText(LocalizationHelper.GetString("AdbDownloadFailedDesc")).Show();
+                    return;
                 }
             }
 
-            if (!downloadResult)
+            const string UnzipDir = "adb";
+            const string NewAdb = UnzipDir + "/platform-tools/adb.exe";
+
+            try
             {
-                using var toast = new ToastNotification(LocalizationHelper.GetString("AdbDownloadFailedTitle"));
-                toast.AppendContentText(LocalizationHelper.GetString("AdbDownloadFailedDesc")).Show();
+                if (Directory.Exists(UnzipDir))
+                {
+                    Directory.Delete(UnzipDir, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("An error occurred while deleting directory: {Type}: {ExMessage}", ex.GetType(), ex.Message);
+                ToastNotification.ShowDirect(LocalizationHelper.GetString("AdbDeletionFailedMessage"));
                 return;
             }
-        }
 
-        const string UnzipDir = "adb";
-        const string NewAdb = UnzipDir + "/platform-tools/adb.exe";
-
-        try
-        {
-            if (Directory.Exists(UnzipDir))
+            try
             {
-                Directory.Delete(UnzipDir, true);
+                ZipFile.ExtractToDirectory(MaaUrls.GoogleAdbFilename, UnzipDir);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "UnzipFailedMessage");
+                ToastNotification.ShowDirect(LocalizationHelper.GetString("UnzipFailedMessage"));
+                return;
+            }
+
+            if (File.Exists(NewAdb))
+            {
+                AdbPath = NewAdb;
+                AdbReplaced = true;
+                ConfigFactory.CurrentConfig.Gui.ConnectSettings.AdbReplaced = true;
+                ToastNotification.ShowDirect(LocalizationHelper.GetString("SuccessfullyReplacedAdb"));
+            }
+            else
+            {
+                ToastNotification.ShowDirect(LocalizationHelper.GetString("FailedToReplaceAdbAndUseLocal"));
             }
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.Error("An error occurred while deleting directory: {Type}: {ExMessage}", ex.GetType(), ex.Message);
-            ToastNotification.ShowDirect(LocalizationHelper.GetString("AdbDeletionFailedMessage"));
-            return;
-        }
-
-        try
-        {
-            ZipFile.ExtractToDirectory(MaaUrls.GoogleAdbFilename, UnzipDir);
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e, "UnzipFailedMessage");
-            ToastNotification.ShowDirect(LocalizationHelper.GetString("UnzipFailedMessage"));
-            return;
-        }
-
-        if (File.Exists(NewAdb))
-        {
-            AdbPath = NewAdb;
-            AdbReplaced = true;
-            ConfigFactory.CurrentConfig.Gui.ConnectSettings.AdbReplaced = true;
-            ToastNotification.ShowDirect(LocalizationHelper.GetString("SuccessfullyReplacedAdb"));
-        }
-        else
-        {
-            ToastNotification.ShowDirect(LocalizationHelper.GetString("FailedToReplaceAdbAndUseLocal"));
+            IsReplacingAdb = false;
         }
     }
 

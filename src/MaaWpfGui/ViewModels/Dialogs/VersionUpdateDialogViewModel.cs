@@ -62,14 +62,14 @@ public class VersionUpdateDialogViewModel : Screen
 
     private static readonly ILogger _logger = Log.ForContext<VersionUpdateDialogViewModel>();
 
-    private static readonly string s_contributorAvatarDir = Path.Combine(PathsHelper.CacheDir, "contributor");
+    private static readonly string _contributorAvatarDir = Path.Combine(PathsHelper.CacheDir, "contributor");
 
     private const string ContributorAvatarPlaceholderName = "_placeholder.png";
 
     // 32×32 全透明 PNG；头像未下载时占住 16px 位置，下载完成前后布局零跳动
     private const string PlaceholderAvatarBase64 = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAGklEQVR4nO3BAQEAAACCIP+vbkhAAQAAAO8GECAAARlDNO4AAAAASUVORK5CYII=";
 
-    private static readonly HashSet<string> s_downloadingAvatars = [];
+    private static readonly HashSet<string> _downloadingAvatars = [];
 
     private static string FormatUpdateInfo(string text)
     {
@@ -84,11 +84,13 @@ public class VersionUpdateDialogViewModel : Screen
         /*
         //        "@ " -> "@ "
         //       "`@`" -> "`@`"
-        //   "@MistEO" -> "![avatar](path "MistEO"){…} [@MistEO](https://github.com/MistEO)"
+        //   "@MistEO" -> "![avatar](path "MistEO"){…}\u2060[@MistEO](https://github.com/MistEO)"
         // "[@MistEO]" -> "[@MistEO]"
         */
         // 头像图片与用户名链接平级不嵌套：MdXaml 的内联匹配正则带 Singleline，
-        // 嵌套图片链接在 LF 行尾（GitHub/MirrorChyan 的 release body）下会跨行吞掉后续行的内容
+        // 嵌套图片链接在 LF 行尾（GitHub/MirrorChyan 的 release body）下会跨行吞掉后续行的内容；
+        // 两者以 WORD JOINER（U+2060）连接（见 GetContributorAvatarMarkdown），
+        // 防拆行由 MergeAvatarUsernameIntoAtoms 在渲染后的文档中把两者合并为原子元素完成
         return Regex.Replace(text, @"([^\[`]|^)@([^\s]+)", m =>
         {
             var user = m.Groups[2].Value;
@@ -108,35 +110,37 @@ public class VersionUpdateDialogViewModel : Screen
             return string.Empty;
         }
 
-        string avatarPath = Path.Combine(s_contributorAvatarDir, user + ".png");
+        string avatarPath = Path.Combine(_contributorAvatarDir, user + ".png");
         string effectivePath = File.Exists(avatarPath)
             ? avatarPath
-            : Path.Combine(s_contributorAvatarDir, ContributorAvatarPlaceholderName);
+            : Path.Combine(_contributorAvatarDir, ContributorAvatarPlaceholderName);
 
         // 路径用正斜杠，Markdown 中反斜杠是转义字符；尺寸语法 {width=16px} 由 MdXaml 的 ImageResizeExt 渲染；
-        // title（即渲染后的 ToolTip）携带用户名，供头像下载完成后在已渲染文档中定位占位图换源
-        return $"![avatar]({effectivePath.Replace('\\', '/')} \"{user}\"){{width=16px height=16px}} ";
+        // title（即渲染后的 ToolTip）携带用户名，供头像下载完成后在已渲染文档中定位占位图换源。
+        // 结尾用 WORD JOINER（U+2060）而非空格连接用户名链接：空格会被 MdXaml 的文本处理原样保留为
+        // 普通空格断点，U+2060 零宽且不是空白，合并前（见 MergeAvatarUsernameIntoAtoms）不会引入多余间距
+        return $"![avatar]({effectivePath.Replace('\\', '/')} \"{user}\"){{width=16px height=16px}}\u2060";
     }
 
-    private static bool s_placeholderAvatarReady;
+    private static bool _placeholderAvatarReady;
 
     private static bool EnsurePlaceholderAvatar()
     {
-        if (s_placeholderAvatarReady)
+        if (_placeholderAvatarReady)
         {
             return true;
         }
 
         try
         {
-            Directory.CreateDirectory(s_contributorAvatarDir);
-            string path = Path.Combine(s_contributorAvatarDir, ContributorAvatarPlaceholderName);
+            Directory.CreateDirectory(_contributorAvatarDir);
+            string path = Path.Combine(_contributorAvatarDir, ContributorAvatarPlaceholderName);
             if (!File.Exists(path))
             {
                 File.WriteAllBytes(path, Convert.FromBase64String(PlaceholderAvatarBase64));
             }
 
-            s_placeholderAvatarReady = true;
+            _placeholderAvatarReady = true;
         }
         catch (Exception e)
         {
@@ -144,7 +148,7 @@ public class VersionUpdateDialogViewModel : Screen
             _logger.Warning(e, "Failed to create placeholder contributor avatar");
         }
 
-        return s_placeholderAvatarReady;
+        return _placeholderAvatarReady;
     }
 
     /// <summary>
@@ -164,15 +168,15 @@ public class VersionUpdateDialogViewModel : Screen
 
         foreach (var user in users)
         {
-            string path = Path.Combine(s_contributorAvatarDir, user + ".png");
+            string path = Path.Combine(_contributorAvatarDir, user + ".png");
             if (File.Exists(path))
             {
                 continue;
             }
 
-            lock (s_downloadingAvatars)
+            lock (_downloadingAvatars)
             {
-                if (!s_downloadingAvatars.Add(user))
+                if (!_downloadingAvatars.Add(user))
                 {
                     continue;
                 }
@@ -184,7 +188,7 @@ public class VersionUpdateDialogViewModel : Screen
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var content = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-                    Directory.CreateDirectory(s_contributorAvatarDir);
+                    Directory.CreateDirectory(_contributorAvatarDir);
                     string tempPath = path + ".temp";
                     await File.WriteAllBytesAsync(tempPath, content).ConfigureAwait(false);
                     File.Move(tempPath, path);
@@ -197,9 +201,9 @@ public class VersionUpdateDialogViewModel : Screen
             }
             finally
             {
-                lock (s_downloadingAvatars)
+                lock (_downloadingAvatars)
                 {
-                    _ = s_downloadingAvatars.Remove(user);
+                    _ = _downloadingAvatars.Remove(user);
                 }
             }
         }
@@ -235,24 +239,91 @@ public class VersionUpdateDialogViewModel : Screen
         });
     }
 
-    private static IEnumerable<Image> EnumerateImages(BlockCollection blocks)
+    /// <summary>
+    /// 把已渲染文档中 ｢头像图片 + 用户名链接｣ 相邻的 inline 合并为一个原子元素。
+    /// InlineUIContainer 在文本流中是对象替换字符，其边界是 WPF 排版的固有断行点，
+    /// 字符层面的禁断（WORD JOINER）无法作用于它，行宽不足时头像与用户名仍会被拆到两行；
+    /// 让两者进入同一个 UI 元素（InlineUIContainer 内 TextBlock 的内容按自然宽度渲染、不参与外层回流）
+    /// 才能保证同行。合并结构：InlineUIContainer(头像) → Run(WORD JOINER) → Hyperlink(@用户名)
+    /// 变为 InlineUIContainer(TextBlock{ InlineUIContainer(头像), Hyperlink })。
+    /// 由 View 侧在 MdXaml 每次生成 Document 后调用。
+    /// </summary>
+    public void MergeAvatarUsernameIntoAtoms()
+    {
+        if (View is not Views.Dialogs.VersionUpdateDialogView view
+            || view.ChangelogViewer.Document is not { } document)
+        {
+            return;
+        }
+
+        // TextTree 的任何修改会使内容枚举器失效，先物化段落列表再逐段合并
+        foreach (var paragraph in EnumerateParagraphs(document.Blocks).ToList())
+        {
+            MergeAvatarUsernameIntoAtoms(paragraph.Inlines, document);
+        }
+    }
+
+    private static void MergeAvatarUsernameIntoAtoms(InlineCollection inlines, FlowDocument document)
+    {
+        var inline = inlines.FirstInline;
+        while (inline is not null)
+        {
+            var cursor = inline.NextInline;
+            if (inline is InlineUIContainer avatarContainer && cursor is Run { } joiner && joiner.Text == "\u2060")
+            {
+                // WORD JOINER Run 与 @ 开头的链接均由 AddContributorLink 生成，组合即头像序列的唯一锚；
+                // 头像图片由 MdXaml 异步加载（此时容器 Child 尚未就位），链接的 NavigateUri 亦为空（MdXaml 走 Command），均不可作条件
+                cursor = joiner.NextInline;
+                if (cursor is Hyperlink { } link && link.Inlines.FirstInline is Run { } first && first.Text.StartsWith("@"))
+                {
+                    var after = link.NextInline;
+                    var nameText = new TextBlock
+                    {
+                        // TextBlock 不在文档的 TextElement 树上，字体不随文档继承，须显式取文档当前值
+                        FontFamily = document.FontFamily,
+                        FontSize = document.FontSize,
+                    };
+
+                    // 异步创建的头像 Image 按最终位置解析隐式样式，拿不到文档 Style.Resources 的 avatar 样式，须就地注入
+                    if (Application.Current?.TryFindResource("MdXamlAvatarImageStyle") is Style avatarStyle)
+                    {
+                        nameText.Resources.Add(typeof(Image), avatarStyle);
+                    }
+
+                    var atom = new InlineUIContainer(nameText);
+                    inlines.InsertBefore(avatarContainer, atom);
+                    inlines.Remove(joiner);
+                    inlines.Remove(avatarContainer);
+                    inlines.Remove(link);
+                    nameText.Inlines.Add(avatarContainer);
+                    nameText.Inlines.Add(link);
+
+                    // 链接脱离文档隐式 Hyperlink 样式作用域后视觉回退为默认样式：取消下划线并重新锚定主题链接色
+                    link.TextDecorations = null;
+                    link.SetResourceReference(Hyperlink.ForegroundProperty, "HyperlinkBrush");
+                    inline = after;
+                    continue;
+                }
+            }
+
+            inline = cursor;
+        }
+    }
+
+    private static IEnumerable<Paragraph> EnumerateParagraphs(BlockCollection blocks)
     {
         foreach (var block in blocks)
         {
             switch (block)
             {
                 case Paragraph paragraph:
-                    foreach (var image in EnumerateImages(paragraph.Inlines))
-                    {
-                        yield return image;
-                    }
-
+                    yield return paragraph;
                     break;
 
                 case Section section:
-                    foreach (var image in EnumerateImages(section.Blocks))
+                    foreach (var nested in EnumerateParagraphs(section.Blocks))
                     {
-                        yield return image;
+                        yield return nested;
                     }
 
                     break;
@@ -260,9 +331,9 @@ public class VersionUpdateDialogViewModel : Screen
                 case List list:
                     foreach (var listItem in list.ListItems)
                     {
-                        foreach (var image in EnumerateImages(listItem.Blocks))
+                        foreach (var nested in EnumerateParagraphs(listItem.Blocks))
                         {
-                            yield return image;
+                            yield return nested;
                         }
                     }
 
@@ -275,9 +346,9 @@ public class VersionUpdateDialogViewModel : Screen
                         {
                             foreach (var cell in row.Cells)
                             {
-                                foreach (var image in EnumerateImages(cell.Blocks))
+                                foreach (var nested in EnumerateParagraphs(cell.Blocks))
                                 {
-                                    yield return image;
+                                    yield return nested;
                                 }
                             }
                         }
@@ -287,12 +358,26 @@ public class VersionUpdateDialogViewModel : Screen
 
                 // details 块渲染为 Expander，内容在嵌套 FlowDocumentScrollViewer 的文档里
                 case BlockUIContainer { Child: Expander { Content: FlowDocumentScrollViewer nested } }:
-                    foreach (var image in EnumerateImages(nested.Document.Blocks))
+                    if (nested.Document is not null)
                     {
-                        yield return image;
+                        foreach (var paragraph in EnumerateParagraphs(nested.Document.Blocks))
+                        {
+                            yield return paragraph;
+                        }
                     }
 
                     break;
+            }
+        }
+    }
+
+    private static IEnumerable<Image> EnumerateImages(BlockCollection blocks)
+    {
+        foreach (var paragraph in EnumerateParagraphs(blocks))
+        {
+            foreach (var image in EnumerateImages(paragraph.Inlines))
+            {
+                yield return image;
             }
         }
     }
@@ -305,6 +390,15 @@ public class VersionUpdateDialogViewModel : Screen
             {
                 case InlineUIContainer { Child: Image image }:
                     yield return image;
+                    break;
+
+                // 原子合并后头像位于 InlineUIContainer 内的 TextBlock 中（见 MergeAvatarUsernameIntoAtoms）
+                case InlineUIContainer { Child: TextBlock { } nameText }:
+                    foreach (var nested in EnumerateImages(nameText.Inlines))
+                    {
+                        yield return nested;
+                    }
+
                     break;
 
                 case Hyperlink hyperlink:
@@ -460,7 +554,6 @@ public class VersionUpdateDialogViewModel : Screen
         /// <summary>
         /// 操作成功
         /// </summary>
-        // ReSharper disable once InconsistentNaming
         OK,
 
         /// <summary>
@@ -568,7 +661,7 @@ public class VersionUpdateDialogViewModel : Screen
                     _ = Task.Run(() =>
                         MessageBoxHelper.Show(
                             LocalizationHelper.GetString("MirrorChyanSelectedButNoCdk"),
-                            "cdk is empty!",
+                            LocalizationHelper.GetString("Warning"),
                             MessageBoxButton.OK,
                             MessageBoxImage.Warning,
                             ok: LocalizationHelper.GetString("Ok")));
@@ -840,7 +933,6 @@ public class VersionUpdateDialogViewModel : Screen
         var selected = 0;
         for (int i = 0; i < latencies.Length; i++)
         {
-            // ReSharper disable once StringLiteralTypo
             var isInChina = urls[i].Contains("s3.maa-org.net") || urls[i].Contains("maa-ota.annangela.cn");
 
             if (latencies[i] < 0)
@@ -1523,7 +1615,6 @@ public class VersionUpdateDialogViewModel : Screen
                 fullPackage = curAssets as JObject;
             }
 
-            // ReSharper disable once InvertIf
             if (name.Contains("ota") && name.Contains($"{curVersionLower}_{latestVersionLower}"))
             {
                 _assetsObject = curAssets as JObject;
@@ -1937,7 +2028,6 @@ public class VersionUpdateDialogViewModel : Screen
             return false;
         }
 
-        // ReSharper disable once CommentTypo
         // v{Major}.{Minor}.{Patch}-{Prerelease}.{CommitDistance}.g{CommitHash}
         // v4.6.7-beta.2.1.g1234567
         // v4.6.8-5.g1234567

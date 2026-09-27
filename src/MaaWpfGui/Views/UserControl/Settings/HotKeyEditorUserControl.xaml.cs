@@ -14,6 +14,7 @@
 #nullable enable
 
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using MaaWpfGui.Constants;
 using MaaWpfGui.Helper;
@@ -39,20 +40,54 @@ public partial class HotKeyEditorUserControl : System.Windows.Controls.UserContr
         set => SetValue(HotKeyProperty, value);
     }
 
+    public static readonly DependencyProperty IsRegistrationFailedProperty =
+        DependencyProperty.Register(nameof(IsRegistrationFailed), typeof(bool),
+            typeof(HotKeyEditorUserControl),
+            new PropertyMetadata(false));
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the current hotkey failed to register; the editor shows an error border while set.
+    /// </summary>
+    public bool IsRegistrationFailed
+    {
+        get => (bool)GetValue(IsRegistrationFailedProperty);
+        set => SetValue(IsRegistrationFailedProperty, value);
+    }
+
     public HotKeyEditorUserControl()
     {
         InitializeComponent();
+        RefreshHotKeyTextBinding();
+        Loaded += (_, _) => LocalizationHelper.LanguageChanged += RefreshHotKeyTextBinding;
+        Unloaded += (_, _) => LocalizationHelper.LanguageChanged -= RefreshHotKeyTextBinding;
+    }
+
+    /// <summary>
+    /// Rebinds the hotkey text so its null placeholder follows the current language.
+    /// TargetNullValue is a plain binding property and cannot reference a DynamicResource,
+    /// so the binding is rebuilt from code on construction and on language change.
+    /// </summary>
+    private void RefreshHotKeyTextBinding()
+    {
+        HotKeyTextBox.SetBinding(
+            System.Windows.Controls.TextBox.TextProperty,
+            new Binding(nameof(HotKey))
+            {
+                Source = this,
+                Mode = BindingMode.OneWay,
+                TargetNullValue = LocalizationHelper.GetString("HotKeyNotSet"),
+            });
     }
 
     private static int CountModifierKeys(ModifierKeys modifiers)
     {
         int count = 0;
-#pragma warning disable SA1503 // Braces should not be omitted
+#pragma warning disable SA1503 // 单行计数保持紧凑
         if ((modifiers & ModifierKeys.Control) != 0) count++;
         if ((modifiers & ModifierKeys.Alt) != 0) count++;
         if ((modifiers & ModifierKeys.Shift) != 0) count++;
         if ((modifiers & ModifierKeys.Windows) != 0) count++;
-#pragma warning restore SA1503 // Braces should not be omitted
+#pragma warning restore SA1503 // 单行计数保持紧凑
         return count;
     }
 
