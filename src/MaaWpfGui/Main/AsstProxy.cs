@@ -3501,6 +3501,9 @@ public class AsstProxy
 
         /// <summary>自定义任务s</summary>
         Custom,
+
+        /// <summary>新手教程</summary>
+        Tutorial,
     }
 
     private readonly ObservableDictionary<AsstTaskId, (TaskType Type, TaskStatus Status)> _tasksStatus = [];

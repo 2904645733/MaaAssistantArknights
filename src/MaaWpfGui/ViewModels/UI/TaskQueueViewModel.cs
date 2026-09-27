@@ -151,6 +151,8 @@ public class TaskQueueViewModel : Screen
     /// </summary>
     public static CustomSettingsUserControlModel CustomTask => CustomSettingsUserControlModel.Instance;
 
+    public static TutorialSettingsUserControlModel TutorialTask => TutorialSettingsUserControlModel.Instance;
+
     /// <summary>
     /// Gets 自动战斗(作业)任务Model
     /// </summary>
@@ -1753,6 +1755,7 @@ public class TaskQueueViewModel : Screen
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("SwitchTheme"), Value = typeof(SwitchThemeTask) },
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("Custom"), Value = typeof(CustomTask) },
             new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("CopilotTask"), Value = typeof(CopilotTask) },
+            new GenericCombinedData<Type> { Display = LocalizationHelper.GetString("TutorialTask"), Value = typeof(TutorialTask) },
         ]);
 
     private void RefreshTaskTypeListLocalization()
@@ -1774,6 +1777,7 @@ public class TaskQueueViewModel : Screen
                 nameof(SwitchThemeTask) => LocalizationHelper.GetString("SwitchTheme"),
                 nameof(CustomTask) => LocalizationHelper.GetString("Custom"),
                 nameof(CopilotTask) => LocalizationHelper.GetString("CopilotTask"),
+                nameof(TutorialTask) => LocalizationHelper.GetString("TutorialTask"),
                 _ => item.Display,
             };
         }

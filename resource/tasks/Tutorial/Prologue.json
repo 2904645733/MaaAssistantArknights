@@ -1,0 +1,165 @@
+{
+    "Tutorial@OcrBase": {
+        "Doc": "新手教程：对话框识别基准任务。所有「认这句对话」的任务都继承它，对话框区域只在这里改一处",
+        "algorithm": "OcrDetect",
+        "roi": [180, 480, 880, 140],
+        "action": "DoNothing"
+    },
+
+    "Tutorial@Prologue@Begin": {
+        "Doc": "新手教程·序章（上/下）：进关卡后会自动开始，没有「开始行动」也没有结算，所以全程由这里驱动",
+        "algorithm": "JustReturn",
+        "next": ["Tutorial@Prologue@Loop"]
+    },
+
+    "Tutorial@Prologue@Loop": {
+        "Doc": "轮询：①教学要求的动作（拖着/点击）②跳过剧情 ③认到「点击继续」就点 ④兜底点一下对话框",
+        "algorithm": "JustReturn",
+        "next": [
+            "Tutorial@P1@DragTexas",
+            "Tutorial@P1@DragTexasDirection",
+            "Tutorial@P1@DragExusiai",
+            "Tutorial@P1@DragExusiaiDirection",
+            "Tutorial@P2@ClickTexas",
+            "Tutorial@P2@ClickTexasSkill",
+            "Tutorial@Plot@Skip",
+            "Tutorial@ClickContinue",
+            "Tutorial@ClickContinueAnywhere"
+        ]
+    },
+
+    "Tutorial@P1@DragTexas": {
+        "Doc": "序章·上：这句之后必须把德克萨斯拖到高亮格，拖完才会出现「方向指示块」那句",
+        "baseTask": "Tutorial@OcrBase",
+        "text": ["博士看到我标注"],
+        "next": ["Tutorial@P1@DragTexasDo"]
+    },
+    "Tutorial@P1@DragTexasDo": {
+        "Doc": "德克萨斯：卡片 (1100,662) 拖到目标格 (579,422)",
+        "algorithm": "JustReturn",
+        "action": "Swipe",
+        "specificRect": [1100, 662, 1, 1],
+        "rectMove": [579, 422, 1, 1],
+        "specialParams": [400, 0, 20, 0],
+        "preDelay": 200,
+        "postDelay": 400,
+        "next": ["Tutorial@Prologue@Loop"]
+    },
+
+    "Tutorial@P1@DragTexasDirection": {
+        "Doc": "序章·上：滚上德克萨斯之后出现这句，把方向指示块往右拖（距离照抄自动战斗的 400）",
+        "baseTask": "Tutorial@OcrBase",
+        "text": ["然后将中央的"],
+        "next": ["Tutorial@P1@DragTexasDirectionDo"]
+    },
+    "Tutorial@P1@DragTexasDirectionDo": {
+        "Doc": "德克萨斯朝向：从格子 (579,422) 往右拖 400 像素",
+        "algorithm": "JustReturn",
+        "action": "Swipe",
+        "specificRect": [579, 422, 1, 1],
+        "rectMove": [979, 422, 1, 1],
+        "specialParams": [200, 0, 20, 0],
+        "preDelay": 300,
+        "postDelay": 400,
+        "next": ["Tutorial@Prologue@Loop"]
+    },
+
+    "Tutorial@P1@DragExusiai": {
+        "Doc": "序章·上：这句之后必须把能天使拖到高亮格",
+        "baseTask": "Tutorial@OcrBase",
+        "text": ["为了确保安全"],
+        "next": ["Tutorial@P1@DragExusiaiDo"]
+    },
+    "Tutorial@P1@DragExusiaiDo": {
+        "Doc": "能天使：卡片 (1217,659) 拖到目标格 (691,313)",
+        "algorithm": "JustReturn",
+        "action": "Swipe",
+        "specificRect": [1217, 659, 1, 1],
+        "rectMove": [691, 313, 1, 1],
+        "specialParams": [400, 0, 20, 0],
+        "preDelay": 200,
+        "postDelay": 400,
+        "next": ["Tutorial@Prologue@Loop"]
+    },
+
+    "Tutorial@P1@DragExusiaiDirection": {
+        "Doc": "序章·上：拖完能天使出现这句，把方向指示块往右拖，拖完这句自动过",
+        "baseTask": "Tutorial@OcrBase",
+        "text": ["能天使是一名狙击"],
+        "next": ["Tutorial@P1@DragExusiaiDirectionDo"]
+    },
+    "Tutorial@P1@DragExusiaiDirectionDo": {
+        "Doc": "能天使朝向：从格子 (691,313) 往右拖 400 像素",
+        "algorithm": "JustReturn",
+        "action": "Swipe",
+        "specificRect": [691, 313, 1, 1],
+        "rectMove": [1091, 313, 1, 1],
+        "specialParams": [200, 0, 20, 0],
+        "preDelay": 300,
+        "postDelay": 400,
+        "next": ["Tutorial@Prologue@Loop"]
+    },
+
+    "Tutorial@P2@ClickTexas": {
+        "Doc": "序章·下：这句之后要点场地上的德克萨斯才能继续",
+        "baseTask": "Tutorial@OcrBase",
+        "text": ["教官曾告诉过我"],
+        "next": ["Tutorial@P2@ClickTexasDo"]
+    },
+    "Tutorial@P2@ClickTexasDo": {
+        "Doc": "点场地上的德克萨斯 (472,309)",
+        "algorithm": "JustReturn",
+        "action": "ClickRect",
+        "specificRect": [462, 299, 20, 20],
+        "postDelay": 400,
+        "next": ["Tutorial@Prologue@Loop"]
+    },
+
+    "Tutorial@P2@ClickTexasSkill": {
+        "Doc": "序章·下：这句之后要点德克萨斯的技能才能继续。先点一次她本人（保证是选中状态），再点技能",
+        "baseTask": "Tutorial@OcrBase",
+        "text": ["是时候使用技能"],
+        "next": ["Tutorial@P2@SelectTexasDo", "Tutorial@P2@ClickTexasSkillDo"]
+    },
+    "Tutorial@P2@SelectTexasDo": {
+        "Doc": "先点德克萨斯 (472,309) 选中她",
+        "algorithm": "JustReturn",
+        "action": "ClickRect",
+        "specificRect": [462, 299, 20, 20],
+        "postDelay": 300,
+        "next": ["Tutorial@P2@ClickTexasSkillDo"]
+    },
+    "Tutorial@P2@ClickTexasSkillDo": {
+        "Doc": "点德克萨斯的技能按钮 (880,418)",
+        "algorithm": "JustReturn",
+        "action": "ClickRect",
+        "specificRect": [870, 408, 20, 20],
+        "postDelay": 400,
+        "next": ["Tutorial@Prologue@Loop"]
+    },
+
+    "Tutorial@Plot@Skip": {
+        "Doc": "教学关结束后会接剧情，这里复用现成的跳过剧情链路（认不到跳过按钮就不匹配，自动落到下一个候选）",
+        "baseTask": "SkipBattlePlot"
+    },
+
+    "Tutorial@ClickContinue": {
+        "Doc": "认到对话框上的「点击继续」才点，避免在别的界面上乱点",
+        "algorithm": "OcrDetect",
+        "text": ["点击继续"],
+        "roi": [180, 380, 920, 340],
+        "action": "ClickRect",
+        "specificRect": [600, 600, 80, 40],
+        "preDelay": 200,
+        "next": ["Tutorial@Prologue@Loop"]
+    },
+
+    "Tutorial@ClickContinueAnywhere": {
+        "Doc": "兜底：直接在对话框位置点一下（普通对话靠这个一路过）。实机若发现会在别的界面乱点，把这一项从 Loop 的 next 里删掉即可",
+        "algorithm": "JustReturn",
+        "action": "ClickRect",
+        "specificRect": [600, 600, 80, 40],
+        "preDelay": 500,
+        "next": ["Tutorial@Prologue@Loop"]
+    }
+}

@@ -410,11 +410,16 @@
                                                 CommandParameter="{Binding TaskTypeList[12].Value}"
                                                 Header="{Binding TaskTypeList[12].Display}"
                                                 Visibility="{c:Binding ShowDebugTask}" />
-                                            <!-- 战斗任务（TaskTypeList[12]）：漏了这一项会导致全新配置下菜单里找不到「战斗任务」 -->
+                                            <!-- 战斗任务（TaskTypeList[13]）：漏了这一项会导致全新配置下菜单里找不到「战斗任务」 -->
                                             <MenuItem
                                                 Command="{s:Action AddTaskQueueTask}"
-                                                CommandParameter="{Binding TaskTypeList[12].Value}"
-                                                Header="{Binding TaskTypeList[12].Display}" />
+                                                CommandParameter="{Binding TaskTypeList[13].Value}"
+                                                Header="{Binding TaskTypeList[13].Display}" />
+                                            <!-- 新手教程（TaskTypeList[14]）：认对话推进，遇到教学要求的拖拽 / 点击就照做 -->
+                                            <MenuItem
+                                                Command="{s:Action AddTaskQueueTask}"
+                                                CommandParameter="{Binding TaskTypeList[14].Value}"
+                                                Header="{Binding TaskTypeList[14].Display}" />
                                         </Menu>
                                     </Border>
                                 </controls:MenuButton.PopupContent>
@@ -677,6 +682,7 @@
                                                                                       AncestorType={x:Type UserControl}}}" />
                             <taskQueue:CustomUserControl DataContext="{Binding CustomTask}" Visibility="{c:Binding DataContext.TaskSettingVisibilities.Custom, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}" />
                             <taskQueue:CopilotUserControl DataContext="{Binding CopilotTask}" Visibility="{c:Binding DataContext.TaskSettingVisibilities.Copilot, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}" />
+                             <taskQueue:TutorialUserControl DataContext="{Binding TutorialTask}" Visibility="{c:Binding DataContext.TaskSettingVisibilities.Tutorial, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}" />
                             <taskQueue:PostActionUserControl DataContext="{Binding PostActionSetting}" Visibility="{c:Binding DataContext.TaskSettingVisibilities.PostAction, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type UserControl}}}" />
                         </hc:SimpleStackPanel>
                     </controls:TransitioningContentControl>

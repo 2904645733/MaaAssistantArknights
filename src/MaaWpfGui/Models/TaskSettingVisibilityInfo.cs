@@ -66,6 +66,8 @@ public class TaskSettingVisibilityInfo : PropertyChangedBase
 
     public bool Copilot { get => field; set => SetAndNotify(ref field, value); }
 
+    public bool Tutorial { get => field; set => SetAndNotify(ref field, value); }
+
     public bool PostAction { get => field; set => SetAndNotify(ref field, value); }
 
     public static TaskSettingVisibilityInfo Instance { get; } = new();
@@ -167,6 +169,7 @@ public class TaskSettingVisibilityInfo : PropertyChangedBase
             SwitchThemeTask => SwitchTheme = enable,
             CustomTask => Custom = enable,
             CopilotTask => Copilot = enable,
+            TutorialTask => Tutorial = enable,
             _ => throw new NotImplementedException(),
         };
         EnableAdvancedSettings = false;

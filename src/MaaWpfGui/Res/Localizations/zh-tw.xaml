@@ -1373,6 +1373,10 @@ C:\leidian\LDPlayer9
     <system:String x:Key="ParadoxCopilot">{key=ParadoxSimulation}</system:String>
     <system:String x:Key="CopilotLocation">作業路徑 / 神秘代碼</system:String>
     <system:String x:Key="CopilotTaskName">關卡名稱</system:String>
+    <system:String x:Key="CopilotTask">戰鬥任務</system:String>
+    <system:String x:Key="TutorialTask">新手教學</system:String>
+    <system:String x:Key="TutorialTaskTip" xml:space="preserve">從任意進度接手：先認出遊戲裡正在播的是哪句對話，判斷走到哪一步，再接著往下做。&#10;普通對話自動點掉；教學要求拖幹員、選朝向、點幹員或點技能的地方按固定座標執行。&#10;適用於帳號取名後的前期教學（序章·上 / 序章·下）這類沒有「開始行動」、也沒有結算的關卡。</system:String>
+    <system:String x:Key="TutorialTaskProgressTip" xml:space="preserve">開始前讓遊戲停在教學過程中即可（戰鬥中或對話中都可以）。&#10;已經走過一段也沒關係，會自動對上是哪一步。</system:String>
     <system:String x:Key="CopilotTaskNameTip">關卡名稱，例如：1-7</system:String>
     <system:String x:Key="SelectTheFile">選擇作業</system:String>
     <system:String x:Key="SelectTheFileTip">作業檔可以直接用滑鼠拖進來喔 (oﾟvﾟ)ノ</system:String>

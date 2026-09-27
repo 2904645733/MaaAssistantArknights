@@ -1375,6 +1375,9 @@ Only level rewards can be farmed; to get the Engraved Medal, all ｢Key Objectiv
     <system:String x:Key="CopilotTaskName">Stage Code</system:String>
     <system:String x:Key="CopilotTaskNameTip">Stage Code, e.g. 1-7</system:String>
     <system:String x:Key="CopilotTask">Battle Mission</system:String>
+    <system:String x:Key="TutorialTask">Beginner Tutorial</system:String>
+    <system:String x:Key="TutorialTaskTip" xml:space="preserve">Resumes from any point: it first recognises which dialogue is on screen to work out the current step, then continues from there.&#10;Normal dialogue is clicked through automatically; the few places where the tutorial asks you to drag an operator, pick a direction, or tap an operator / skill are performed at fixed coordinates.&#10;Built for the early tutorial stages right after naming your account (Prologue I / II), which have neither a Start button nor a settlement screen.</system:String>
+    <system:String x:Key="TutorialTaskProgressTip" xml:space="preserve">Just leave the game somewhere inside the tutorial before starting (mid-battle or mid-dialogue both work).&#10;Starting halfway through is fine - the current step is detected automatically.</system:String>
     <system:String x:Key="CopilotBattleTitle">Battle</system:String>
     <system:String x:Key="CopilotBattlePickerTip" xml:space="preserve">Turns what is on the Copilot page (auto squad, multi-job mode, sanity potions and originite prime) into one battle step
 
