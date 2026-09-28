@@ -28,12 +28,6 @@
             "Tutorial@Main@Step7@Bottom",
             "Tutorial@Main@Step8@Top",
             "Tutorial@Main@Step8@Bottom",
-            "Tutorial@Main@Step9@Top",
-            "Tutorial@Main@Step9@Bottom",
-            "Tutorial@Main@Step10@Top",
-            "Tutorial@Main@Step10@Bottom",
-            "Tutorial@Main@Step11@Top",
-            "Tutorial@Main@Step11@Bottom",
             "Tutorial@Gacha@Skip",
             "Tutorial@Prologue@Loop"
         ]
@@ -351,7 +345,7 @@
         ]
     },
     "Tutorial@Main@Step8@Top": {
-        "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）",
+        "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
             "点击进入对应主题曲地图"
@@ -361,7 +355,7 @@
         ]
     },
     "Tutorial@Main@Step8@Bottom": {
-        "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）",
+        "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
             "点击进入对应主题曲地图"
@@ -371,7 +365,7 @@
         ]
     },
     "Tutorial@Main@Act8": {
-        "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）：点 [1078, 595, 112, 42]",
+        "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战：点 [1078, 595, 112, 42]",
         "algorithm": "JustReturn",
         "action": "ClickRect",
         "specificRect": [
@@ -381,116 +375,6 @@
             42
         ],
         "postDelay": 500,
-        "next": [
-            "Tutorial@Main@Loop"
-        ]
-    },
-    "Tutorial@Main@Step9@Top": {
-        "Doc": "导航：点关卡 0-1",
-        "baseTask": "Tutorial@Ocr@Top",
-        "text": [
-            "选择行动地点"
-        ],
-        "next": [
-            "Tutorial@Main@Act9"
-        ]
-    },
-    "Tutorial@Main@Step9@Bottom": {
-        "Doc": "导航：点关卡 0-1",
-        "baseTask": "Tutorial@Ocr@Bottom",
-        "text": [
-            "选择行动地点"
-        ],
-        "next": [
-            "Tutorial@Main@Act9"
-        ]
-    },
-    "Tutorial@Main@Act9": {
-        "Doc": "导航：点关卡 0-1：点 [585, 329, 110, 27]",
-        "algorithm": "JustReturn",
-        "action": "ClickRect",
-        "specificRect": [
-            585,
-            329,
-            110,
-            27
-        ],
-        "postDelay": 500,
-        "next": [
-            "Tutorial@Main@Loop"
-        ]
-    },
-    "Tutorial@Main@Step10@Top": {
-        "Doc": "0-1：点「开始行动」进编队页",
-        "baseTask": "Tutorial@Ocr@Top",
-        "text": [
-            "点击按钮进入战前编队页面"
-        ],
-        "next": [
-            "Tutorial@Main@Act10"
-        ]
-    },
-    "Tutorial@Main@Step10@Bottom": {
-        "Doc": "0-1：点「开始行动」进编队页",
-        "baseTask": "Tutorial@Ocr@Bottom",
-        "text": [
-            "点击按钮进入战前编队页面"
-        ],
-        "next": [
-            "Tutorial@Main@Act10"
-        ]
-    },
-    "Tutorial@Main@Act10": {
-        "Doc": "0-1：点「开始行动」进编队页：认到文字再点它自己",
-        "algorithm": "OcrDetect",
-        "text": [
-            "开始",
-            "行动"
-        ],
-        "roi": [
-            999,
-            398,
-            222,
-            237
-        ],
-        "action": "ClickSelf",
-        "postDelay": 800,
-        "next": [
-            "Tutorial@Main@Loop"
-        ]
-    },
-    "Tutorial@Main@Step11@Top": {
-        "Doc": "0-1：点开始作战按钮 → 进关卡，然后任务结束交给战斗任务",
-        "baseTask": "Tutorial@Ocr@Top",
-        "text": [
-            "点击按钮开始执行此次作战"
-        ],
-        "next": [
-            "Tutorial@Main@Act11"
-        ]
-    },
-    "Tutorial@Main@Step11@Bottom": {
-        "Doc": "0-1：点开始作战按钮 → 进关卡，然后任务结束交给战斗任务",
-        "baseTask": "Tutorial@Ocr@Bottom",
-        "text": [
-            "点击按钮开始执行此次作战"
-        ],
-        "next": [
-            "Tutorial@Main@Act11"
-        ]
-    },
-    "Tutorial@Main@Act11": {
-        "Doc": "0-1：点开始作战按钮 → 进关卡，然后任务结束交给战斗任务：模板匹配后点它自己。template 必须显式写（baseTask 不继承模板名）",
-        "algorithm": "MatchTemplate",
-        "template": "BattleStartNormal.png",
-        "roi": [
-            955,
-            86,
-            136,
-            606
-        ],
-        "action": "ClickSelf",
-        "postDelay": 800,
         "next": []
     }
 }
