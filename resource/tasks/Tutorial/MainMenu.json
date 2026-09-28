@@ -47,6 +47,22 @@
         "action": "ClickSelf",
         "postDelay": 2000,
         "next": [
+            "Tutorial@Gacha@TapToContinue",
+            "Tutorial@Main@Loop"
+        ]
+    },
+    "Tutorial@Gacha@TapToContinue": {
+        "Doc": "跳过之后停在干员立绘那一屏：点屏幕中间任意位置就能继续。只在「刚点完跳过」之后接这一步，不放进轮询 —— 免得在别的界面无条件乱点",
+        "algorithm": "JustReturn",
+        "action": "ClickRect",
+        "specificRect": [
+            620,
+            340,
+            40,
+            40
+        ],
+        "postDelay": 1500,
+        "next": [
             "Tutorial@Main@Loop"
         ]
     },
