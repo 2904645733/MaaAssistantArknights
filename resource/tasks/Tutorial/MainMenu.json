@@ -35,17 +35,17 @@
         ]
     },
     "Tutorial@Gacha@Skip": {
-        "Doc": "抽卡动画里的「跳过」：认到就点。template 显式写，避免按任务名找 Tutorial@Gacha@Skip.png 导致资源加载失败",
+        "Doc": "抽卡动画右上角的「跳过」：认到就点它自己。roi 照抄官方 GachaSkip 任务的右上角区域 [1144,0,136,148]（模板 55x48），不要用全屏，免得在别处误匹配。template 显式写，避免按任务名找 Tutorial@Gacha@Skip.png 导致资源加载失败",
         "algorithm": "MatchTemplate",
         "template": "GachaSkip.png",
         "roi": [
+            1144,
             0,
-            0,
-            1280,
-            720
+            136,
+            148
         ],
         "action": "ClickSelf",
-        "postDelay": 800,
+        "postDelay": 1500,
         "next": [
             "Tutorial@Main@Loop"
         ]
