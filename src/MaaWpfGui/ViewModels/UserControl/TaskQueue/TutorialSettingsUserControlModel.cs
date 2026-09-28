@@ -42,7 +42,13 @@ public class TutorialSettingsUserControlModel : TaskSettingsViewModel, TutorialS
     /// 名字照游戏里的显示写：还没公开关卡代号时游戏显示成「??? 序章·上」。
     /// 以后每做完一段，在这里和 resource/tasks/Tutorial 里各加一处。
     /// </summary>
-    public IReadOnlyList<string> ImplementedStages { get; } = ["??? 序章·上", "??? 序章·下"];
+    public IReadOnlyList<string> ImplementedStages { get; } = [
+        "??? 序章·上",
+        "??? 序章·下",
+        "抽卡教程",
+        "编队教程",
+        "0-1",
+    ];
 
     /// <inheritdoc/>
     public override void RefreshUI(BaseTask baseTask)

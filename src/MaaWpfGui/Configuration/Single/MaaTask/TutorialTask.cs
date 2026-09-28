@@ -26,7 +26,8 @@ public class TutorialTask : BaseTask
     public TutorialTask() => TaskType = TaskType.Tutorial;
 
     /// <summary>
-    /// Gets or sets 要跑的教程段，对应资源里的 Tutorial@{段}@Begin（目前只有 Prologue = 序章·上 / 序章·下）。
+    /// Gets or sets 要跑的教程段，对应资源里的 Tutorial@{段}@Begin。
+    /// Main = 从序章（上/下）一路到主界面的抽卡 / 编队 / 回行动现场选 0-1（内部会先跑序章那段）。
     /// </summary>
-    public string Segment { get; set; } = "Prologue";
+    public string Segment { get; set; } = "Main";
 }
