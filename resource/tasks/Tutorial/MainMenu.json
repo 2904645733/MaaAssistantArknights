@@ -30,64 +30,12 @@
             "Tutorial@Main@Step8@Bottom",
             "Tutorial@Main@Step9@Top",
             "Tutorial@Main@Step9@Bottom",
-            "Tutorial@Gacha@Confirm",
-            "Tutorial@Gacha@SwipeOpenBag",
             "Tutorial@Gacha@Skip",
             "Tutorial@Prologue@Loop"
         ]
     },
-    "Tutorial@Gacha@Confirm": {
-        "Doc": "抽卡确认弹窗（消耗合成玉）：点确认，然后去等包裹。模板 GachaConfirm.png 必须显式写",
-        "algorithm": "MatchTemplate",
-        "template": "GachaConfirm.png",
-        "roi": [
-            830,
-            431,
-            228,
-            151
-        ],
-        "action": "ClickSelf",
-        "postDelay": 800,
-        "next": [
-            "Tutorial@Gacha@Confirm",
-            "Tutorial@Gacha@SwipeOpenBag",
-            "Tutorial@Main@Loop"
-        ]
-    },
-    "Tutorial@Gacha@SwipeOpenBag": {
-        "Doc": "展示干员立绘那一屏：往右划开包裹（官方 GachaSwipeToOpenBag 的做法：认到右上角按钮就往右划）",
-        "algorithm": "MatchTemplate",
-        "template": "GachaSkip.png",
-        "roi": [
-            1144,
-            0,
-            136,
-            148
-        ],
-        "action": "Swipe",
-        "specificRect": [
-            1080,
-            310,
-            100,
-            100
-        ],
-        "rectMove": [
-            100,
-            310,
-            200,
-            100
-        ],
-        "specialParams": [
-            150
-        ],
-        "postDelay": 3000,
-        "next": [
-            "Tutorial@Gacha@Skip",
-            "Tutorial@Main@Loop"
-        ]
-    },
     "Tutorial@Gacha@Skip": {
-        "Doc": "抽卡动画右上角的「跳过」：认到就点它自己。roi 照抄官方 GachaSkip 任务的右上角区域 [1144,0,136,148]（模板 55x48），不要用全屏，免得在别处误匹配。template 显式写，避免按任务名找 Tutorial@Gacha@Skip.png 导致资源加载失败",
+        "Doc": "抽卡的「跳过」：教学这次抽卡没有消耗合成玉的确认步骤，而且点它会连「划开包裹」一起跳掉，所以整条抽卡只留这一步。roi 照抄官方 GachaSkip 的右上角 [1144,0,136,148]（模板 55x48），别用全屏免得误匹配。template 显式写（baseTask 不继承模板名）",
         "algorithm": "MatchTemplate",
         "template": "GachaSkip.png",
         "roi": [
@@ -103,7 +51,7 @@
         ]
     },
     "Tutorial@Main@Step0@Top": {
-        "Doc": "抽卡：点「招募干员」，之后走完整条抽卡链（确认→开包→跳过）",
+        "Doc": "抽卡：点「招募干员」",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
             "点击此处以招募干员"
@@ -113,7 +61,7 @@
         ]
     },
     "Tutorial@Main@Step0@Bottom": {
-        "Doc": "抽卡：点「招募干员」，之后走完整条抽卡链（确认→开包→跳过）",
+        "Doc": "抽卡：点「招募干员」",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
             "点击此处以招募干员"
@@ -123,7 +71,7 @@
         ]
     },
     "Tutorial@Main@Act0": {
-        "Doc": "抽卡：点「招募干员」，之后走完整条抽卡链（确认→开包→跳过）：点 [813, 625, 184, 47]",
+        "Doc": "抽卡：点「招募干员」：点 [813, 625, 184, 47]",
         "algorithm": "JustReturn",
         "action": "ClickRect",
         "specificRect": [
@@ -134,7 +82,6 @@
         ],
         "postDelay": 500,
         "next": [
-            "Tutorial@Gacha@Confirm",
             "Tutorial@Main@Loop"
         ]
     },
