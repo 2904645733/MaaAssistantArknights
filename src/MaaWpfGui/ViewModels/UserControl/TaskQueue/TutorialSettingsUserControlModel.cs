@@ -38,11 +38,11 @@ public class TutorialSettingsUserControlModel : TaskSettingsViewModel, TutorialS
 
     /// <summary>
     /// Gets 已经写好、MAA 现在就能带着跑的教学段落（面板上用方框一个一个列出来，按游戏里的先后顺序）。
-    /// 第一项是起名点确定之后那段开场剧情：先自动跳过，之后才是前两关教学。
+    /// 起名点确定之后那段开场剧情属于 ??? 序章·上 的一部分（流程里会先自动跳过），不单独占一项。
     /// 名字照游戏里的显示写：还没公开关卡代号时游戏显示成「??? 序章·上」。
     /// 以后每做完一段，在这里和 resource/tasks/Tutorial 里各加一处。
     /// </summary>
-    public IReadOnlyList<string> ImplementedStages { get; } = ["起名后的开场剧情（自动跳过）", "??? 序章·上", "??? 序章·下"];
+    public IReadOnlyList<string> ImplementedStages { get; } = ["??? 序章·上", "??? 序章·下"];
 
     /// <inheritdoc/>
     public override void RefreshUI(BaseTask baseTask)
