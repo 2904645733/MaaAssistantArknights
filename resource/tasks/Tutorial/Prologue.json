@@ -36,9 +36,9 @@
     },
 
     "Tutorial@Prologue@Begin": {
-        "Doc": "新手教程·序章（上/下）：教学关进关由游戏自己完成，既没有「开始行动」也没有结算，所以全程由这里驱动。从任意进度接手都可以 —— 每轮都在看画面，遇到需要动手的那句才动手",
+        "Doc": "新手教程·序章：起名点确定后会先播一段开场剧情，先把它跳过；之后才进 ??? 序章·上。教学关进关由游戏自己完成，既没有「开始行动」也没有结算，所以全程由这里驱动。从任意进度接手都可以 —— 每轮都在看画面，遇到需要动手的那句才动手",
         "algorithm": "JustReturn",
-        "next": ["Tutorial@Prologue@Loop"]
+        "next": ["Tutorial@Plot@Skip", "Tutorial@Prologue@Loop"]
     },
 
     "Tutorial@Prologue@Loop": {
@@ -204,9 +204,9 @@
     },
 
     "Tutorial@Plot@Skip": {
-        "Doc": "剧情右上角的「跳过」按钮：认到就点一下，点完回轮询。这里不用 baseTask —— MAA 的 template 不随 baseTask 继承，会自动按本任务名去找 Tutorial@Plot@Skip.png，找不到就让整个资源加载失败",
+        "Doc": "剧情右上角的「跳过」按钮：认到就点一下，点完接确认弹窗、再回轮询。开场剧情（起名点确定之后那段）和教学关打完之后的剧情都靠它。roi 比官方那份放宽一些，好兼容开场剧情的界面。这里不用 baseTask —— MAA 的 template 不随 baseTask 继承，会自动按本任务名去找 Tutorial@Plot@Skip.png，找不到就让整个资源加载失败",
         "algorithm": "MatchTemplate",
-        "roi": [1096, 0, 182, 131],
+        "roi": [1000, 0, 280, 160],
         "template": ["SkipThePreBattlePlot.png", "SkipThePreBattlePlot2.png"],
         "maskRange": [100, 255],
         "action": "ClickSelf",
