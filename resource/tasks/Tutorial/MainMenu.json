@@ -30,6 +30,10 @@
             "Tutorial@Main@Step8@Bottom",
             "Tutorial@Main@Step9@Top",
             "Tutorial@Main@Step9@Bottom",
+            "Tutorial@Main@Step10@Top",
+            "Tutorial@Main@Step10@Bottom",
+            "Tutorial@Main@Step11@Top",
+            "Tutorial@Main@Step11@Bottom",
             "Tutorial@Gacha@Skip",
             "Tutorial@Prologue@Loop"
         ]
@@ -137,26 +141,96 @@
         ]
     },
     "Tutorial@Main@Step2@Top": {
-        "Doc": "编队：点导航栏返回（StageBegin 的小房子）",
+        "Doc": "编队：点要选中的干员",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
-            "干员已经成功加入出击小队"
+            "点击选中干员"
         ],
         "next": [
             "Tutorial@Main@Act2"
         ]
     },
     "Tutorial@Main@Step2@Bottom": {
-        "Doc": "编队：点导航栏返回（StageBegin 的小房子）",
+        "Doc": "编队：点要选中的干员",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
-            "干员已经成功加入出击小队"
+            "点击选中干员"
         ],
         "next": [
             "Tutorial@Main@Act2"
         ]
     },
     "Tutorial@Main@Act2": {
+        "Doc": "编队：点要选中的干员：点 [396, 135, 95, 181]",
+        "algorithm": "JustReturn",
+        "action": "ClickRect",
+        "specificRect": [
+            396,
+            135,
+            95,
+            181
+        ],
+        "postDelay": 500,
+        "next": [
+            "Tutorial@Main@Loop"
+        ]
+    },
+    "Tutorial@Main@Step3@Top": {
+        "Doc": "编队：点「确认编队」",
+        "baseTask": "Tutorial@Ocr@Top",
+        "text": [
+            "点击确认编队"
+        ],
+        "next": [
+            "Tutorial@Main@Act3"
+        ]
+    },
+    "Tutorial@Main@Step3@Bottom": {
+        "Doc": "编队：点「确认编队」",
+        "baseTask": "Tutorial@Ocr@Bottom",
+        "text": [
+            "点击确认编队"
+        ],
+        "next": [
+            "Tutorial@Main@Act3"
+        ]
+    },
+    "Tutorial@Main@Act3": {
+        "Doc": "编队：点「确认编队」：点 [1057, 661, 125, 41]",
+        "algorithm": "JustReturn",
+        "action": "ClickRect",
+        "specificRect": [
+            1057,
+            661,
+            125,
+            41
+        ],
+        "postDelay": 500,
+        "next": [
+            "Tutorial@Main@Loop"
+        ]
+    },
+    "Tutorial@Main@Step4@Top": {
+        "Doc": "编队：点导航栏返回（StageBegin 的小房子）",
+        "baseTask": "Tutorial@Ocr@Top",
+        "text": [
+            "干员已经成功加入出击小队"
+        ],
+        "next": [
+            "Tutorial@Main@Act4"
+        ]
+    },
+    "Tutorial@Main@Step4@Bottom": {
+        "Doc": "编队：点导航栏返回（StageBegin 的小房子）",
+        "baseTask": "Tutorial@Ocr@Bottom",
+        "text": [
+            "干员已经成功加入出击小队"
+        ],
+        "next": [
+            "Tutorial@Main@Act4"
+        ]
+    },
+    "Tutorial@Main@Act4": {
         "Doc": "编队：点导航栏返回（StageBegin 的小房子）：点 [222, 17, 90, 45]",
         "algorithm": "JustReturn",
         "action": "ClickRect",
@@ -171,27 +245,27 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step3@Top": {
+    "Tutorial@Main@Step5@Top": {
         "Doc": "编队：点首页按钮",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
             "点击首页按钮回到中央大厅"
         ],
         "next": [
-            "Tutorial@Main@Act3"
+            "Tutorial@Main@Act5"
         ]
     },
-    "Tutorial@Main@Step3@Bottom": {
+    "Tutorial@Main@Step5@Bottom": {
         "Doc": "编队：点首页按钮",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
             "点击首页按钮回到中央大厅"
         ],
         "next": [
-            "Tutorial@Main@Act3"
+            "Tutorial@Main@Act5"
         ]
     },
-    "Tutorial@Main@Act3": {
+    "Tutorial@Main@Act5": {
         "Doc": "编队：点首页按钮：点 [64, 247, 54, 64]",
         "algorithm": "JustReturn",
         "action": "ClickRect",
@@ -206,27 +280,27 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step4@Top": {
+    "Tutorial@Main@Step6@Top": {
         "Doc": "导航：点曲谱标签（StageTheme）",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
             "选中曲谱标签"
         ],
         "next": [
-            "Tutorial@Main@Act4"
+            "Tutorial@Main@Act6"
         ]
     },
-    "Tutorial@Main@Step4@Bottom": {
+    "Tutorial@Main@Step6@Bottom": {
         "Doc": "导航：点曲谱标签（StageTheme）",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
             "选中曲谱标签"
         ],
         "next": [
-            "Tutorial@Main@Act4"
+            "Tutorial@Main@Act6"
         ]
     },
-    "Tutorial@Main@Act4": {
+    "Tutorial@Main@Act6": {
         "Doc": "导航：点曲谱标签（StageTheme）：点 [243, 598, 147, 122]",
         "algorithm": "JustReturn",
         "action": "ClickRect",
@@ -241,27 +315,27 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step5@Top": {
+    "Tutorial@Main@Step7@Top": {
         "Doc": "导航：点主题曲条目",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
             "乐章的旋律由此开始"
         ],
         "next": [
-            "Tutorial@Main@Act5"
+            "Tutorial@Main@Act7"
         ]
     },
-    "Tutorial@Main@Step5@Bottom": {
+    "Tutorial@Main@Step7@Bottom": {
         "Doc": "导航：点主题曲条目",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
             "乐章的旋律由此开始"
         ],
         "next": [
-            "Tutorial@Main@Act5"
+            "Tutorial@Main@Act7"
         ]
     },
-    "Tutorial@Main@Act5": {
+    "Tutorial@Main@Act7": {
         "Doc": "导航：点主题曲条目：点 [793, 322, 209, 215]",
         "algorithm": "JustReturn",
         "action": "ClickRect",
@@ -276,27 +350,27 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step6@Top": {
+    "Tutorial@Main@Step8@Top": {
         "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
             "点击进入对应主题曲地图"
         ],
         "next": [
-            "Tutorial@Main@Act6"
+            "Tutorial@Main@Act8"
         ]
     },
-    "Tutorial@Main@Step6@Bottom": {
+    "Tutorial@Main@Step8@Bottom": {
         "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
             "点击进入对应主题曲地图"
         ],
         "next": [
-            "Tutorial@Main@Act6"
+            "Tutorial@Main@Act8"
         ]
     },
-    "Tutorial@Main@Act6": {
+    "Tutorial@Main@Act8": {
         "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）：点 [1078, 595, 112, 42]",
         "algorithm": "JustReturn",
         "action": "ClickRect",
@@ -311,27 +385,27 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step7@Top": {
+    "Tutorial@Main@Step9@Top": {
         "Doc": "导航：点关卡 0-1",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
             "选择行动地点"
         ],
         "next": [
-            "Tutorial@Main@Act7"
+            "Tutorial@Main@Act9"
         ]
     },
-    "Tutorial@Main@Step7@Bottom": {
+    "Tutorial@Main@Step9@Bottom": {
         "Doc": "导航：点关卡 0-1",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
             "选择行动地点"
         ],
         "next": [
-            "Tutorial@Main@Act7"
+            "Tutorial@Main@Act9"
         ]
     },
-    "Tutorial@Main@Act7": {
+    "Tutorial@Main@Act9": {
         "Doc": "导航：点关卡 0-1：点 [585, 329, 110, 27]",
         "algorithm": "JustReturn",
         "action": "ClickRect",
@@ -346,27 +420,27 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step8@Top": {
+    "Tutorial@Main@Step10@Top": {
         "Doc": "0-1：点「开始行动」进编队页",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
             "点击按钮进入战前编队页面"
         ],
         "next": [
-            "Tutorial@Main@Act8"
+            "Tutorial@Main@Act10"
         ]
     },
-    "Tutorial@Main@Step8@Bottom": {
+    "Tutorial@Main@Step10@Bottom": {
         "Doc": "0-1：点「开始行动」进编队页",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
             "点击按钮进入战前编队页面"
         ],
         "next": [
-            "Tutorial@Main@Act8"
+            "Tutorial@Main@Act10"
         ]
     },
-    "Tutorial@Main@Act8": {
+    "Tutorial@Main@Act10": {
         "Doc": "0-1：点「开始行动」进编队页：认到文字再点它自己",
         "algorithm": "OcrDetect",
         "text": [
@@ -385,27 +459,27 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step9@Top": {
+    "Tutorial@Main@Step11@Top": {
         "Doc": "0-1：点开始作战按钮 → 进关卡，然后任务结束交给战斗任务",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
             "点击按钮开始执行此次作战"
         ],
         "next": [
-            "Tutorial@Main@Act9"
+            "Tutorial@Main@Act11"
         ]
     },
-    "Tutorial@Main@Step9@Bottom": {
+    "Tutorial@Main@Step11@Bottom": {
         "Doc": "0-1：点开始作战按钮 → 进关卡，然后任务结束交给战斗任务",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
             "点击按钮开始执行此次作战"
         ],
         "next": [
-            "Tutorial@Main@Act9"
+            "Tutorial@Main@Act11"
         ]
     },
-    "Tutorial@Main@Act9": {
+    "Tutorial@Main@Act11": {
         "Doc": "0-1：点开始作战按钮 → 进关卡，然后任务结束交给战斗任务：模板匹配后点它自己。template 必须显式写（baseTask 不继承模板名）",
         "algorithm": "MatchTemplate",
         "template": "BattleStartNormal.png",
