@@ -66,14 +66,17 @@ public class TutorialSettingsUserControlModel : TaskSettingsViewModel, TutorialS
     {
         (bool? IsSuccess, IEnumerable<int> TaskId) ITaskQueueModelSerialize.Serialize(BaseTask? baseTask, int? taskId)
         {
-            if (baseTask is not TutorialTask tutorial)
+            if (baseTask is not TutorialTask)
             {
                 return (null, []);
             }
 
-            // 核心侧用「自定任务」通道执行我们的任务链：Custom 类型 + task_names
+            // 核心侧用「自定任务」通道执行我们的任务链：Custom 类型 + task_names。
+            // 入口固定用 Tutorial@Main@Begin —— 它是包含全部段落的总入口
+            // （内部会回落到序章那段）。不能读 config 里的 Segment：
+            // 老存档里存的可能是 "Prologue"，会把整段主界面流程漏掉。
             var task = new AsstCustomTask {
-                CustomTasks = [$"Tutorial@{tutorial.Segment}@Begin"],
+                CustomTasks = ["Tutorial@Main@Begin"],
             };
             return taskId switch {
                 int id when id > 0 => (Instances.AsstProxy.AsstSetTaskParamsEncoded(id, task), [id]),
