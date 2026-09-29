@@ -18,16 +18,16 @@
             "Tutorial@Main@编队-点要选中的干员(下框)",
             "Tutorial@Main@编队-点确认编队",
             "Tutorial@Main@编队-点确认编队(下框)",
-            "Tutorial@Main@编队-点导航栏返回（StageBegin 的小房子）",
-            "Tutorial@Main@编队-点导航栏返回（StageBegin 的小房子）(下框)",
+            "Tutorial@Main@编队-点导航栏返回",
+            "Tutorial@Main@编队-点导航栏返回(下框)",
             "Tutorial@Main@编队-点首页按钮",
             "Tutorial@Main@编队-点首页按钮(下框)",
-            "Tutorial@Main@导航-点曲谱标签（StageTheme）",
-            "Tutorial@Main@导航-点曲谱标签（StageTheme）(下框)",
+            "Tutorial@Main@导航-点曲谱标签",
+            "Tutorial@Main@导航-点曲谱标签(下框)",
             "Tutorial@Main@导航-点主题曲条目",
             "Tutorial@Main@导航-点主题曲条目(下框)",
-            "Tutorial@Main@导航-点前往章节（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战",
-            "Tutorial@Main@导航-点前往章节（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战(下框)",
+            "Tutorial@Main@导航-点前往章节",
+            "Tutorial@Main@导航-点前往章节(下框)",
             "Tutorial@Gacha@Skip",
             "Tutorial@Prologue@Loop"
         ]
@@ -204,7 +204,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@编队-点导航栏返回（StageBegin 的小房子）": {
+    "Tutorial@Main@编队-点导航栏返回": {
         "Doc": "编队：点导航栏返回（StageBegin 的小房子）",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -214,7 +214,7 @@
             "Tutorial@Main@Act4"
         ]
     },
-    "Tutorial@Main@编队-点导航栏返回（StageBegin 的小房子）(下框)": {
+    "Tutorial@Main@编队-点导航栏返回(下框)": {
         "Doc": "编队：点导航栏返回（StageBegin 的小房子）",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -274,7 +274,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@导航-点曲谱标签（StageTheme）": {
+    "Tutorial@Main@导航-点曲谱标签": {
         "Doc": "导航：点曲谱标签（StageTheme）",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -284,7 +284,7 @@
             "Tutorial@Main@Act6"
         ]
     },
-    "Tutorial@Main@导航-点曲谱标签（StageTheme）(下框)": {
+    "Tutorial@Main@导航-点曲谱标签(下框)": {
         "Doc": "导航：点曲谱标签（StageTheme）",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -344,7 +344,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@导航-点前往章节（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战": {
+    "Tutorial@Main@导航-点前往章节": {
         "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -354,7 +354,7 @@
             "Tutorial@Main@Act8"
         ]
     },
-    "Tutorial@Main@导航-点前往章节（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战(下框)": {
+    "Tutorial@Main@导航-点前往章节(下框)": {
         "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
