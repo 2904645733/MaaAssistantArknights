@@ -10,24 +10,24 @@
         "Doc": "轮询：①本段需要动手的几步（抽卡/编队/导航/进关，上下文字框各一个变体）②抽卡动画跳过 ③认到头像图案就点一下对话 ④都不是就交给序章那段（Tutorial@Prologue@Loop）",
         "algorithm": "JustReturn",
         "next": [
-            "Tutorial@Main@Step0@Top",
-            "Tutorial@Main@Step0@Bottom",
-            "Tutorial@Main@Step1@Top",
-            "Tutorial@Main@Step1@Bottom",
-            "Tutorial@Main@Step2@Top",
-            "Tutorial@Main@Step2@Bottom",
-            "Tutorial@Main@Step3@Top",
-            "Tutorial@Main@Step3@Bottom",
-            "Tutorial@Main@Step4@Top",
-            "Tutorial@Main@Step4@Bottom",
-            "Tutorial@Main@Step5@Top",
-            "Tutorial@Main@Step5@Bottom",
-            "Tutorial@Main@Step6@Top",
-            "Tutorial@Main@Step6@Bottom",
-            "Tutorial@Main@Step7@Top",
-            "Tutorial@Main@Step7@Bottom",
-            "Tutorial@Main@Step8@Top",
-            "Tutorial@Main@Step8@Bottom",
+            "Tutorial@Main@抽卡-点招募干员",
+            "Tutorial@Main@抽卡-点招募干员(下框)",
+            "Tutorial@Main@编队-点添加干员",
+            "Tutorial@Main@编队-点添加干员(下框)",
+            "Tutorial@Main@编队-点要选中的干员",
+            "Tutorial@Main@编队-点要选中的干员(下框)",
+            "Tutorial@Main@编队-点确认编队",
+            "Tutorial@Main@编队-点确认编队(下框)",
+            "Tutorial@Main@编队-点导航栏返回（StageBegin 的小房子）",
+            "Tutorial@Main@编队-点导航栏返回（StageBegin 的小房子）(下框)",
+            "Tutorial@Main@编队-点首页按钮",
+            "Tutorial@Main@编队-点首页按钮(下框)",
+            "Tutorial@Main@导航-点曲谱标签（StageTheme）",
+            "Tutorial@Main@导航-点曲谱标签（StageTheme）(下框)",
+            "Tutorial@Main@导航-点主题曲条目",
+            "Tutorial@Main@导航-点主题曲条目(下框)",
+            "Tutorial@Main@导航-点前往章节（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战",
+            "Tutorial@Main@导航-点前往章节（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战(下框)",
             "Tutorial@Gacha@Skip",
             "Tutorial@Prologue@Loop"
         ]
@@ -64,7 +64,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step0@Top": {
+    "Tutorial@Main@抽卡-点招募干员": {
         "Doc": "抽卡：点「招募干员」",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -74,7 +74,7 @@
             "Tutorial@Main@Act0"
         ]
     },
-    "Tutorial@Main@Step0@Bottom": {
+    "Tutorial@Main@抽卡-点招募干员(下框)": {
         "Doc": "抽卡：点「招募干员」",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -99,7 +99,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step1@Top": {
+    "Tutorial@Main@编队-点添加干员": {
         "Doc": "编队：点「添加干员」",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -109,7 +109,7 @@
             "Tutorial@Main@Act1"
         ]
     },
-    "Tutorial@Main@Step1@Bottom": {
+    "Tutorial@Main@编队-点添加干员(下框)": {
         "Doc": "编队：点「添加干员」",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -134,7 +134,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step2@Top": {
+    "Tutorial@Main@编队-点要选中的干员": {
         "Doc": "编队：点要选中的干员",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -144,7 +144,7 @@
             "Tutorial@Main@Act2"
         ]
     },
-    "Tutorial@Main@Step2@Bottom": {
+    "Tutorial@Main@编队-点要选中的干员(下框)": {
         "Doc": "编队：点要选中的干员",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -169,7 +169,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step3@Top": {
+    "Tutorial@Main@编队-点确认编队": {
         "Doc": "编队：点「确认编队」",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -179,7 +179,7 @@
             "Tutorial@Main@Act3"
         ]
     },
-    "Tutorial@Main@Step3@Bottom": {
+    "Tutorial@Main@编队-点确认编队(下框)": {
         "Doc": "编队：点「确认编队」",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -204,7 +204,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step4@Top": {
+    "Tutorial@Main@编队-点导航栏返回（StageBegin 的小房子）": {
         "Doc": "编队：点导航栏返回（StageBegin 的小房子）",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -214,7 +214,7 @@
             "Tutorial@Main@Act4"
         ]
     },
-    "Tutorial@Main@Step4@Bottom": {
+    "Tutorial@Main@编队-点导航栏返回（StageBegin 的小房子）(下框)": {
         "Doc": "编队：点导航栏返回（StageBegin 的小房子）",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -239,7 +239,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step5@Top": {
+    "Tutorial@Main@编队-点首页按钮": {
         "Doc": "编队：点首页按钮",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -249,7 +249,7 @@
             "Tutorial@Main@Act5"
         ]
     },
-    "Tutorial@Main@Step5@Bottom": {
+    "Tutorial@Main@编队-点首页按钮(下框)": {
         "Doc": "编队：点首页按钮",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -274,7 +274,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step6@Top": {
+    "Tutorial@Main@导航-点曲谱标签（StageTheme）": {
         "Doc": "导航：点曲谱标签（StageTheme）",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -284,7 +284,7 @@
             "Tutorial@Main@Act6"
         ]
     },
-    "Tutorial@Main@Step6@Bottom": {
+    "Tutorial@Main@导航-点曲谱标签（StageTheme）(下框)": {
         "Doc": "导航：点曲谱标签（StageTheme）",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -309,7 +309,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step7@Top": {
+    "Tutorial@Main@导航-点主题曲条目": {
         "Doc": "导航：点主题曲条目",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -319,7 +319,7 @@
             "Tutorial@Main@Act7"
         ]
     },
-    "Tutorial@Main@Step7@Bottom": {
+    "Tutorial@Main@导航-点主题曲条目(下框)": {
         "Doc": "导航：点主题曲条目",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
@@ -344,7 +344,7 @@
             "Tutorial@Main@Loop"
         ]
     },
-    "Tutorial@Main@Step8@Top": {
+    "Tutorial@Main@导航-点前往章节（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战": {
         "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战",
         "baseTask": "Tutorial@Ocr@Top",
         "text": [
@@ -354,7 +354,7 @@
             "Tutorial@Main@Act8"
         ]
     },
-    "Tutorial@Main@Step8@Bottom": {
+    "Tutorial@Main@导航-点前往章节（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战(下框)": {
         "Doc": "导航：点「前往章节」（EnterEpisodeNew-Click）→ 本段结束，交给战斗任务进 0-1 并作战",
         "baseTask": "Tutorial@Ocr@Bottom",
         "text": [
