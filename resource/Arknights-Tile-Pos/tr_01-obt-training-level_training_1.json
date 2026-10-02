@@ -8,49 +8,49 @@
         [
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
@@ -87,21 +87,21 @@
             },
             {
                 "buildableType": 2,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_wall"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
@@ -110,7 +110,7 @@
         [
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
@@ -138,21 +138,21 @@
             },
             {
                 "buildableType": 2,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_wall"
             },
             {
                 "buildableType": 2,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_wall"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
@@ -161,14 +161,14 @@
         [
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 2,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_wall"
@@ -196,14 +196,14 @@
             },
             {
                 "buildableType": 2,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_wall"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
@@ -212,21 +212,21 @@
         [
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 2,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_wall"
             },
             {
                 "buildableType": 2,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_wall"
@@ -263,49 +263,49 @@
         [
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
             },
             {
                 "buildableType": 0,
-                "heightType": 1,
+                "heightType": 0,
                 "isEnd": false,
                 "isStart": false,
                 "tileKey": "tile_forbidden"
