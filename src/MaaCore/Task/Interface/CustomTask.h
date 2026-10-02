@@ -22,6 +22,9 @@ public:
 
     bool parse_and_register_material_synthesis(const std::string& task_name);
 
+    // 新手教程：进度识别插件（一轮一次 OCR + 查表，见 TutorialProgressTaskPlugin）
+    bool parse_and_register_tutorial_progress(const std::string& task_name);
+
 private:
     std::shared_ptr<ProcessTask> m_custom_task_ptr = nullptr;
 };

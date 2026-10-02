@@ -1,0 +1,15 @@
+{
+    "version": 3,
+    "minimum_required": "v6.0.0",
+    "doc": {"title": "TR-1", "details": "TR-1"},
+    "stage_name": "TR-1",
+    "opers": [],
+    "groups": [],
+    "actions": [
+        {"type": "SpeedUp"},
+        {"type": "Deploy", "name": "巡林者", "direction": "Left", "location": [4, 1]},
+        {"type": "Deploy", "name": "夜刀", "direction": "Left", "location": [3, 1]},
+        {"type": "Deploy", "name": "芙蓉", "direction": "Left", "location": [4, 2]},
+        {"type": "SkillDaemon"}
+    ]
+}

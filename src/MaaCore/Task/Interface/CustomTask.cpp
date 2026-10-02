@@ -6,6 +6,7 @@
 #include "Task/MiniGame/PixelPaintTaskPlugin.h"
 #include "Task/MiniGame/SecretFrontTaskPlugin.h"
 #include "Task/Miscellaneous/ScreenshotTaskPlugin.h"
+#include "Task/Miscellaneous/TutorialProgressTaskPlugin.h"
 #include "Task/ProcessTask.h"
 #include "Utils/Logger.hpp"
 
@@ -48,6 +49,9 @@ bool asst::CustomTask::set_params(const json::value& params)
         }
         else if (parse_and_register_material_synthesis(task_name)) {
             Log.info("Parsed and registered MaterialSynthesis task: ", task_name);
+        }
+        else if (parse_and_register_tutorial_progress(task_name)) {
+            LogInfo << "Parsed and registered TutorialProgress task:" << task_name;
         }
 
         if (Task.get(resolved_task) == nullptr) {
@@ -167,6 +171,31 @@ bool asst::CustomTask::parse_and_register_pixel_paint(const std::string& task_na
     plugin_ptr->set_grid_delay(
         static_cast<unsigned>(pixel_opt->get("grid_delay", pixel_opt->get("grid_click_delay", 0))));
     Log.info("PixelPaint groups:", plugin_ptr->get_groups().size());
+    return true;
+}
+
+bool asst::CustomTask::parse_and_register_tutorial_progress(const std::string& task_name)
+{
+    // 新手教程总入口。只认这一个名字，别的自定任务不加这个插件。
+    // 加前缀的形式（Tutorial@Main@Begin@xxx）也认，和解包时 task_name_view 的写法保持一致。
+    static constexpr std::string_view BeginTask = "Tutorial@Main@Begin";
+    if (task_name != BeginTask && !task_name.starts_with(std::string(BeginTask) + '@')) {
+        return false;
+    }
+
+    if (m_custom_task_ptr->find_plugin<TutorialProgressTaskPlugin>()) {
+        return true;
+    }
+
+    auto plugin_ptr = m_custom_task_ptr->register_plugin<TutorialProgressTaskPlugin>();
+    if (!plugin_ptr) {
+        LogError << __FUNCTION__ << "| failed to register TutorialProgressTaskPlugin";
+        return false;
+    }
+    // 把正在跑的 ProcessTask 交给插件：教程跑完（规则表里的 X 动作）时，
+    // 插件要靠它 override_next 把外层轮询导向结束点，让任务链干净结束 ——
+    // 不然这条任务永不结束，排在队列后面的 Copilot（打 0-1）永远轮不到。
+    plugin_ptr->set_progress_task(m_custom_task_ptr.get());
     return true;
 }
 
