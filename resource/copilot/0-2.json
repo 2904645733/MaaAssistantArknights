@@ -1,0 +1,37 @@
+{
+    "version": 3,
+    "stage_name": "0-2",
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "序章 黑暗时代·上 - 0-2 - 守卫",
+        "details": "序章 黑暗时代·上 - 0-2 - 守卫"
+    },
+    "opers": [],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "黑角",
+            "type": "Deploy",
+            "location": [
+                6,
+                3
+            ],
+            "direction": "Right"
+        },
+        {
+            "name": "巡林者",
+            "type": "Deploy",
+            "location": [
+                6,
+                2
+            ],
+            "direction": "Right"
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ]
+}

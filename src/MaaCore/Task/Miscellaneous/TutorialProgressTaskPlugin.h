@@ -40,7 +40,18 @@ namespace asst
 //             C:x,y        点这个精确坐标
 //             G:x1,y1,x2,y2,ms   从这里拖到那里
 //             W:ms         等这么久
+//             J:文件名     用 resource/copilot 下这份作业打这一关（例如 J:main_00-01.json）
 //   句子里的 '|' 与 ':' 都不会出现，所以分隔安全。
+//
+// ★ J: 为什么存在（这是本插件从"队列驱动"改成"句子驱动"的关键）：
+//   以前"什么时候打哪一关"是【GUI 那 5 个任务的顺序】决定的：
+//     ① 教程段 → ② Copilot(0-1) → ③ 教程段 → ④ Copilot(TR-1) → ⑤ 教程段
+//   这个设计在"从中间接着跑"时必然错位 —— 因为队列位置是固定的，而游戏进度不是。
+//   实机踩过：某轮只命中了 TR-1 段的 3 条规则（前面 0-1 早已跑过），于是 ① 这个位置
+//   跑完 TR-1 段结束，队列推进到 ② —— 而 ② 装的是 0-1 的作业，结果在 TR-1 的
+//   关卡详情页上用了 0-1 的三个部署点。
+//   改成 J: 之后，打哪一关由【认到哪句话】决定，和队列位置无关：认到就自己打，
+//   打完接着认下一句。GUI 侧只需要 1 个教程任务。
 class TutorialProgressTaskPlugin final : public AbstractTaskPlugin
 {
 public:
@@ -76,15 +87,33 @@ private:
         double* score_out,
         std::string* ocr_out) const;
     void run_actions(const std::vector<std::string>& actions); // 按顺序执行动作
+    // 用 resource/copilot 下的一份作业打当前这一关（规则表里的 J: 动作）。
+    // 同步跑完一整场：开始行动 → 编队 → 部署 → 打完 → 退出结算。
+    // 跑之前会把"退结算"的计数装上，这样回来时停在结算画面也能自动点掉。
+    bool run_copilot_job(const std::string& job_filename);
     // 结束本段教程：把外层轮询的 next 覆盖成"结束点"任务（next 为空），
     // 任务链随之结束、队列继续跑后面的任务（Copilot 打 0-1）。
     void finish_segment(std::string_view reason);
     // 剧情跳过：认到右上角「跳过 ▶」就点它 + 点确认弹窗。返回 true = 处理掉了，
     // 本轮不用再做别的（对话框识别留给下一轮）。
     bool try_skip_plot();
+    // ── 兜底进终端 + 终端里打关卡（用户要求，照搬官方理智作战那套）──────
+    // 调官方任务链进终端：CloseAnnos 关弹窗 -> QuickSwitch@ToTerminal 切终端。
+    // 两个链都带 #back，调完会自己回到调用方。返回 true = 本轮已处理。
+    bool try_enter_terminal();
+    // 在终端里认「关卡进度」图标（LevelProgressRect + TutorialLevelProgress.png）。
+    // 命中就 OCR 读关卡名、记下来、点卡片进这一关。返回 true = 本轮已处理。
+    bool try_pick_level_in_terminal();
+    // 关卡详情页出来了就点「开始行动」（认官方 StartButton1），然后跑对应作业。
+    // 返回 true = 本轮已处理。
+    bool try_start_selected_level();
     bool click_point(int x, int y) const;
     bool swipe_from_to(int x1, int y1, int x2, int y2, int duration) const;
     bool dialog_frame_changed(const cv::Mat& image, const Rect& area); // 对话框那块画面变没变
+    // 这一屏能不能看到终端那张主题卡上的「关卡进度」图标（= 在终端，且卡片在进度那一栏）
+    bool is_level_progress_visible(const cv::Mat& image) const;
+    // 关卡详情页出来没有 —— 直接复用官方任务 StartButton1（就是详情页的「开始行动」）
+    bool is_stage_detail_opened(const cv::Mat& image) const;
 
     std::vector<Rule> m_rules;
     bool m_rules_loaded = false;
@@ -98,9 +127,70 @@ private:
     // 正在跑的 ProcessTask（CustomTask 注册时传入）。用来在教程跑完时
     // override_next 结束本段任务链。空 = 没传进来，那时只能记日志、不结束。
     ProcessTask* m_progress_task = nullptr;
-    // 退结算：还剩几次要点。-1 = 还没决定过（只在"进入本段后第一次没看到对话"时才决定：
-    // 那说明停在上一关的结算画面上，见 exit_settlement 的说明）。
-    int m_settlement_clicks_left = -1;
+    // 退结算：还剩几次要点右上角那个角落。
+    // ★ 只有【刚跑完一场自动战斗】时才有值 > 0（由 run_copilot_job 打完时装上）。
+    //   平时恒为 0 = 不退结算。
+    //   踩过：原来初始 -1 + "第一次没对话就装 6 次"，结果主界面上也白点 6 下右上角
+    //   （用户看到的现象："一直点最右边"）。官方的 ClickCorner 是有门控的
+    //   （只在 EndOfAction 之后走），这里是同样的意思。
+    int m_settlement_clicks_left = 0;
+
+    // 兜底计时：连续多少毫秒没看到对话。看到对话就清零。
+    // 超过 NoDialogFallbackMs 且不在终端 -> 调官方链路进终端。
+    // ★ 为什么用计时而不是"一没对话就进终端"：结算/剧情/抽卡那几屏本来就没有对话，
+    //   一没对话就跳转会把这些正常流程打断。计时等于"给了 2 秒还没动静才算真卡住"。
+    unsigned m_no_dialog_ms = 0;
+    // 已经进过终端了（认到过进度图标）。用来避免每轮都重复调 QuickSwitch。
+    bool m_in_terminal = false;
+    // 从终端进度卡读到的关卡名（形如 0-1 / TR-5）。空 = 还没读到。
+    std::string m_pending_level;
+    // 已经点了进度卡、等详情页出来
+    bool m_waiting_stage_detail = false;
+    // ── 编队页等对话（用户要求的顺序）────────────────────────────
+    // 详情页点了「开始行动」之后进编队页，那里可能还有教程对话，得先做掉对话，
+    // 确认稳定没对话了才启动作业。所以点完开始行动先进入这个状态：
+    //   m_waiting_battle_start = true  + m_battle_start_level = 关卡名
+    // 由 _run() 里那个分支负责"等连续 BattleStartDwellMs 没对话 -> 启动作业"。
+    bool m_waiting_battle_start = false;
+    std::string m_battle_start_level;
+    // 编队页上【是否认出过对话】。用户给的两条互斥规则：
+    //   编队页识别到对话 -> 处理掉 -> 【不启动作业】-> 回到大循环
+    //   编队页没识别到对话 -> 启动作业
+    // 所以这是个"一次性事实"：只要在编队页上认出过一次对话，这一关的作业资格就作废。
+    bool m_formation_dialog_seen = false;
+    // ── TR-2：不能起作业，改点区域进战斗（用户要求）──────────────────
+    // 用户原话：TR-2 没办法用自动战斗处理，所以检测到进度卡的进度是 TR-2 时，
+    //   进入到编队页面【没有对话的情况下不能启动 TR-2 的作业】，
+    //   而是点击 (1065, 430, 81, 150) 区域进入战斗。
+    // 之后的流程由规则表接管（TR-2 段那一串对话，含点坐标和拖拽部署）。
+    // 撤销：删掉这两个成员 + _run() 里标了「TR-2 手动进战斗」的那一段。
+    inline static const std::string_view ManualEntryLevel = "TR-2";
+    inline static const Rect ManualEntryRect = Rect(1065, 430, 81, 150);
+    bool m_manual_entry_done = false;
+    // ── "回到大循环去终端"的显式状态 ─────────────────────────────
+    // ★ 为什么要有它：用户要的是一条【连续的链】——
+    //     编队页对话处理完 -> 回大循环 -> 识别到导航栏 -> 点它 -> 到终端
+    //     -> 认进度卡 -> 点它 -> 详情页 -> 点开始行动 -> 编队页 -> ...
+    //   中间任何地方弹出对话，都先处理对话，再继续这条链（和从主界面进终端一样）。
+    //   以前没有这个状态，靠"没对话 2.4 秒就当成卡住、去进终端"来猜 ——
+    //   那个兜底会插在这条链中间乱触发，表现就是"在编队页上就开始点导航栏"。
+    //   现在改成：编队页对话处理完【显式】置 true，由它驱动"回终端"这一步；
+    //   而那个 2.4 秒兜底只在【从没主动去过终端】时才用（见 _run 里的条件）。
+    bool m_return_to_terminal = false;
+    // 编队页上连续多久没对话才认为"确实没对话"（刚进去时对话框还在淡入，
+    // 等一小会儿再下结论，免得把"还没画出来"当成"没有对话"）。
+    inline static constexpr unsigned BattleStartDwellMs = 3000;
+    // ── 进终端之后的加载等待 ─────────────────────────────────────
+    // ★ 踩过：点完终端【立刻】检查进度卡，那时界面还在加载、卡片还没出来，
+    //   于是判成"没进去"、标记 in_terminal=0，下一轮又去点导航栏 ——
+    //   表现就是"点了导航栏到终端后，又开始识别导航栏"。
+    //   官方 TerminalDefault 的 postDelay 是 3000，就是等加载用的。
+    //   不过实测这台机器加载挺快（设 3000 之后约 2 秒进度卡就认到了），
+    //   1200 够用，还能少让人干等。
+    //   ★ 这个值只影响"最慢等多久才重新考虑进终端" —— 这期间 _run() 每轮
+    //     照样认进度卡，认到就清零、立刻往下走，所以调小不会漏判。
+    unsigned m_terminal_settle_ms = 0;
+    inline static constexpr unsigned TerminalSettleMs = 1200;
 
     // ── "现在处于对话"的判据 ──────────────────────────────────
     // 按用户要求，用【官方 BattleAvatarDialog.png】判断是不是在对话；roi 也照抄官方任务
@@ -177,6 +267,71 @@ private:
     // 所以这里用固定次数（结算/评级/掉落那几层，点几下就够了）。
     inline static constexpr int SettlementMaxClicks = 6;
 
+    // ── 兜底：进终端 ────────────────────────────────────────────
+    // 上面两个判据（跳过按钮 / 头像标志）都认不到时，游戏可能停在某个"插件不认识、
+    // 但也没有对话"的屏幕上（活动弹窗挡着、误入别的页面等），教程就卡住了。
+    //
+    // 兜底办法：连续这么久都没看到对话，就按官方"理智作战"那套回到终端 ——
+    // 终端是教程的"安全落脚点"：到了那里就能认出关卡进度、把当前这一关打掉。
+    //   CloseAnnos             先关掉一堆活动弹窗（干扰项）
+    //   QuickSwitch@ToTerminal 小房子快捷切终端（主界面直接点终端；不在就点开菜单再点）
+    // 两个都是官方现成的任务链，带 #back，调完自己会回到调用方。
+    inline static constexpr unsigned NoDialogFallbackMs = 2000;
+
+    // 进终端用的官方主路径任务（理智作战 Fight.sub 就是它）：
+    // 认各个 UI 主题的 Terminal.png（= 主界面右上角那个「终端」大按钮）。
+    // 实测 UiTheme/Default/Terminal.png 在主界面上 0.9836@(901,120)，稳过 0.8。
+    inline static constexpr std::string_view TerminalEntryTaskName = "Terminal-Entry";
+
+    // 不在主界面时的那条路：官方的 QuickSwitch（点小房子 -> 点菜单里的终端）。
+    //
+    // ★ 直接用官方任务链 "QuickSwitch@ToTerminal"，【不要】自己写死坐标 + 硬等。
+    //   官方那两步本身就是【模板匹配 + ClickSelf】，而且模板是能匹上的：
+    //     QuickSwitch/Menu.png     官方实测 0.985501 @[247,20,44,34]  roi [197,0,144,134]
+    //     QuickSwitch/Terminal.png 官方实测 0.968569 @[500,50,59,48]  roi [450,0,159,148]
+    //   我也在保存下来的真实界面截图上复测过 Menu.png：0.9879 / 0.9991 / 0.9990 / 0.9991
+    //   （之前我说"匹不上、只能点写死坐标"是测错了图，那 0.65 是别的屏）。
+    //   写死坐标 + sleep(1200) 不但慢，还怕界面一改就点空。
+
+    // ── 终端里的「关卡进度」──────────────────────────────────────
+    // 终端界面正中间那张主题卡：上面是主题图标 + MAIN THEME，
+    // 下面是「进度」+ 当前关卡名（实测 0-1 / 1-2 / 2-1 / TR-5 这种）。
+    //
+    // ★ 这两个 roi 与模板都是【用户实测给的】：
+    //     进度图标 模板框2_555_113_51_47.png（用户框 = [555,113,51,47]）
+    //     关卡名   roi [556,233,48,26]，内容是卡片下方的关卡名，例如 TR-2
+    //
+    //   ★★ 踩过的两个坑（都是"模板比搜索区大"这一类，OpenCV 直接匹不了、恒 miss 0）：
+    //      1. 最初写死成 roi [544,102,74,75]（74x75），而当时的模板是 77x77 —— 模板更大；
+    //      2. 用户的模板图【比他自己给的框大一圈边距】：
+    //         框 [555,113,51,47] = 51x47，实际模板文件是 77x71（多裁了 26x24 的边距）。
+    //      所以 roi 不能照抄那个 51x47，要按【模板实际尺寸】给，并留一点余量。
+    //      现在的算法：模板中心 = 框中心 = (580,136)；roi = 以该中心为中心、
+    //      模板尺寸各边 + 6px 余量 -> [536,95,89,83]。
+    //      余量给够没代价（只是多匹配一点背景），给不够就会裁掉模板导致匹不上。
+    inline static const Rect LevelProgressRect = Rect(536, 95, 89, 83);
+    inline static constexpr std::string_view LevelProgressTemplate = "TutorialLevelProgress.png";
+    inline static constexpr double LevelProgressThreshold = 0.8;
+    inline static const Rect LevelNameRect = Rect(556, 233, 48, 26);
+
+    // ── 关卡详情页的「开始行动」───────────────────────────────────
+    // ★ 用自己的轻量任务，【不要】用官方的 StartButton1。
+    //   官方 StartButton1 是给理智作战用的：它 next 里挂着 StartButton2 ->
+    //   StartButton2WaitTime，而 StartButton2WaitTime 的 postDelay 是 40000（等 40 秒）。
+    //   教程点完开始行动就该直接进战斗，套那条链会白等 40 秒；用户等不及按了停止，
+    //   need_exit() 变 true，紧随其后的 copilot job 一启动就立刻退出。
+    //   实机日志（就是这个坑）：
+    //     sleep 40000                                    <- 卡在这里
+    //     asst::stop | enter                             <- 用户按了停止
+    //     start button click returned 1
+    //     run copilot job for level 0-2
+    //     copilot job finished: 0-2.json ret: 0          <- 一启动就退出
+    //   Tutorial@ClickStartAction 就是"认「开始行动」-> 点它 -> next 为空"。
+    inline static constexpr std::string_view StageDetailTaskName = "Tutorial@ClickStartAction";
+    // 官方那个也叫来一份：只用于判断"关卡详情页开没开"（它是 OcrDetect，不下发 next，
+    // 用 PipelineAnalyzer 探测不会触发那条 40 秒的链）。探测和点击分开，互不影响。
+    inline static constexpr std::string_view StageDetailProbeTaskName = "StartButton1";
+
     // ── 剧情跳过 ────────────────────────────────────────────────
     // 教程里有三段纯剧情演出（起名后的开场、序章·上结束、序章·下结束），
     // 那几屏【没有对话框、也没有 BattleAvatarDialog 标志】，插件本来会干等着。
@@ -209,6 +364,10 @@ private:
     inline static constexpr std::string_view EndTaskName = "Tutorial@Progress@Done";
     // 规则表里表示"本段教程跑完"的动作：X（在规则表里写成 X:段名，冒号后的段名只用于日志）
     inline static constexpr std::string_view FinishActionKind = "X";
+    // 规则表里表示"用这份作业打这一关"的动作：J:<作业文件名>（文件在 resource/copilot 下）。
+    // 作业统一放那儿 —— 不去猜用户的临时/自定义路径（避免和用户自己的作业撞车）。
+    inline static constexpr std::string_view CopilotActionKind = "J";
+    inline static constexpr std::string_view CopilotResourceDir = "copilot";
     // 相似度匹配参数（离线验证见 新手教程\工具\验证相似度匹配.py）
     // ★ 单位一律【字符】，不是字节。
     //   踩过：曾经"统一用字节"来消掉字节/字符混比，结果引入了更严重的错误 ——
