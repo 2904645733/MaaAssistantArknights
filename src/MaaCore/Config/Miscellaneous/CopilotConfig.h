@@ -21,6 +21,10 @@ public:
 
     const std::string& get_stage_name() const noexcept { return m_data.info.stage_name; }
 
+    // [TUTORIAL-AUTOFORMATION] 作业 json 里的 "autoFormation"（缺省 false）。
+    // 见 AsstBattleDef.h 里 CombatData::auto_formation 与 CopilotConfig.cpp 的说明。
+    bool get_auto_formation() const noexcept { return m_data.auto_formation; }
+
     void clear();
 
 protected:

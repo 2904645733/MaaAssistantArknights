@@ -1,0 +1,54 @@
+{
+    "version": 3,
+    "stage_name": "0-7",
+    "difficulty": 0,
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "序章 黑暗时代·上 - 0-7 - 感染",
+        "details": "序章 黑暗时代·上 - 0-7 - 感染"
+    },
+    "opers": [
+        {
+            "name": "娜仁图亚",
+            "skill": 1,
+            "skill_usage": 2,
+            "requirements": {
+                "elite": 2,
+                "level": 90,
+                "skill_level": 10,
+                "module": 1,
+                "potentiality": 1
+            }
+        },
+        {
+            "name": "夜刀",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "module": -1,
+                "potentiality": 1
+            }
+        }
+    ],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "娜仁图亚",
+            "type": "Deploy",
+            "location": [
+                5,
+                2
+            ],
+            "direction": "Right"
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 4
+}

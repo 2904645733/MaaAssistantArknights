@@ -6,7 +6,28 @@
         "title": "序章 黑暗时代·上 - 0-2 - 守卫",
         "details": "序章 黑暗时代·上 - 0-2 - 守卫"
     },
-    "opers": [],
+    "opers": [
+        {
+            "name": "黑角",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "module": -1,
+                "potentiality": 1
+            }
+        },
+        {
+            "name": "巡林者",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "potentiality": 1,
+                "module": -1
+            }
+        }
+    ],
     "groups": [],
     "actions": [
         {
@@ -33,5 +54,7 @@
         {
             "type": "SkillDaemon"
         }
-    ]
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 4
 }

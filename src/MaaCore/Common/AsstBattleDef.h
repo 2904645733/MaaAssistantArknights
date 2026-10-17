@@ -558,6 +558,14 @@ struct CombatData // 作业 JSON 数据
     BasicInfo info;
     OperUsageGroups groups;
     std::vector<Action> actions;
+
+    // [TUTORIAL-AUTOFORMATION] 作业 JSON 可选字段 "autoFormation": true
+    // 让新手教程插件用 formation=true 起这场作业（MAA 自己自动编队），
+    // 而不是默认的 formation=false（教学关是游戏给阵容，MAA 别去点「快捷编队」）。
+    // 缺省 false = 原行为。目前新手教程的 0-2 ~ 0-8 七份作业都声明了 true，
+    // 配合作业里的 "supportUnitUsage": 4（只借首位6星）。
+    // 撤销：见 CopilotConfig.cpp 里同名标记的注释。
+    bool auto_formation = false;
 };
 } // namespace copilot
 

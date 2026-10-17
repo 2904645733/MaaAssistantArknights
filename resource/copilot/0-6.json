@@ -1,0 +1,119 @@
+{
+    "version": 3,
+    "stage_name": "0-6",
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "序章 黑暗时代·上 - 0-6 - 强击",
+        "details": "序章 黑暗时代·上 - 0-6 - 强击"
+    },
+    "opers": [
+        {
+            "name": "安德切尔",
+            "requirements": {
+                "elite": 1,
+                "level": 55,
+                "skill_level": 7,
+                "potentiality": 1,
+                "module": -1
+            }
+        },
+        {
+            "name": "黑角",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "potentiality": 1,
+                "module": -1
+            }
+        },
+        {
+            "name": "夜刀",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "potentiality": 1,
+                "module": -1
+            },
+            "skill": 1,
+            "skill_usage": 0
+        },
+        {
+            "name": "巡林者",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "potentiality": 1,
+                "module": -1
+            }
+        },
+        {
+            "name": "芙蓉",
+            "requirements": {
+                "elite": 1,
+                "level": 55,
+                "skill_level": 7,
+                "potentiality": 1,
+                "module": -1
+            }
+        }
+    ],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "夜刀",
+            "type": "Deploy",
+            "location": [
+                8,
+                2
+            ],
+            "direction": "Left"
+        },
+        {
+            "name": "黑角",
+            "type": "Deploy",
+            "location": [
+                8,
+                4
+            ],
+            "direction": "Left"
+        },
+        {
+            "name": "巡林者",
+            "type": "Deploy",
+            "location": [
+                6,
+                3
+            ],
+            "direction": "Right"
+        },
+        {
+            "name": "芙蓉",
+            "type": "Deploy",
+            "location": [
+                8,
+                1
+            ],
+            "direction": "Down"
+        },
+        {
+            "name": "安德切尔",
+            "type": "Deploy",
+            "location": [
+                5,
+                3
+            ],
+            "direction": "Right"
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 4
+}

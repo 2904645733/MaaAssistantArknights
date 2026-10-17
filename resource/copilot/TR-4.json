@@ -1,0 +1,39 @@
+{
+    "version": 3,
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "TR-4",
+        "details": "TR-4"
+    },
+    "stage_name": "TR-4",
+    "opers": [],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "type": "Deploy",
+            "name": "翎羽",
+            "location": [
+                4,
+                2
+            ],
+            "direction": "Right"
+        },
+        {
+            "type": "Deploy",
+            "name": "芬",
+            "location": [
+                6,
+                2
+            ],
+            "direction": "Left",
+            "costs": 12,
+            "pre_delay": 5000
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ]
+}

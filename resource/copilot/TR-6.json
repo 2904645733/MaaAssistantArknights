@@ -1,0 +1,38 @@
+{
+    "version": 3,
+    "stage_name": "TR-6",
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "TR-6",
+        "details": "TR-6"
+    },
+    "opers": [],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "12F",
+            "type": "Deploy",
+            "location": [
+                3,
+                2
+            ],
+            "direction": "Right",
+            "costs": 47
+        },
+        {
+            "name": "米格鲁",
+            "type": "Deploy",
+            "location": [
+                3,
+                3
+            ],
+            "direction": "Right"
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ]
+}

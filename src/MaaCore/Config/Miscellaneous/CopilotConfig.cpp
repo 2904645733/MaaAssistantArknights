@@ -35,6 +35,16 @@ bool asst::CopilotConfig::parse(const json::value& json)
         return false;
     }
 
+    // [TUTORIAL-AUTOFORMATION] 作业可选字段 "autoFormation": true
+    // 新手教程的作业默认 formation=false（教学关是游戏给定阵容，MAA 不去点「快捷编队」
+    // 免得和教程抢操作）。但个别关卡要求 MAA 自己【自动编队】，所以在作业 json 里声明。
+    // 缺省 false = 原行为；不认这个字段的老作业完全不受影响。
+    // （目前 0-2 ~ 0-8 七份作业都声明了 true，同时带 "supportUnitUsage": 4 =
+    //   只借首位6星；后者由插件的 read_job_options 直接读，不走这里。）
+    // 撤销：删掉这一行 + CopilotConfig.h 的 getter + CombatData 的字段
+    //       + TutorialProgressTaskPlugin 里标了同名标记的那段。
+    m_data.auto_formation = json.get("autoFormation", false);
+
     return true;
 }
 

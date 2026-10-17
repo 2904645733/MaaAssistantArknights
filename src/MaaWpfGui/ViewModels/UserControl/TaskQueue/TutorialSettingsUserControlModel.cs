@@ -37,19 +37,42 @@ public class TutorialSettingsUserControlModel : TaskSettingsViewModel, TutorialS
     public static TutorialSettingsUserControlModel Instance { get; }
 
     /// <summary>
-    /// Gets 已经写好、MAA 现在就能带着跑的教学段落（面板上用方框一个一个列出来，按游戏里的先后顺序）。
-    /// 起名点确定之后那段开场剧情属于 ??? 序章·上 的一部分（流程里会先自动跳过），不单独占一项。
+    /// Gets 教程段落清单：面板上一个方框一段，按游戏里的先后顺序排。
+    /// <para>
+    /// ★ 这张表和核心侧的规则表是【同一个东西的两面】，两边必须一致：
+    /// 核心侧真源 = 新手教程\进度表.json → 规则表.txt → resource/tasks/Tutorial/Progress.json；
+    /// 本列表 = 同一批分段名，只用于显示。
+    /// 核对脚本：新手教程\工具\核对面板分段列表.py（检查两边段名与顺序是否一致）。
+    /// </para>
+    /// <para>
+    /// 起名点确定之后那段开场剧情属于「序章·上」的一部分（流程里会先自动跳过），不单独占一项。
     /// 名字照游戏里的显示写：还没公开关卡代号时游戏显示成「??? 序章·上」。
-    /// 以后每做完一段，在这里和 resource/tasks/Tutorial 里各加一处。
+    /// </para>
+    /// <para>
+    /// 「0-3 / TR-3 / 0-4 / 0-5 / 0-6 / TR-5」这几段在规则表里只有占位句、没有自己的对话：
+    /// 打关走终端链（核心认进度卡 → OCR 读关卡名 → 找 resource/copilot/&lt;关卡名&gt;.json），
+    /// 0-4 / 0-5 弹出的「点击按钮进入快速编队页面」复用 0-2 那条规则。
+    /// </para>
     /// </summary>
     public IReadOnlyList<string> ImplementedStages { get; } = [
         "??? 序章·上",
         "??? 序章·下",
-        "抽卡教程",
-        "编队教程",
-        "0-1",
+        "主界面",
         "任务",
         "TR-1",
+        "0-2",
+        "公招",
+        "TR-2",
+        "0-3",
+        "TR-3",
+        "0-4",
+        "干员升级",
+        "0-5",
+        "0-6",
+        "技能升级",
+        "TR-5",
+        "0-7",
+        "0-8",
     ];
 
     /// <inheritdoc/>

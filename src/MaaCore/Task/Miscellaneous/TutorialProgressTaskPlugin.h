@@ -107,6 +107,19 @@ private:
     // 关卡详情页出来了就点「开始行动」（认官方 StartButton1），然后跑对应作业。
     // 返回 true = 本轮已处理。
     bool try_start_selected_level();
+
+    // [TUTORIAL-AUTOFORMATION] 读作业 json 的两个可选字段（缺省都保持原行为）：
+    //   "autoFormation": true   -> 用 formation=true 起作业（MAA 自动编队），目前 0-5 / 0-7
+    //   "supportUnitUsage": 4   -> 助战策略 = SupportUnitUsage::OnlyFirst（只借首位6星），目前 0-7
+    //                              4 是 BattleFormationTask.h 里 OnlyFirst 的值。
+    // 两个字段都不写 = 教学关原来的行为（游戏给定阵容、不点「快捷编队」）。
+    struct JobOptions
+    {
+        bool auto_formation = false;
+        int support_unit_usage = 0; // 0 = SupportUnitUsage::None
+    };
+
+    JobOptions read_job_options(const std::filesystem::path& job_path) const;
     bool click_point(int x, int y) const;
     bool swipe_from_to(int x1, int y1, int x2, int y2, int duration) const;
     bool dialog_frame_changed(const cv::Mat& image, const Rect& area); // 对话框那块画面变没变
@@ -180,6 +193,16 @@ private:
     // 编队页上连续多久没对话才认为"确实没对话"（刚进去时对话框还在淡入，
     // 等一小会儿再下结论，免得把"还没画出来"当成"没有对话"）。
     inline static constexpr unsigned BattleStartDwellMs = 3000;
+    // ── 关卡详情页上的"等对话"（用户要求：等一轮，约 0.9 秒）────────────
+    // 为什么需要：详情页和编队页【都可能有对话】。原来的代码在终端分支里直接
+    //   `if (is_stage_detail_opened(image)) try_start_selected_level();` ——
+    //   而 is_stage_detail_opened 用的是官方 StartButton1（就是「开始行动」按钮）。
+    //   如果对话框盖住了右下角那个按钮，它就判成"详情页还没出来"→ 又去点进度卡。
+    // 现在的规矩：点完进度卡进详情页后，先在详情页上等【一轮】没对话，才点「开始行动」。
+    //   代价 ≈ 一次 _run（实测约 0.85 秒），和编队页那套保守做法一致。
+    //   （"等一轮"= 点完卡片后的第一轮只用来观察，从第二轮起才允许点开始行动。）
+    // ★ 实测代价（用户问过）：每走一次终端链多一轮 ≈ 0.85 秒；6 个主线关合计约 +5 秒。
+    bool m_waiting_stage_detail_dwell = false;
     // ── 进终端之后的加载等待 ─────────────────────────────────────
     // ★ 踩过：点完终端【立刻】检查进度卡，那时界面还在加载、卡片还没出来，
     //   于是判成"没进去"、标记 in_terminal=0，下一轮又去点导航栏 ——
@@ -191,6 +214,14 @@ private:
     //     照样认进度卡，认到就清零、立刻往下走，所以调小不会漏判。
     unsigned m_terminal_settle_ms = 0;
     inline static constexpr unsigned TerminalSettleMs = 1200;
+    // ── 进终端失败的冷却（用户要求：10 秒）────────────────────────────
+    // 为什么需要：进终端那两条路（QuickSwitch@ToTerminal + TerminalDefault）各自要花
+    //   1.1 秒 / 0.6 秒。界面上没有终端可点的时候它们必然失败，于是【每轮都白花 1.7 秒】，
+    //   把整个循环拖慢一倍（实测：每轮 1.86 秒，其中 1.67 秒是这两次失败尝试）。
+    //   加冷却后失败只花一次，之后不再连续试，循环回到约 0.85 秒/轮。
+    // 递减同样要防无符号下溢（踩过 42 亿毫秒那个坑）。
+    unsigned m_terminal_cooldown_ms = 0;
+    inline static constexpr unsigned TerminalCooldownMs = 10'000;
 
     // ── "现在处于对话"的判据 ──────────────────────────────────
     // 按用户要求，用【官方 BattleAvatarDialog.png】判断是不是在对话；roi 也照抄官方任务

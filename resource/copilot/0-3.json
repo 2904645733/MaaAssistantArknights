@@ -1,0 +1,80 @@
+{
+    "version": 3,
+    "stage_name": "0-3",
+    "difficulty": 0,
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "序章 黑暗时代·上 - 0-3 - 追击",
+        "details": "序章 黑暗时代·上 - 0-3 - 追击"
+    },
+    "opers": [
+        {
+            "name": "安德切尔",
+            "requirements": {
+                "elite": 1,
+                "level": 55,
+                "skill_level": 7,
+                "potentiality": 1,
+                "module": -1
+            }
+        },
+        {
+            "name": "黑角",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "potentiality": 1,
+                "module": -1
+            }
+        },
+        {
+            "name": "巡林者",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "potentiality": 1,
+                "module": -1
+            }
+        }
+    ],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "巡林者",
+            "type": "Deploy",
+            "location": [
+                3,
+                1
+            ],
+            "direction": "Down"
+        },
+        {
+            "name": "黑角",
+            "type": "Deploy",
+            "location": [
+                4,
+                3
+            ],
+            "direction": "Left"
+        },
+        {
+            "name": "安德切尔",
+            "type": "Deploy",
+            "location": [
+                2,
+                1
+            ],
+            "direction": "Down"
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 4
+}

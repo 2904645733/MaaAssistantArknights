@@ -20,6 +20,8 @@
 #include "Vision/Miscellaneous/PipelineAnalyzer.h"
 #include "Vision/OCRer.h"
 
+#include <meojson/json.hpp>
+
 using namespace asst;
 
 namespace
@@ -399,6 +401,20 @@ bool asst::TutorialProgressTaskPlugin::_run()
                 // 已经有目标关卡了 -> 看详情页出来没有，出来就点开始。
                 // （点完「开始行动」进编队页，之后由上面的 m_waiting_battle_start
                 //   分支负责"等对话/启动作业"。）
+                //
+                // ★★ 详情页上也【可能弹对话】（用户要求：点开始行动之前先看有没有对话）。
+                //   而且【这里必须放在 is_stage_detail_opened 之前】：那个判据用的是官方
+                //   StartButton1（就是「开始行动」按钮），对话框一旦盖住它就会判成
+                //   "详情页还没出来"，于是又去点进度卡 —— 这是原来那版的坑。
+                //   规矩（用户选"等一轮"）：点完卡片后的第一轮只观察，
+                //   从第二轮起才允许点「开始行动」。
+                if (m_waiting_stage_detail_dwell) {
+                    m_waiting_stage_detail_dwell = false;
+                    LogInfo << __FUNCTION__
+                            << "| on the stage detail page, wait one round in case a dialogue pops up"
+                            << "before clicking the start button (level:" << m_pending_level << ")";
+                    return true;
+                }
                 if (is_stage_detail_opened(image)) {
                     try_start_selected_level();
                     return true;
@@ -430,7 +446,20 @@ bool asst::TutorialProgressTaskPlugin::_run()
             //   所以这里进完终端先等一段时间，期间【不再尝试进终端】，
             //   只让上面的进度卡判断每轮跑（认到就自然往下走）。
             if (m_terminal_settle_ms > 0) {
-                m_terminal_settle_ms -= GachaSkipIntervalMs;
+                // ★ 递减必须防下溢。
+                //   踩过（很隐蔽）：原来写 `m_terminal_settle_ms -= GachaSkipIntervalMs`，
+                //   而它是 unsigned —— 减到负数会下溢成 42 亿
+                //   （实机日志：`waiting for the terminal to settle, 4294934896 ms left`，
+                //     那是 49 天），于是这个分支永远成立、每轮都在这里 return true，
+                //   后面【所有】逻辑（选关、编队页、兜底点击）全都走不到，看起来像插件卡死。
+                //   只要"初始值不是递减量的整数倍"就会发生（1200 不是 800 的倍数）。
+                //   修法：先比大小，再减 —— 减不动就直接归零。
+                if (m_terminal_settle_ms > GachaSkipIntervalMs) {
+                    m_terminal_settle_ms -= GachaSkipIntervalMs;
+                }
+                else {
+                    m_terminal_settle_ms = 0;
+                }
                 LogInfo << __FUNCTION__ << "| waiting for the terminal to settle," << m_terminal_settle_ms << "ms left";
                 return true;
             }
@@ -439,24 +468,65 @@ bool asst::TutorialProgressTaskPlugin::_run()
                 return true;
             }
 
-            // ★ 没对话够久了：去终端。
-            //   两条来源：
-            //     ① m_return_to_terminal —— 编队页对话处理完，显式走这条链（用户要的）
-            //     ② 笼统兜底 —— 没对话够久就当成"卡在某个不认识的屏上"，去终端找路
-            //   ★ 我一度给 ② 加过"只生效一次"的限制（m_ever_entered_terminal），
-            //     又给整个进终端加过"最多试 3 次"（MaxTerminalAttempts）——
-            //     两处都是【用户没要求】的改动，都把原行为改掉了 —— 都已撤掉。
-            const bool from_fallback = !m_return_to_terminal;
-            if (from_fallback) {
-                LogInfo << __FUNCTION__ << "| no dialogue for" << m_no_dialog_ms
-                        << "ms, use the generic fallback to go to terminal";
+            // ★ 进终端失败的冷却（用户要求 10 秒，见 .h 里 TerminalCooldownMs）。
+            //   进终端那两条路各自要 1.1s / 0.6s；界面上没有终端可点的时候必然失败，
+            //   不加冷却就【每轮白花 1.7 秒】（实测每轮 1.86 秒）。
+            //   冷却期间跳过"进终端"，直接往下走 —— 循环回到约 0.85 秒/轮，
+            //   兜底点击（点屏幕正上方）也就能更快轮到。
+            if (m_terminal_cooldown_ms > 0) {
+                if (m_terminal_cooldown_ms > GachaSkipIntervalMs) {
+                    m_terminal_cooldown_ms -= GachaSkipIntervalMs;
+                }
+                else {
+                    m_terminal_cooldown_ms = 0;
+                }
+                LogInfo << __FUNCTION__ << "| terminal entry is cooling down," << m_terminal_cooldown_ms
+                        << "ms left, skip trying to enter the terminal this round";
             }
-            m_return_to_terminal = false;
-            if (try_enter_terminal()) {
-                return true;
+            else {
+
+                // ★ 没对话够久了：去终端。
+                //   两条来源：
+                //     ① m_return_to_terminal —— 编队页对话处理完，显式走这条链（用户要的）
+                //     ② 笼统兜底 —— 没对话够久就当成"卡在某个不认识的屏上"，去终端找路
+                //   ★ 我一度给 ② 加过"只生效一次"的限制（m_ever_entered_terminal），
+                //     又给整个进终端加过"最多试 3 次"（MaxTerminalAttempts）——
+                //     两处都是【用户没要求】的改动，都把原行为改掉了 —— 都已撤掉。
+                const bool from_fallback = !m_return_to_terminal;
+                if (from_fallback) {
+                    LogInfo << __FUNCTION__ << "| no dialogue for" << m_no_dialog_ms
+                            << "ms, use the generic fallback to go to terminal";
+                }
+                // ★ m_return_to_terminal 只在【进终端成功】时清掉。
+                //   踩过：原来在调用前就清了，于是"编队页对话处理完 -> 没对话 -> 进终端失败"
+                //   之后这个请求就丢了，再也不会重试；同时 try_enter_terminal 又谎报成功，
+                //   两头一夹就把后续逻辑全堵死。
+                if (try_enter_terminal()) {
+                    m_return_to_terminal = false;
+                    return true;
+                }
+                // 进终端失败 -> 装冷却，这段时间里不再试（每轮白花 1.7 秒太亏）
+                m_terminal_cooldown_ms = TerminalCooldownMs;
+                LogInfo << __FUNCTION__ << "| terminal entry failed, cool down for" << m_terminal_cooldown_ms << "ms";
             }
-            LogInfo << __FUNCTION__ << "| no dialogue for" << m_no_dialog_ms
-                    << "ms and terminal entry did nothing, keep waiting";
+
+            // ★★ 循环识别什么都没认出来时的兜底：点一下【屏幕正上方】，然后继续识别。
+            //   （用户要求。坐标复用 TopContinuePoint = (608, 70)，即上方对话框的"继续"位置。）
+            //   走到这里 = 这一轮：没认到对话 + 没认到关卡进度卡 + 进终端也没做成，
+            //   也就是"什么都没识别到"。这时点一下正上方，给游戏一个推进的机会，
+            //   下一轮照常从头识别。
+            //
+            //   ★ 不做节流（用户明确要求去掉）：每轮都点。
+            //     我一度在这里加了"点一次隔 3 轮再点"，那是我自己加的、用户没要求；
+            //     而且 3 轮是按每轮 0.85 秒估的，实测每轮 1.76 秒（中间夹着进终端那 1.7 秒），
+            //     于是实际变成 3.5 秒才点一次 —— 反而把用户要的"接着识别"拖慢了。
+            LogInfo << __FUNCTION__ << "| nothing recognized (no dialogue, no level progress card, terminal entry"
+                    << "did nothing), click the top-center point:" << TopContinuePoint.to_string()
+                    << "then keep recognizing";
+            click_point(TopContinuePoint.x, TopContinuePoint.y);
+            // 点完把"没对话"计时清零：这一下是【刚做过一个动作】，重新开始累计，
+            // 否则下一轮立刻又满足"没对话够久"，会马上再进一次终端。
+            m_no_dialog_ms = 0;
             return true;
         }
         matched_rect = result->rect;
@@ -1090,11 +1160,18 @@ bool asst::TutorialProgressTaskPlugin::try_enter_terminal()
         }
     }
 
-    LogInfo << __FUNCTION__ << "| both entry paths did nothing, keep waiting";
+    // ★ 两条路都没成 -> 返回 false，让调用方知道"这一轮进终端没做成"。
+    //   踩过：这里原来无条件 `return true`，于是 _run() 里
+    //     `if (try_enter_terminal()) { return true; }`
+    //   永远成立，它【后面】的代码（循环识别兜底点击等）永远走不到，
+    //   表现就是"什么都没识别到时插件卡着不动、什么都不点"。
+    //   实机日志：`both entry paths did nothing, keep waiting` 连着 7 次，
+    //             而 m_no_dialog_ms 一路累加到 16800ms。
+    //   也【不】在这里重新装 m_terminal_settle_ms（那只是把延迟挪到下一轮）。
+    LogInfo << __FUNCTION__ << "| both entry paths did nothing, report failure to the caller";
     m_pending_level.clear();
     m_waiting_stage_detail = false;
-    m_terminal_settle_ms = TerminalSettleMs;
-    return true;
+    return false;
 }
 
 bool asst::TutorialProgressTaskPlugin::try_pick_level_in_terminal()
@@ -1144,6 +1221,8 @@ bool asst::TutorialProgressTaskPlugin::try_pick_level_in_terminal()
 
     click_point(LevelProgressRect.x + LevelProgressRect.width / 2, LevelProgressRect.y + LevelProgressRect.height / 2);
     m_waiting_stage_detail = true;
+    // 点完卡片 -> 下一轮只看不动（详情页上可能弹对话，见 .h 里 m_waiting_stage_detail_dwell）
+    m_waiting_stage_detail_dwell = true;
     sleep(GachaSkipIntervalMs);
     return true;
 }
@@ -1190,6 +1269,27 @@ bool asst::TutorialProgressTaskPlugin::try_start_selected_level()
     return true;
 }
 
+asst::TutorialProgressTaskPlugin::JobOptions asst::TutorialProgressTaskPlugin::read_job_options(
+    const std::filesystem::path& job_path) const
+{
+    // [TUTORIAL-AUTOFORMATION] 见 .h 里的声明与 CopilotConfig.cpp 的说明。
+    // 直接读文件，不用 CopilotConfig —— 后者要靠 CopilotTask::set_params 去 load，
+    // 而这里需要在 set_params 之前就拿到值。
+    JobOptions options;
+    auto json_opt = json::open(job_path, true, true);
+    if (!json_opt) {
+        LogError << __FUNCTION__ << "| cannot open the job json to read its options:" << job_path;
+        return options; // 读不到就全用默认 = 原行为
+    }
+    options.auto_formation = json_opt->get("autoFormation", false);
+    options.support_unit_usage = json_opt->get("supportUnitUsage", 0);
+    if (options.auto_formation || options.support_unit_usage != 0) {
+        LogInfo << __FUNCTION__ << "| job options | autoFormation:" << options.auto_formation
+                << "supportUnitUsage:" << options.support_unit_usage << "job:" << job_path;
+    }
+    return options;
+}
+
 bool asst::TutorialProgressTaskPlugin::run_copilot_job(const std::string& job_filename)
 {
     if (job_filename.empty()) {
@@ -1215,11 +1315,27 @@ bool asst::TutorialProgressTaskPlugin::run_copilot_job(const std::string& job_fi
     LogInfo << __FUNCTION__ << "| start copilot job:" << job_filename << "path:" << job_path
             << "actions from rule table drive this, not the GUI queue";
 
+    // [TUTORIAL-AUTOFORMATION] 作业 json 可以声明两个可选字段（缺省都保持原行为）：
+    //   "autoFormation": true   -> formation=true，MAA 自己自动编队（目前 0-5 / 0-7）
+    //   "supportUnitUsage": 4   -> 助战策略 OnlyFirst「只借首位6星」（目前 0-7）
+    //   默认 autoFormation=false —— 教学关大多是游戏给定阵容，
+    //   MAA 去点「快捷编队」会和教程抢操作。
+    //   实现：直接读那份作业 json，不依赖 CopilotConfig 的解析顺序
+    //   （那样要在 set_params 之前就 load，脆弱）。
+    const JobOptions job_options = read_job_options(job_path);
+    LogInfo << __FUNCTION__ << "| job options -> formation:" << job_options.auto_formation
+            << "support_unit_usage:" << job_options.support_unit_usage;
+
     auto copilot_task = std::make_shared<CopilotTask>(m_callback, m_inst);
     json::value params;
     params["filename"] = utils::path_to_utf8_string(job_path);
-    // 教学关是游戏给定阵容：不让 MAA 去点「快捷编队」跟教程抢操作（和 GUI 侧同一个设置）。
-    params["formation"] = false;
+    params["formation"] = job_options.auto_formation;
+    // ★ 即使 autoFormation=false 也要传 support_unit_usage：
+    //   官方 CopilotTask.cpp:171 是 `set_enable(with_formation || usage == OnlyFirst)` ——
+    //   「只借首位6星」本身不自动编队，但要让编队子任务跑起来去借那个助战干员。
+    if (job_options.support_unit_usage != 0) {
+        params["support_unit_usage"] = job_options.support_unit_usage;
+    }
     params["loop_times"] = 1;
 
     if (!copilot_task->set_params(params)) {
