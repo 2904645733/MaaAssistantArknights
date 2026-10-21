@@ -1,0 +1,49 @@
+{
+    "version": 3,
+    "stage_name": "TR-7",
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "TR-7",
+        "details": "TR-7"
+    },
+    "opers": [],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "安德切尔",
+            "type": "Deploy",
+            "location": [
+                3,
+                2
+            ],
+            "direction": "Right"
+        },
+        {
+            "name": "蛇屠箱",
+            "type": "Deploy",
+            "location": [
+                2,
+                3
+            ],
+            "direction": "Right"
+        },
+        {
+            "name": "蛇屠箱",
+            "type": "SkillUsage",
+            "skill_usage": 1
+        },
+        {
+            "name": "安德切尔",
+            "type": "SkillUsage",
+            "skill_usage": 1
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 1
+}

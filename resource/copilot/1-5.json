@@ -1,0 +1,65 @@
+{
+    "version": 3,
+    "stage_name": "1-5",
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "第一章 黑暗时代·下 - 1-5 - 麻痹",
+        "details": "第一章 黑暗时代·下 - 1-5 - 麻痹"
+    },
+    "opers": [
+        {
+            "name": "黑角",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "module": -1,
+                "potentiality": 1
+            }
+        },
+        {
+            "name": "予愿安洁莉娜",
+            "requirements": {
+                "elite": 2,
+                "level": 90,
+                "skill_level": 10,
+                "module": -1,
+                "potentiality": 1
+            }
+        }
+    ],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "予愿安洁莉娜",
+            "type": "Deploy",
+            "location": [
+                8,
+                3
+            ],
+            "direction": "Right"
+        },
+        {
+            "name": "黑角",
+            "type": "Deploy",
+            "location": [
+                7,
+                4
+            ],
+            "direction": "Right"
+        },
+        {
+            "kills": 7,
+            "name": "予愿安洁莉娜",
+            "type": "Skill"
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 1
+}

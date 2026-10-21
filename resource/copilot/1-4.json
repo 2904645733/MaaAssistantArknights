@@ -1,0 +1,58 @@
+{
+    "version": 3,
+    "stage_name": "1-4",
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "第一章 黑暗时代·下 - 1-4 - 先兆",
+        "details": "第一章 黑暗时代·下 - 1-4 - 先兆"
+    },
+    "opers": [
+        {
+            "name": "夜刀",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "module": -1,
+                "potentiality": 1
+            }
+        },
+        {
+            "name": "予愿安洁莉娜",
+            "skill": 3,
+            "skill_usage": 1,
+            "requirements": {
+                "elite": 2,
+                "level": 90,
+                "skill_level": 10,
+                "module": -1,
+                "potentiality": 1
+            }
+        }
+    ],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "予愿安洁莉娜",
+            "type": "Deploy",
+            "location": [
+                3,
+                3
+            ],
+            "direction": "Right"
+        },
+        {
+            "type": "Skill",
+            "name": "予愿安洁莉娜",
+            "kills": 4
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 1
+}

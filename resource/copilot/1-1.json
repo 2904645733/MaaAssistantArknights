@@ -1,0 +1,53 @@
+{
+    "version": 3,
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "第一章 黑暗时代·下 - 1-1 - 孤岛",
+        "details": "第一章 黑暗时代·下 - 1-1 - 孤岛"
+    },
+    "stage_name": "1-1",
+    "opers": [
+        {
+            "name": "娜仁图亚",
+            "requirements": {
+                "level": 90,
+                "skill_level": 10,
+                "module": 1,
+                "elite": 2,
+                "potentiality": 1
+            },
+            "skill": 1,
+            "skill_usage": 2
+        },
+        {
+            "name": "夜刀",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "potentiality": 1,
+                "module": -1
+            }
+        }
+    ],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "type": "Deploy",
+            "name": "娜仁图亚",
+            "location": [
+                4,
+                4
+            ],
+            "direction": "Right"
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 1
+}

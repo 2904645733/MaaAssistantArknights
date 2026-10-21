@@ -1,0 +1,49 @@
+{
+    "version": 3,
+    "stage_name": "TR-8",
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "TR-8",
+        "details": "TR-8"
+    },
+    "opers": [],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "芬",
+            "type": "Deploy",
+            "location": [
+                6,
+                1
+            ],
+            "direction": "Left"
+        },
+        {
+            "name": "克洛丝",
+            "type": "Deploy",
+            "location": [
+                7,
+                1
+            ],
+            "direction": "Left"
+        },
+        {
+            "name": "障碍物",
+            "type": "Deploy",
+            "location": [
+                6,
+                4
+            ],
+            "direction": "None",
+            "costs": 42
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 1
+}

@@ -1,0 +1,47 @@
+{
+    "version": 3,
+    "stage_name": "TR-9",
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "TR-9",
+        "details": "TR-9"
+    },
+    "opers": [],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "name": "翎羽",
+            "type": "Deploy",
+            "location": [
+                3,
+                2
+            ],
+            "direction": "Right"
+        },
+        {
+            "name": "玫兰莎",
+            "type": "Deploy",
+            "location": [
+                3,
+                4
+            ],
+            "direction": "Right"
+        },
+        {
+            "type": "Skill",
+            "location": [
+                4,
+                3
+            ],
+            "costs": 47
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 1
+}

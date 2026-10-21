@@ -1,0 +1,53 @@
+{
+    "version": 3,
+    "minimum_required": "v6.0.0",
+    "doc": {
+        "title": "第一章 黑暗时代·下 - 1-7 - 暴君",
+        "details": "第一章 黑暗时代·下 - 1-7 - 暴君"
+    },
+    "stage_name": "1-7",
+    "opers": [
+        {
+            "name": "娜仁图亚",
+            "requirements": {
+                "level": 90,
+                "skill_level": 10,
+                "module": 1,
+                "elite": 2,
+                "potentiality": 1
+            },
+            "skill": 1,
+            "skill_usage": 2
+        },
+        {
+            "name": "夜刀",
+            "requirements": {
+                "elite": 0,
+                "level": 30,
+                "skill_level": 1,
+                "potentiality": 1,
+                "module": -1
+            }
+        }
+    ],
+    "groups": [],
+    "actions": [
+        {
+            "type": "SpeedUp"
+        },
+        {
+            "type": "Deploy",
+            "name": "娜仁图亚",
+            "location": [
+                5,
+                2
+            ],
+            "direction": "Down"
+        },
+        {
+            "type": "SkillDaemon"
+        }
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 1
+}

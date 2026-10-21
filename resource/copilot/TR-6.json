@@ -34,5 +34,7 @@
         {
             "type": "SkillDaemon"
         }
-    ]
+    ],
+    "autoFormation": true,
+    "supportUnitUsage": 1
 }

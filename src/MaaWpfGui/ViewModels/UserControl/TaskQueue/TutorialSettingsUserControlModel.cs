@@ -72,7 +72,28 @@ public class TutorialSettingsUserControlModel : TaskSettingsViewModel, TutorialS
         "技能升级",
         "TR-5",
         "0-7",
+
+        // 0-7 之后（顺序按用户给的）
+        "TR-6",
         "0-8",
+        "0-9",
+        "TR-7",
+        "0-10",
+        "资源收集",
+        "0-11",
+        "基建",
+        "1-1",
+        "控制中心升级",
+        "1-2",
+        "干员培养",
+        "1-3",
+        "1-4",
+        "1-5",
+        "剿灭",
+        "1-6",
+        "TR-8",
+        "TR-9",
+        "1-7",
     ];
 
     /// <inheritdoc/>
